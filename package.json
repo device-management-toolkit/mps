@@ -39,7 +39,7 @@
     "ci-prettify": "npx prettier --check '**/*.{ts,js,yaml,css,scss,json}'"
   },
   "dependencies": {
-    "@open-amt-cloud-toolkit/wsman-messages": "^5.7.0",
+    "@open-amt-cloud-toolkit/wsman-messages": "^5.8.0",
     "bottleneck": "^2.19.5",
     "consul": "^2.0.1",
     "cors": "^2.8.5",
@@ -49,7 +49,7 @@
     "got": "^14.4.6",
     "http-z": "^7.0.0",
     "jws": "^4.0.0",
-    "mongodb": "^6.14.0",
+    "mongodb": "^6.14.2",
     "mqtt": "^5.10.4",
     "node-forge": "^1.3.1",
     "pg": "^8.13.3",
@@ -80,7 +80,7 @@
     "ts-jest": "^29.2.6",
     "ts-node": "^10.9.2",
     "typescript": "^5.7.3",
-    "typescript-eslint": "8.25.0"
+    "typescript-eslint": "8.26.0"
   },
   "optionalDependencies": {
     "fsevents": "^2.3.3"
