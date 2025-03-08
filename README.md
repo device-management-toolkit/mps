@@ -93,6 +93,17 @@ jwt_secrets:
 
 <br>
 
+## Using devcontainer
+
+If you want debug in vscode devcontainer, try to open the project with devcontainer (Make sure you install the extension of **Dev Containers**)
+
+- Step1: Press **Ctrl + Shift+ P** in vscode;
+- Step2: Type **Dev Containers: Reopen in Container**;
+- Step3: Click the item which appear in column;
+- Step4: Open a terminal, build and run app with command;
+
+<br>
+
 ## Additional Resources
 
 - For detailed documentation and Getting Started, [visit the docs site](https://device-management-toolkit.github.io/docs).
