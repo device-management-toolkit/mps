@@ -1,3 +1,15 @@
+# [2.14.0](https://github.com/device-management-toolkit/mps/compare/v2.13.22...v2.14.0) (2025-03-10)
+
+
+### Bug Fixes
+
+* **docker:** update devcontainer.json format with prettier ([eb30af8](https://github.com/device-management-toolkit/mps/commit/eb30af898faec07369f5f1302bc16999aba2ca25))
+
+
+### Features
+
+* **docker:** add support for devcontainer (device-management-toolkit/cloud-deployment[#383](https://github.com/device-management-toolkit/mps/issues/383)) ([c91726c](https://github.com/device-management-toolkit/mps/commit/c91726c428a0d58a7be300c12b615b6aed0e3b75))
+
 ## [2.13.22](https://github.com/open-amt-cloud-toolkit/mps/compare/v2.13.21...v2.13.22) (2025-02-07)
 
 
