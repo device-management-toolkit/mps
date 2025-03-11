@@ -3,12 +3,12 @@
  * SPDX-License-Identifier: Apache-2.0
  **********************************************************************/
 
-import { type Response, type Request } from 'express'
+import { type AMT, type CIM } from '@open-amt-cloud-toolkit/wsman-messages'
+import { type Request, type Response } from 'express'
 import { logger, messages } from '../../logging/index.js'
 import { ErrorResponse } from '../../utils/amtHelper.js'
-import { MqttProvider } from '../../utils/MqttProvider.js'
 import { AMTStatusCodes } from '../../utils/constants.js'
-import { type AMT, type CIM } from '@open-amt-cloud-toolkit/wsman-messages'
+import { MqttProvider } from '../../utils/MqttProvider.js'
 
 export async function powerAction(req: Request, res: Response): Promise<void> {
   try {
@@ -16,6 +16,29 @@ export async function powerAction(req: Request, res: Response): Promise<void> {
     const results = await req.deviceAction.getBootOptions()
     const bootData = setBootData(payload.action as number, false, results.AMT_BootSettingData)
     await req.deviceAction.setBootConfiguration(bootData)
+
+    if((payload.action as CIM.Types.PowerManagementService.PowerState) == 2)
+    {
+      const OSPWRSAV_FULLPOWER = 2;
+      const OSPWRSAV_SAVING = 3;
+
+      const current_ospowerstatus = await req.deviceAction.getOSPowerSavingState()
+      if(current_ospowerstatus?.Body?.OSPowerSavingState == OSPWRSAV_SAVING)
+      {
+        logger.info(`OS Power Saving State is 3 (Saving Mode). Changing it to 2 (Full Power) before continuing...`)
+        ;
+        const osResponse = await req.deviceAction.requestOSPowerSavingStateChange(OSPWRSAV_FULLPOWER)
+        
+        if(osResponse?.Body?.RequestOSPowerSavingStateChange_OUTPUT?.ReturnValue == 0)
+        {
+          logger.info(`OS Power Saving State changed to 2 (Full Power) successfully.`);
+        }
+        else
+        {
+          logger.error(`Failed to change OS Power Saving State. Proceeding with power action...`);          
+        }
+      }
+    }
 
     const powerAction = await req.deviceAction.sendPowerAction(
       payload.action as CIM.Types.PowerManagementService.PowerState

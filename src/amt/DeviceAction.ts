@@ -3,12 +3,12 @@
  * SPDX-License-Identifier: Apache-2.0
  **********************************************************************/
 
-import { logger, messages } from '../logging/index.js'
-import { type CIRAHandler } from './CIRAHandler.js'
 import { AMT, CIM, IPS, type Common } from '@open-amt-cloud-toolkit/wsman-messages'
-import { type Selector } from '@open-amt-cloud-toolkit/wsman-messages/WSMan.js'
-import { type CIRASocket } from '../models/models.js'
 import { type Types } from '@open-amt-cloud-toolkit/wsman-messages/cim'
+import { type Selector } from '@open-amt-cloud-toolkit/wsman-messages/WSMan.js'
+import { logger, messages } from '../logging/index.js'
+import { type CIRASocket } from '../models/models.js'
+import { type CIRAHandler } from './CIRAHandler.js'
 
 export class DeviceAction {
   ciraHandler: CIRAHandler
@@ -426,5 +426,22 @@ export class DeviceAction {
     // will there be one?
     const unprovisionResponse = await this.ciraHandler.Send(this.ciraSocket, xmlRequestBody)
     return unprovisionResponse.Envelope
+  }
+
+  async getOSPowerSavingState(): Promise<Common.Models.Envelope<IPS.Models.PowerManagementService>> {
+    logger.silly(`getOSPowerSavingState ${messages.OS_POWER_SAVING_STATE_GET_REQUESTED}`)
+    const xmlRequestBody = this.ips.PowerManagementService.Get()    
+    const result = await this.ciraHandler.Get<IPS.Models.PowerManagementService>(this.ciraSocket, xmlRequestBody)   
+    logger.silly(`getOSPowerSavingState ${messages.COMPLETE}`)
+    return result.Envelope
+  }
+
+  async requestOSPowerSavingStateChange(OSPowerSavingState: IPS.Types.PowerManagementService.OSPowerSavingState): 
+    Promise<Common.Models.Envelope<IPS.Models.RequestOSPowerSavingStateChangeResponse>> {
+    logger.silly(`requestOSPowerSavingStateChange ${messages.OS_POWER_SAVING_STATE_CHANGE_REQUESTED}`)
+    const xmlRequestBody = this.ips.PowerManagementService.RequestOSPowerSavingStateChange(OSPowerSavingState)
+    const result = await this.ciraHandler.Get<IPS.Models.RequestOSPowerSavingStateChangeResponse>(this.ciraSocket, xmlRequestBody)
+    logger.silly(`requestOSPowerSavingStateChange ${messages.COMPLETE}`)
+    return result.Envelope
   }
 }
