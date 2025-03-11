@@ -32,6 +32,15 @@ export const HTTPErrorTable = {
   604: 'Unexpected HTTP pull response'
 }
 
+// OSPowerSavingState. The current operating system power saving state of the associated Management System Element.
+// ValueMap={0, 1, 2, 3}
+// Values={Unknown, Unsupported, Full Power, OS Power Saving}
+export const DMTFOSPowerSavingState = [
+  0, 
+  1, 
+  2, 
+  3]
+
 // Power Actions supported as per Distributed Management Task Force standard.
 // ValueMap={2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16}
 // Values={Power On, Sleep - Light, Sleep - Deep, Power Cycle (Off Soft), Power Off - Hard, Hibernate, Power Off - Soft, Power Cycle (Off Hard), Master Bus Reset, Diagnostic Interrupt (NMI), Power Off - Soft Graceful, Power Off - Hard Graceful, Master Bus Reset Graceful, Power Cycle (Off - Soft Graceful), Power Cycle (Off - Hard Graceful)}
