@@ -4,7 +4,6 @@
  **********************************************************************/
 
 import { AMT, CIM, IPS, type Common } from '@open-amt-cloud-toolkit/wsman-messages'
-import { type Types } from '@open-amt-cloud-toolkit/wsman-messages/cim'
 import { type Selector } from '@open-amt-cloud-toolkit/wsman-messages/WSMan.js'
 import { logger, messages } from '../logging/index.js'
 import { type CIRASocket } from '../models/models.js'
@@ -134,7 +133,7 @@ export class DeviceAction {
     return result
   }
 
-  async changeBootOrder(bootSource?: Types.BootConfigSetting.InstanceID): Promise<any> {
+  async changeBootOrder(bootSource?: CIM.Types.BootConfigSetting.InstanceID): Promise<any> {
     logger.silly(`changeBootOrder ${messages.REQUEST}`)
     let xmlRequestBody: string
     if (bootSource == null) {
