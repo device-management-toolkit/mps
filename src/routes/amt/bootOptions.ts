@@ -3,12 +3,12 @@
  * SPDX-License-Identifier: Apache-2.0
  **********************************************************************/
 
-import { type Response, type Request } from 'express'
+import { type AMT, type CIM } from '@open-amt-cloud-toolkit/wsman-messages'
+import { type Request, type Response } from 'express'
 import { logger, messages } from '../../logging/index.js'
 import { ErrorResponse } from '../../utils/amtHelper.js'
-import { MqttProvider } from '../../utils/MqttProvider.js'
 import { AMTStatusCodes } from '../../utils/constants.js'
-import { type AMT, type CIM } from '@open-amt-cloud-toolkit/wsman-messages'
+import { MqttProvider } from '../../utils/MqttProvider.js'
 
 export async function bootOptions(req: Request, res: Response): Promise<void> {
   try {
