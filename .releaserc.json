@@ -27,8 +27,7 @@
     [
       "@semantic-release/exec",
       {
-        "prepareCmd": "docker build -t vprodemo.azurecr.io/mps:v${nextRelease.version} . && docker tag vprodemo.azurecr.io/mps:v${nextRelease.version} docker.io/intel/oact-mps:latest && docker tag vprodemo.azurecr.io/mps:v${nextRelease.version} docker.io/intel/oact-mps:v${nextRelease.version}",
-        "publishCmd": "docker push vprodemo.azurecr.io/mps:v${nextRelease.version} && docker push docker.io/intel/oact-mps:latest && docker push docker.io/intel/oact-mps:v${nextRelease.version}"
+        "publishCmd": "docker buildx build --platform linux/amd64,linux/arm64 --push -t vprodemo.azurecr.io/mps:v${nextRelease.version} . -t vprodemo.azurecr.io/mps:v${nextRelease.version} docker.io/intel/oact-mps:latest -t vprodemo.azurecr.io/mps:v${nextRelease.version} docker.io/intel/oact-mps:v${nextRelease.version}"
       }
     ],
     "@semantic-release/git"
