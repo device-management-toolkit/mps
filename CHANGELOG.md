@@ -1,3 +1,10 @@
+# [2.15.0](https://github.com/device-management-toolkit/mps/compare/v2.14.2...v2.15.0) (2025-03-18)
+
+
+### Features
+
+* **docker:** enable multiarch build ([70e7d55](https://github.com/device-management-toolkit/mps/commit/70e7d55fd04bb36931f79c2a2acbeedddacaad6d))
+
 ## [2.14.2](https://github.com/device-management-toolkit/mps/compare/v2.14.1...v2.14.2) (2025-03-12)
 
 
