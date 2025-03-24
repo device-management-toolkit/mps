@@ -10,7 +10,13 @@ describe('Check index from routes', () => {
     { path: '/ciracert', method: 'get' }]
   it('should have routes', () => {
     routes.forEach((route) => {
-      const match = router.stack.find((s) => s.route?.path === route.path && s.route?.methods[route.method])
+      const match = router.stack.find((s) => {
+        if (s.route?.path === route.path) {
+          // @ts-expect-error -  Property 'methods' does not exist on type 'IRoute'. Ignoring TypeScript error as methods exists at runtime
+          return s.route.methods && s.route.methods[route.method]
+        }
+        return false
+      })
       expect(match).toBeTruthy()
     })
   })
