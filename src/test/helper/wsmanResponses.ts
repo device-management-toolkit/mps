@@ -1083,3 +1083,99 @@ export const deactivateResponse = {
     errorDescription: 'guid : 1'
   }
 }
+
+export const osPowerSavingStateChangeGetResponse = {
+  Envelope: {
+    Header: {
+      To: 'http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous',
+      RelatesTo: '2',
+      Action: 'http://schemas.xmlsoap.org/ws/2004/09/transfer/GetResponse',
+      MessageID: 'uuid:00000000-8086-8086-8086-000000011EC1',
+      ResourceURI: 'http://intel.com/wbem/wscim/1/ips-schema/1/IPS_PowerManagementService'
+    },
+    Body: {
+      CreationClassName: 'IPS_PowerManagementService',
+      ElementName: 'Intel(r) AMT Power Management Service',
+      EnabledState: '5',
+      Name: 'Intel(r) AMT Power Management Service',
+      OSPowerSavingState: '3',
+      RequestedState: '12',
+      SystemCreationClassName: 'CIM_ComputerSystem',
+      SystemName: 'Intel(r) AMT'
+    }
+  }
+}
+
+export const osPowerSavingStateChangeResponse = {
+  Envelope: {
+    Header: {
+      To: 'http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous',
+      RelatesTo: '3',
+      Action:
+        'http://intel.com/wbem/wscim/1/ips-schema/1/IPS_PowerManagementService/RequestOSPowerSavingStateChangeResponse',
+      MessageID: 'uuid:00000000-8086-8086-8086-0000000133A3',
+      ResourceURI: 'http://intel.com/wbem/wscim/1/ips-schema/1/IPS_PowerManagementService'
+    },
+    Body: {
+      RequestOSPowerSavingStateChange_OUTPUT: {
+        ReturnValue: 0
+      }
+    }
+  }
+}
+
+export const osPowerSavingStateChangeBadResponse = {
+  Envelope: {
+    Header: {
+      To: 'http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous',
+      RelatesTo: '3',
+      Action:
+        'http://intel.com/wbem/wscim/1/ips-schema/1/IPS_PowerManagementService/RequestOSPowerSavingStateChangeResponse',
+      MessageID: 'uuid:00000000-8086-8086-8086-0000000133A3',
+      ResourceURI: 'http://intel.com/wbem/wscim/1/ips-schema/1/IPS_PowerManagementService'
+    },
+    Body: {
+      RequestOSPowerSavingStateChange_OUTPUT: {
+        ReturnValue: 5
+      }
+    }
+  }
+}
+
+export const osPowerSavingStateChangeRequest = {
+  Envelope: {
+    Header: {
+      To: '/wsman',
+      Action: 'http://intel.com/wbem/wscim/1/ips-schema/1/IPS_PowerManagementService/RequestOSPowerSavingStateChange',
+      MessageID: '3',
+      ResourceURI: 'http://intel.com/wbem/wscim/1/ips-schema/1/IPS_PowerManagementService',
+      ReplyTo: {
+        Address: 'http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous'
+      },
+      OperationTimeout: 'PT60S'
+    },
+    Body: {
+      RequestOSPowerSavingStateChange_INPUT: {
+        OSPowerSavingState: '3',
+        ManagedElement: {
+          Address: 'http://schemas.xmlsoap.org/ws/2004/08/addressing'
+        },
+        ReferenceParameters: {
+          ResourceURI: 'http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_ComputerSystem',
+          SelectorSet: {
+            Selector: [
+              {
+                Name: 'CreationClassName',
+                Value: 'CIM_ComputerSystem'
+              },
+              {
+                Name: 'Name',
+                Value: 'ManagedSystem'
+              }
+            ]
+          }
+        }
+      }
+    }
+  }
+}
