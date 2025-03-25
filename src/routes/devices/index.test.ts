@@ -18,6 +18,7 @@ describe('Check index from devices', () => {
   ]
   it('should have routes', async () => {
     routes.forEach((route) => {
+      // @ts-expect-error -  Property 'methods' does not exist on type 'IRoute'. Ignoring TypeScript error as methods exists at runtime
       const match = router.stack.find((s) => s.route?.path === route.path && s.route?.methods[route.method])
       expect(match).toBeTruthy()
     })
