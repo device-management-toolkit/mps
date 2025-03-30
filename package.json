@@ -39,7 +39,7 @@
     "ci-prettify": "npx prettier --check '**/*.{ts,js,yaml,css,scss,json}'"
   },
   "dependencies": {
-    "@open-amt-cloud-toolkit/wsman-messages": "^5.9.0",
+    "@open-amt-cloud-toolkit/wsman-messages": "^5.9.1",
     "bottleneck": "^2.19.5",
     "consul": "^2.0.1",
     "cors": "^2.8.5",
@@ -63,7 +63,7 @@
     "@types/body-parser": "^1.19.5",
     "@types/express": "^5.0.1",
     "@types/jest": "^29.5.14",
-    "@types/node": "^22.13.11",
+    "@types/node": "^22.13.14",
     "@types/node-forge": "^1.3.11",
     "@types/pg": "^8.11.11",
     "@types/ws": "^8.18.0",
@@ -77,10 +77,10 @@
     "jest-transform-stub": "^2.0.0",
     "prettier-config-standard": "^7.0.0",
     "prettier-plugin-multiline-arrays": "^4.0.3",
-    "ts-jest": "^29.2.6",
+    "ts-jest": "^29.3.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.2",
-    "typescript-eslint": "8.27.0"
+    "typescript-eslint": "8.28.0"
   },
   "optionalDependencies": {
     "fsevents": "^2.3.3"
