@@ -3,19 +3,20 @@
  * SPDX-License-Identifier: Apache-2.0
  **********************************************************************/
 
-import { powerState } from './getPowerState.js'
-import { createSpyObj } from '../../test/helper/jest.js'
-import { serviceAvailableToElement } from '../../test/helper/wsmanResponses.js'
+import { spyOn } from 'jest-mock'
 import { CIRAHandler } from '../../amt/CIRAHandler.js'
 import { DeviceAction } from '../../amt/DeviceAction.js'
 import { HttpHandler } from '../../amt/HttpHandler.js'
 import { messages } from '../../logging/index.js'
-import { spyOn } from 'jest-mock'
+import { createSpyObj } from '../../test/helper/jest.js'
+import { serviceAvailableToElement } from '../../test/helper/wsmanResponses.js'
+import { powerState } from './getPowerState.js'
 
 describe('power state', () => {
   let resSpy
   let req
   let powerStateSpy
+  let osPowerStateGetSpy
   beforeEach(() => {
     const handler = new CIRAHandler(new HttpHandler(), 'admin', 'P@ssw0rd')
     const device = new DeviceAction(handler, null)
@@ -33,6 +34,21 @@ describe('power state', () => {
     resSpy.json.mockReturnThis()
     resSpy.send.mockReturnThis()
 
+    osPowerStateGetSpy = spyOn(device, 'getOSPowerSavingState').mockResolvedValue({
+      Body: {
+        IPS_PowerManagementService: {
+          CreationClassName: 'IPS_PowerManagementService',
+          ElementName: 'Intel(r) AMT Power Management Service',
+          EnabledState: '5',
+          Name: 'Intel(r) AMT Power Management Service',
+          OSPowerSavingState: '3',
+          RequestedState: '12',
+          SystemCreationClassName: 'CIM_ComputerSystem',
+          SystemName: 'Intel(r) AMT'
+        }
+      }
+    } as any)
+
     powerStateSpy = spyOn(device, 'getPowerState')
   })
 
@@ -40,7 +56,7 @@ describe('power state', () => {
     powerStateSpy.mockResolvedValueOnce(serviceAvailableToElement.Envelope.Body)
     await powerState(req, resSpy)
     expect(resSpy.status).toHaveBeenCalledWith(200)
-    expect(resSpy.send).toHaveBeenCalledWith({ powerstate: '4' })
+    expect(resSpy.send).toHaveBeenCalledWith({ powerstate: '4', OSPowerSavingState: '3' })
   })
   it('should get an error with status code 400, when get power state is null', async () => {
     powerStateSpy.mockResolvedValueOnce(null)
