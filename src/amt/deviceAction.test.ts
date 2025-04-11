@@ -3,11 +3,14 @@
  * SPDX-License-Identifier: Apache-2.0
  **********************************************************************/
 
-import { type CIRASocket } from '../models/models.js'
+import { type AMT, type CIM } from '@open-amt-cloud-toolkit/wsman-messages'
+import { type Selector } from '@open-amt-cloud-toolkit/wsman-messages/WSMan.js'
+import { type Models } from '@open-amt-cloud-toolkit/wsman-messages/ips/models.js'
 import { type SpyInstance, spyOn } from 'jest-mock'
+import { type CIRASocket } from '../models/models.js'
 import {
-  alarmClockOccurrences,
   addAlarmClockOccurrenceResponse,
+  alarmClockOccurrences,
   amtMessageLog,
   auditLog,
   biosElement,
@@ -22,6 +25,7 @@ import {
   enumerateResponseIPSAlarmClockOccurrence,
   generalSettings,
   mediaAccessDevice,
+  osPowerSavingStateChangeGetResponse,
   physicalMemory,
   physicalPackage,
   positionToFirstRecord,
@@ -36,9 +40,6 @@ import {
 import { CIRAHandler } from './CIRAHandler.js'
 import { DeviceAction } from './DeviceAction.js'
 import { HttpHandler } from './HttpHandler.js'
-import { type Selector } from '@open-amt-cloud-toolkit/wsman-messages/WSMan.js'
-import { type Models } from '@open-amt-cloud-toolkit/wsman-messages/ips/models.js'
-import { type AMT, type CIM } from '@open-amt-cloud-toolkit/wsman-messages'
 
 describe('Device Action Tests', () => {
   let enumerateSpy: SpyInstance<any>
@@ -87,6 +88,21 @@ describe('Device Action Tests', () => {
       getSpy.mockResolvedValueOnce({ Envelope: { Body: { RequestPowerStateChange_OUTPUT: { ReturnValue: 0 } } } })
       const result = await device.sendPowerAction(10)
       expect(result).toEqual({ Body: { RequestPowerStateChange_OUTPUT: { ReturnValue: 0 } } })
+    })
+  })
+
+  describe('ips_power', () => {
+    it('should return current OS PowerSaving State', async () => {
+      getSpy.mockResolvedValueOnce(osPowerSavingStateChangeGetResponse)
+      const result = await device.getOSPowerSavingState()
+      expect(result).toBe(osPowerSavingStateChangeGetResponse.Envelope)
+    })
+    it('should request OS Power Saving State Change action', async () => {
+      getSpy.mockResolvedValueOnce({
+        Envelope: { Body: { RequestOSPowerSavingStateChange_OUTPUT: { ReturnValue: 0 } } }
+      })
+      const result = await device.requestOSPowerSavingStateChange(2)
+      expect(result).toEqual({ Body: { RequestOSPowerSavingStateChange_OUTPUT: { ReturnValue: 0 } } })
     })
   })
 

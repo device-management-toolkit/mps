@@ -32,6 +32,16 @@ export const HTTPErrorTable = {
   604: 'Unexpected HTTP pull response'
 }
 
+// OSPowerSavingState. The current operating system power saving state of the associated Management System Element.
+// ValueMap={0, 1, 2, 3}
+// Values={Unknown, Unsupported, Full Power, OS Power Saving}
+export const DMTFOSPowerSavingState = [
+  0,
+  1,
+  2,
+  3
+]
+
 // Power Actions supported as per Distributed Management Task Force standard.
 // ValueMap={2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16}
 // Values={Power On, Sleep - Light, Sleep - Deep, Power Cycle (Off Soft), Power Off - Hard, Hibernate, Power Off - Soft, Power Cycle (Off Hard), Master Bus Reset, Diagnostic Interrupt (NMI), Power Off - Soft Graceful, Power Off - Hard Graceful, Master Bus Reset Graceful, Power Cycle (Off - Soft Graceful), Power Cycle (Off - Hard Graceful)}
@@ -63,13 +73,34 @@ export const DMTFPowerExtendedStates = [
   300,
   301,
   400,
-  401
+  401,
+  500, //From OS Power Saving Mode to OS Full Power Mode
+  501 //From OS Full Power to OS Power Saving Mode
 ]
+
+export const DMTFCombinedPowerStates = [
+  ...DMTFPowerStates,
+  ...DMTFPowerExtendedStates
+] // Power States + Extended Power States for Validation
 
 export const UserConsentOptions = {
   none: 0,
   kvm: 1,
   all: 4294967295
+}
+
+export const OSPowerSavingStateStatusCodes = {
+  0: 'COMPLETED_WITH_NO_ERROR',
+  1: 'NOT_SUPPORTED',
+  2: 'UNKNOWN_OR_UNSPECIFIED_ERROR',
+  3: 'CANNOT_COMPLETE_WITHIN_TIMEOUT_PERIOD',
+  4: 'FAILED',
+  5: 'INVALID_PARAMETER',
+  6: 'IN_USE',
+  4096: 'METHOD_PARAMETERS_CHECKED_JOB_STARTED',
+  4097: 'INVALID_STATE_TRANSITION',
+  4098: 'USE_OF_TIMEOUT_PARAMETER_NOT_SUPPORTED',
+  4099: 'BUSY'
 }
 
 export const AMTStatusCodes = {
