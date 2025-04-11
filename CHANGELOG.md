@@ -1,3 +1,10 @@
+# [2.16.0](https://github.com/device-management-toolkit/mps/compare/v2.15.0...v2.16.0) (2025-04-11)
+
+
+### Features
+
+* **api:** manage OS Power Saving State ([#1869](https://github.com/device-management-toolkit/mps/issues/1869)) ([0b98295](https://github.com/device-management-toolkit/mps/commit/0b98295c9cb152eeec6e27c0faadc69b2f6fad18))
+
 # [2.15.0](https://github.com/device-management-toolkit/mps/compare/v2.14.2...v2.15.0) (2025-03-18)
 
 
