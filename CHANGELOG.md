@@ -1,3 +1,10 @@
+## [2.16.1](https://github.com/device-management-toolkit/mps/compare/v2.16.0...v2.16.1) (2025-04-21)
+
+
+### Bug Fixes
+
+* grab req.tenantId for device token ([#1908](https://github.com/device-management-toolkit/mps/issues/1908)) ([f006d6d](https://github.com/device-management-toolkit/mps/commit/f006d6df59e0d9690f39dedc5b1ddc55f040634e)), closes [#1767](https://github.com/device-management-toolkit/mps/issues/1767)
+
 # [2.16.0](https://github.com/device-management-toolkit/mps/compare/v2.15.0...v2.16.0) (2025-04-11)
 
 
