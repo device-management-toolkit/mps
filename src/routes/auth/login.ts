@@ -27,7 +27,7 @@ export async function login(req: Request, res: Response): Promise<void> {
     password === Environment.Config.web_admin_password
   ) {
     const expirationMinutes = Number(Environment.Config.jwt_expiration)
-    res.status(200).send({ token: signature(expirationMinutes, '*') })
+    res.status(200).send({ token: signature(expirationMinutes, '*', '') })
   } else {
     logger.silly(`${messages.LOGIN_FAILED}, username: ${username}`)
     res.status(401).send({ message: messages.LOGIN_FAILED })
