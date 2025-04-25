@@ -70,5 +70,6 @@ export const config: configType = {
   consul_host: 'localhost',
   consul_port: '8500',
   consul_key_prefix: 'MPS',
-  cira_last_seen: true
+  cira_last_seen: true,
+  timeout_ms_default: "10000"
 }
