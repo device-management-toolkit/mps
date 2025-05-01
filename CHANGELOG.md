@@ -1,3 +1,10 @@
+# [2.17.0](https://github.com/device-management-toolkit/mps/compare/v2.16.1...v2.17.0) (2025-05-01)
+
+
+### Features
+
+* **api:** manage power state timeout ([#1929](https://github.com/device-management-toolkit/mps/issues/1929)) ([9ff7526](https://github.com/device-management-toolkit/mps/commit/9ff7526becaadb491c0e71bc38ea0598f278726b))
+
 ## [2.16.1](https://github.com/device-management-toolkit/mps/compare/v2.16.0...v2.16.1) (2025-04-21)
 
 
