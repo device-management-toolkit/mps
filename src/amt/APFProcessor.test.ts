@@ -3,16 +3,16 @@
  * SPDX-License-Identifier: Apache-2.0
  **********************************************************************/
 
-import { Buffer } from 'node:buffer'
-import Common from '../utils/common.js'
-import { logger } from '../logging/index.js'
-import APFProcessor, { APFProtocol } from './APFProcessor.js'
-import { Environment } from '../utils/Environment.js'
-import { type CIRASocket } from '../models/models.js'
-import { type CIRAChannel } from './CIRAChannel.js'
-import { EventEmitter } from 'node:events'
 import { jest } from '@jest/globals'
 import { spyOn } from 'jest-mock'
+import { Buffer } from 'node:buffer'
+import { EventEmitter } from 'node:events'
+import { logger } from '../logging/index.js'
+import { type CIRASocket } from '../models/models.js'
+import Common from '../utils/common.js'
+import { Environment } from '../utils/Environment.js'
+import APFProcessor, { APFProtocol } from './APFProcessor.js'
+import { type CIRAChannel } from './CIRAChannel.js'
 
 describe('APFProcessor Tests', () => {
   afterEach(() => {
@@ -1060,7 +1060,8 @@ describe('APFProcessor Tests', () => {
         consul_host: 'localhost',
         consul_port: '8500',
         consul_key_prefix: 'MPS',
-        cira_last_seen: true
+        cira_last_seen: true,
+        timeout_ms_default: "10000"
       }
       Environment.Config = config
 

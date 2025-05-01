@@ -10,6 +10,7 @@ import { HttpHandler } from '../../amt/HttpHandler.js'
 import { messages } from '../../logging/index.js'
 import { createSpyObj } from '../../test/helper/jest.js'
 import { serviceAvailableToElement } from '../../test/helper/wsmanResponses.js'
+import { TIMEOUT_MESSAGE, TimeoutError } from '../../utils/timeoutOpManagement.js'
 import { powerState } from './getPowerState.js'
 
 describe('power state', () => {
@@ -78,4 +79,25 @@ describe('power state', () => {
       errorDescription: messages.POWER_STATE_EXCEPTION
     })
   })
+  it('should get an error with status code 404, when get power state is timeout', async () => {
+    powerStateSpy.mockImplementation(() => {
+      throw new TimeoutError(TIMEOUT_MESSAGE)
+    })
+    await powerState(req, resSpy)
+    expect(resSpy.status).toHaveBeenCalledWith(404)
+    expect(resSpy.json).toHaveBeenCalledWith({
+      error: {
+         action: "Power action type does not exist",
+         alarm: "Alarm instance not found",
+         device: "Device not found/connected. Please connect again using CIRA.",
+         guid: "GUID does not exist in the payload",
+         invalidGuid: "GUID empty/invalid",
+         method: "Request does not contain method",
+         noMethod: "Requested method does not exists",
+         payload: "Request does not contain payload",
+       },
+      errorDescription: messages.POWER_STATE_EXCEPTION
+    })
+  })
+
 })
