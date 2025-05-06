@@ -129,3 +129,34 @@ export interface DeviceSecrets {
   MEBX_PASSWORD?: string
   MPS_PASSWORD?: string
 }
+
+
+export type HttpZHeader = {
+  name: string
+  value: string
+}
+
+export type HttpZParserModel = {
+  headers: HttpZHeader[]
+  body?: {
+    text?: string
+    params?: any[]
+    contentType?: string
+    boundary?: string
+  };
+  headersSize?: number
+  bodySize?: number
+};
+
+export type HttpZCookieParam = {
+  name: string
+  value?: string
+  params?: string[]
+};
+
+export type HttpZParserResponseModel = HttpZParserModel & {
+  protocolVersion: string
+  statusCode: number
+  statusMessage: string
+  cookies?: HttpZCookieParam[]
+};

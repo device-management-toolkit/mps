@@ -3,13 +3,12 @@
  * SPDX-License-Identifier: Apache-2.0
  **********************************************************************/
 
-// import httpZ, { HttpZResponseModel } from 'http-z'
 import { Buffer } from 'node:buffer'
-import { type CIRASocket } from '../models/models.js'
+import { HttpZParserResponseModel, type CIRASocket } from '../models/models.js'
 import APFProcessor from './APFProcessor.js'
 import { type connectionParams, type HttpHandler } from './HttpHandler.js'
 import { EventEmitter } from 'node:events'
-import httpZ, { type HttpZResponseModel } from 'http-z'
+import { parse } from 'http-z'
 import { parseBody } from '../utils/parseWSManResponseBody.js'
 import { logger } from '../logging/index.js'
 
@@ -55,7 +54,7 @@ export class CIRAChannel {
       // For 401 Unauthorized error during digest authentication message ends with </html>, rest all the messages ends with 0\r\n\r\n
       if (this.rawChunkedData.includes('</html>') || this.rawChunkedData.includes('0\r\n\r\n')) {
         try {
-          const message = httpZ.parse(this.rawChunkedData) as HttpZResponseModel
+          const message = parse(this.rawChunkedData) as HttpZParserResponseModel
 
           if (message.statusCode === 200) {
             const xmlBody = parseBody(message)

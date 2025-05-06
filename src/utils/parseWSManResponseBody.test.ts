@@ -3,12 +3,12 @@
  * SPDX-License-Identifier: Apache-2.0
  **********************************************************************/
 
-import { type HttpZResponseModel } from 'http-z'
+import { HttpZParserResponseModel } from '../models/models.js'
 import { parseBody } from './parseWSManResponseBody.js'
 
 describe('Check parseWSManResponseBody', () => {
   it('Should pass when converting WSMan response to json', async () => {
-    const xmlResponse: HttpZResponseModel = {
+    const xmlResponse: HttpZParserResponseModel = {
       protocolVersion: 'HTTP/1.1',
       statusCode: 200,
       statusMessage: 'OK',
@@ -51,7 +51,7 @@ describe('Check parseWSManResponseBody', () => {
   })
 
   it('Should fail and return an empty response when a message does not contain \r\n', async () => {
-    const xmlResponse: HttpZResponseModel = {
+    const xmlResponse: HttpZParserResponseModel = {
       protocolVersion: 'HTTP/1.1',
       statusCode: 200,
       statusMessage: 'OK',
@@ -83,7 +83,7 @@ describe('Check parseWSManResponseBody', () => {
 
   it('Should fail and return an empty response when there is no message body', async () => {
     // See issue #661; this response is documented there.
-    const xmlResponse: HttpZResponseModel = {
+    const xmlResponse: HttpZParserResponseModel = {
       protocolVersion: 'HTTP/1.1',
       statusCode: 400,
       statusMessage: 'Bad Request',
