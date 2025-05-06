@@ -3,8 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  **********************************************************************/
 
-import { type HttpZResponseModel } from 'http-z'
-import { type CIRASocket } from '../models/models.js'
+import { HttpZParserResponseModel, type CIRASocket } from '../models/models.js'
 import { computerSystemPackage } from '../test/helper/wsmanResponses.js'
 import { parseBody } from '../utils/parseWSManResponseBody.js'
 import APFProcessor from './APFProcessor.js'
@@ -99,7 +98,7 @@ describe('CIRA Handler', () => {
     expect(result).toStrictEqual({ data: 'data' })
   })
   it('should parse body when valid message', () => {
-    const message: HttpZResponseModel = {
+    const message: HttpZParserResponseModel = {
       statusCode: 200,
       body: {
         text: cimCardResponse

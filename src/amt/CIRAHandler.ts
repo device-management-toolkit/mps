@@ -3,10 +3,10 @@
  * SPDX-License-Identifier: Apache-2.0
  **********************************************************************/
 
-import { type CIRASocket } from '../models/models.js'
+import { HttpZParserResponseModel, type CIRASocket } from '../models/models.js'
 import APFProcessor from './APFProcessor.js'
 import { type connectionParams, type HttpHandler } from './HttpHandler.js'
-import httpZ, { type HttpZResponseModel } from 'http-z'
+import { parse } from 'http-z'
 import { AMTPort } from '../utils/constants.js'
 import { type Common } from '@open-amt-cloud-toolkit/wsman-messages'
 import { CIRAChannel } from './CIRAChannel.js'
@@ -15,9 +15,10 @@ import Bottleneck from 'bottleneck'
 
 export interface PendingRequests {
   xml?: string
-  response?: HttpZResponseModel | string
+  response?: HttpZParserResponseModel | string
   messageId?: string
 }
+
 export class CIRAHandler {
   xml: string
   httpHandler: HttpHandler
@@ -126,7 +127,7 @@ export class CIRAHandler {
     return null
   }
 
-  handleAuth(message: HttpZResponseModel): Common.Models.DigestChallenge {
+  handleAuth(message: HttpZParserResponseModel): Common.Models.DigestChallenge {
     const found = message.headers.find((item) => item.name === 'Www-Authenticate')
     if (found != null) {
       return this.httpHandler.parseAuthenticateResponseHeader(found.value)
@@ -135,7 +136,7 @@ export class CIRAHandler {
   }
 
   handleResult(data: string): any {
-    const message = httpZ.parse(data) as HttpZResponseModel
+    const message = parse(data) as HttpZParserResponseModel 
     if (message.statusCode === 401) {
       this.connectAttempts++
       if (this.connectAttempts < 4) {

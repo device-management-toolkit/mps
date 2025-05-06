@@ -3,9 +3,9 @@
  * SPDX-License-Identifier: Apache-2.0
  **********************************************************************/
 
-import { type HttpZResponseModel } from 'http-z'
+import { HttpZParserResponseModel } from "../models/models.js"
 
-export function parseBody(message: HttpZResponseModel): string {
+export function parseBody(message: HttpZParserResponseModel): string {
   let xmlBody = ''
   // 'Bad' requests to some devices return no body (issue #661) - prevent exceptions below
   if (message.bodySize === 0) return ''
