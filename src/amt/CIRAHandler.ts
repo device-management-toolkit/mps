@@ -6,7 +6,7 @@
 import { type CIRASocket } from '../models/models.js'
 import APFProcessor from './APFProcessor.js'
 import { type connectionParams, type HttpHandler } from './HttpHandler.js'
-import httpZ, { type HttpZResponseModel } from 'http-z'
+import { parse } from 'http-z'
 import { AMTPort } from '../utils/constants.js'
 import { type Common } from '@open-amt-cloud-toolkit/wsman-messages'
 import { CIRAChannel } from './CIRAChannel.js'
@@ -15,7 +15,7 @@ import Bottleneck from 'bottleneck'
 
 export interface PendingRequests {
   xml?: string
-  response?: HttpZResponseModel | string
+  response?: any
   messageId?: string
 }
 export class CIRAHandler {
@@ -126,7 +126,7 @@ export class CIRAHandler {
     return null
   }
 
-  handleAuth(message: HttpZResponseModel): Common.Models.DigestChallenge {
+  handleAuth(message: any): Common.Models.DigestChallenge {
     const found = message.headers.find((item) => item.name === 'Www-Authenticate')
     if (found != null) {
       return this.httpHandler.parseAuthenticateResponseHeader(found.value)
@@ -135,7 +135,12 @@ export class CIRAHandler {
   }
 
   handleResult(data: string): any {
-    const message = httpZ.parse(data) as HttpZResponseModel
+    const message = parse(data)
+
+    if (!('statusCode' in message)) {
+      throw new Error('Invalid message format: missing statusCode')
+    }
+
     if (message.statusCode === 401) {
       this.connectAttempts++
       if (this.connectAttempts < 4) {
