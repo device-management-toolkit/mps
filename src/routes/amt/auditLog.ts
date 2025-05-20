@@ -9,7 +9,7 @@ import { ErrorResponse } from '../../utils/amtHelper.js'
 import { MqttProvider } from '../../utils/MqttProvider.js'
 import Common from '../../utils/common.js'
 import { AMTAuditStringTable, RealmNames } from '../../utils/constants.js'
-import { type Common as WsmanMessagesCommon } from '@open-amt-cloud-toolkit/wsman-messages'
+import { type Common as WsmanMessagesCommon } from '@device-management-toolkit/wsman-messages'
 
 export async function auditLog(req: Request, res: Response): Promise<void> {
   try {

@@ -14,7 +14,7 @@ import {
   WatchdogCurrentStates
 } from '../../utils/constants.js'
 import Common from '../../utils/common.js'
-import { type AMT } from '@open-amt-cloud-toolkit/wsman-messages'
+import { type AMT } from '@device-management-toolkit/wsman-messages'
 
 export async function eventLog(req: Request, res: Response): Promise<void> {
   try {
