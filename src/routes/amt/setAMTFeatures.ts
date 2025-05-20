@@ -8,7 +8,7 @@ import { logger, messages } from '../../logging/index.js'
 import { ErrorResponse } from '../../utils/amtHelper.js'
 import { MqttProvider } from '../../utils/MqttProvider.js'
 import { UserConsentOptions } from '../../utils/constants.js'
-import { type AMT, type IPS, Common } from '@open-amt-cloud-toolkit/wsman-messages'
+import { type AMT, type IPS, Common } from '@device-management-toolkit/wsman-messages'
 import { type DeviceAction } from '../../amt/DeviceAction.js'
 
 export async function setAMTFeatures(req: Request, res: Response): Promise<void> {
