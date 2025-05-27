@@ -8,7 +8,7 @@ import { logger, messages } from '../../logging/index.js'
 import { ErrorResponse } from '../../utils/amtHelper.js'
 import { MqttProvider } from '../../utils/MqttProvider.js'
 import { AMTStatusCodes } from '../../utils/constants.js'
-import { type AMT, type CIM } from '@open-amt-cloud-toolkit/wsman-messages'
+import { type AMT, type CIM } from '@device-management-toolkit/wsman-messages'
 
 export async function bootOptions(req: Request, res: Response): Promise<void> {
   try {

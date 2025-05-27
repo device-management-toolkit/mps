@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  **********************************************************************/
 
-import { AMT, CIM, IPS, type Common } from '@open-amt-cloud-toolkit/wsman-messages'
-import { type Selector } from '@open-amt-cloud-toolkit/wsman-messages/WSMan.js'
+import { AMT, CIM, IPS, type Common } from '@device-management-toolkit/wsman-messages'
+import { type Selector } from '@device-management-toolkit/wsman-messages/WSMan.js'
 import { logger, messages } from '../logging/index.js'
 import { type CIRASocket } from '../models/models.js'
 import { type CIRAHandler } from './CIRAHandler.js'

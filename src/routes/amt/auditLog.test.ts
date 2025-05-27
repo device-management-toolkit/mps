@@ -9,7 +9,7 @@ import { createSpyObj } from '../../test/helper/jest.js'
 import { DeviceAction } from '../../amt/DeviceAction.js'
 import { CIRAHandler } from '../../amt/CIRAHandler.js'
 import { HttpHandler } from '../../amt/HttpHandler.js'
-import { type AMT } from '@open-amt-cloud-toolkit/wsman-messages'
+import { type AMT } from '@device-management-toolkit/wsman-messages'
 import { type SpyInstance, spyOn } from 'jest-mock'
 
 describe('auditLog', () => {

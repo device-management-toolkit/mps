@@ -3,9 +3,9 @@
  * SPDX-License-Identifier: Apache-2.0
  **********************************************************************/
 
-import { type AMT, type CIM } from '@open-amt-cloud-toolkit/wsman-messages'
-import { type Selector } from '@open-amt-cloud-toolkit/wsman-messages/WSMan.js'
-import { type Models } from '@open-amt-cloud-toolkit/wsman-messages/ips/models.js'
+import { type AMT, type CIM } from '@device-management-toolkit/wsman-messages'
+import { type Selector } from '@device-management-toolkit/wsman-messages/WSMan.js'
+import { type Models } from '@device-management-toolkit/wsman-messages/ips/models.js'
 import { type SpyInstance, spyOn } from 'jest-mock'
 import { type CIRASocket } from '../models/models.js'
 import {
