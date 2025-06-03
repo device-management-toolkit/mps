@@ -1,10 +1,10 @@
 # Management Presence Server
 
-![CodeQL](https://img.shields.io/github/actions/workflow/status/open-amt-cloud-toolkit/mps/codeql-analysis.yml?style=for-the-badge&label=CodeQL&logo=github)
-![API Tests](https://img.shields.io/github/actions/workflow/status/open-amt-cloud-toolkit/mps/api-test.yml?style=for-the-badge&label=API%20Test&logo=postman)
-![Build](https://img.shields.io/github/actions/workflow/status/open-amt-cloud-toolkit/mps/node.js.yml?style=for-the-badge&logo=github)
-![Codecov](https://img.shields.io/codecov/c/github/open-amt-cloud-toolkit/mps?style=for-the-badge&logo=codecov)
-[![OSSF-Scorecard Score](https://img.shields.io/ossf-scorecard/github.com/open-amt-cloud-toolkit/mps?style=for-the-badge&label=OSSF%20Score)](https://api.securityscorecards.dev/projects/github.com/open-amt-cloud-toolkit/mps)
+![CodeQL](https://img.shields.io/github/actions/workflow/status/device-management-toolkit/mps/codeql-analysis.yml?style=for-the-badge&label=CodeQL&logo=github)
+![API Tests](https://img.shields.io/github/actions/workflow/status/device-management-toolkit/mps/api-test.yml?style=for-the-badge&label=API%20Test&logo=postman)
+![Build](https://img.shields.io/github/actions/workflow/status/device-management-toolkit/mps/node.js.yml?style=for-the-badge&logo=github)
+![Codecov](https://img.shields.io/codecov/c/github/device-management-toolkit/mps?style=for-the-badge&logo=codecov)
+[![OSSF-Scorecard Score](https://img.shields.io/ossf-scorecard/github.com/device-management-toolkit/mps?style=for-the-badge&label=OSSF%20Score)](https://api.securityscorecards.dev/projects/github.com/device-management-toolkit/mps)
 [![Discord](https://img.shields.io/discord/1063200098680582154?style=for-the-badge&label=Discord&logo=discord&logoColor=white&labelColor=%235865F2&link=https%3A%2F%2Fdiscord.gg%2DKHeUNEWVH)](https://discord.gg/DKHeUNEWVH)
 [![Docker Pulls](https://img.shields.io/docker/pulls/intel/oact-mps?style=for-the-badge&logo=docker)](https://hub.docker.com/r/intel/oact-mps)
 
