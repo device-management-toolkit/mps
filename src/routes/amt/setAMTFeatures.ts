@@ -3,13 +3,13 @@
  * SPDX-License-Identifier: Apache-2.0
  **********************************************************************/
 
-import { type Response, type Request } from 'express'
+import { type AMT, type CIM, type IPS, Common } from '@device-management-toolkit/wsman-messages'
+import { type Request, type Response } from 'express'
+import { type DeviceAction } from '../../amt/DeviceAction.js'
 import { logger, messages } from '../../logging/index.js'
 import { ErrorResponse } from '../../utils/amtHelper.js'
-import { MqttProvider } from '../../utils/MqttProvider.js'
 import { UserConsentOptions } from '../../utils/constants.js'
-import { type AMT, type IPS, Common } from '@device-management-toolkit/wsman-messages'
-import { type DeviceAction } from '../../amt/DeviceAction.js'
+import { MqttProvider } from '../../utils/MqttProvider.js'
 
 export async function setAMTFeatures(req: Request, res: Response): Promise<void> {
   try {
@@ -21,7 +21,7 @@ export async function setAMTFeatures(req: Request, res: Response): Promise<void>
 
     const amtRedirectionResponse = await req.deviceAction.getRedirectionService()
     const optServiceResponse = await req.deviceAction.getIpsOptInService()
-    const kvmRedirectionResponse = await req.deviceAction.getKvmRedirectionSap()
+    const kvmRedirectionResponse = await req.deviceAction.getKvmRedirectionSap()    
 
     let isRedirectionChanged = false
     let redir = amtRedirectionResponse.AMT_RedirectionService.ListenerEnabled
@@ -80,6 +80,32 @@ export async function setAMTFeatures(req: Request, res: Response): Promise<void>
       await setUserConsent(req.deviceAction, optServiceResponse, payload.guid as string)
     }
 
+    // OCR
+    let requestedState:CIM.Types.BootService.RequestedState 
+    if ('httpsBootSupported' in payload) {
+        if (payload.httpsBootSupported==true){
+          requestedState = 32769 // disable Intel RPE and enable Intel One-Click Recovery and all other boot options: 32769          
+        }
+    } else{
+      requestedState = 32768 // disable Intel One-Click Recovery and Intel RPE and enable all other boot options: 32768
+    }
+
+    let ocrChange=false
+    const ocrSettings = await req.deviceAction.getOneClickRecoverySettings() 
+    if (ocrSettings != null && ocrSettings?.OCR === true) { //OCR:TRUE implies ocrdata.CIM_BootService?.EnabledState IN (32769, 32771)
+      // From enabled to disabled
+      if (requestedState === 32768) {
+        ocrChange = true // disable OCR
+      }
+    } else {
+      // From disabled to enabled
+      if (requestedState === 32769) {
+        ocrChange = true // enable OCR
+      }
+    }
+      
+    await req.deviceAction.requestBootServiceStateChange(requestedState)
+    
     MqttProvider.publishEvent('success', ['AMT_SetFeatures'], messages.AMT_FEATURES_SET_SUCCESS, guid)
     res.status(200).json({ status: messages.AMT_FEATURES_SET_SUCCESS }).end()
   } catch (error) {

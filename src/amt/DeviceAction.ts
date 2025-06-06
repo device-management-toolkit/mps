@@ -9,6 +9,18 @@ import { logger, messages } from '../logging/index.js'
 import { type CIRASocket } from '../models/models.js'
 import { type CIRAHandler } from './CIRAHandler.js'
 
+export interface OCRData {
+  CIM_BootService: any; 
+  CIM_BootSourceSettings: CIM.Models.BootSourceSetting[]|null; 
+  AMT_BootCapabilities; 
+  AMT_BootSettingData: AMT.Models.BootSettingData; 
+}
+
+export interface BootSettings {
+	isHTTPSBootExists : boolean
+	isPBAWinREExists  : boolean
+}
+
 export class DeviceAction {
   ciraHandler: CIRAHandler
   ciraSocket: CIRASocket
@@ -125,12 +137,72 @@ export class DeviceAction {
     return result
   }
 
+  async requestBootServiceStateChange(reqState: CIM.Types.BootService.RequestedState): Promise<number> {
+    logger.silly(`BootServiceStateChange ${messages.REQUEST}`)
+    //const bootSource = 'Intel(r) AMT: Boot Configuration 0'
+    const xmlRequestBody = this.cim.BootService.RequestStateChange(reqState)
+    const result = await this.ciraHandler.Send(this.ciraSocket, xmlRequestBody)
+    logger.silly(`BootServiceStateChange ${messages.COMPLETE}`)
+    return result
+  }
+
   async getBootSettingSource(): Promise<any> {
     logger.silly(`getBootSettingSource ${messages.REQUEST}`)
     const xmlRequestBody = this.cim.BootSourceSetting.Get()
     const result = await this.ciraHandler.Send(this.ciraSocket, xmlRequestBody)
     logger.silly(`getBootSettingSource ${messages.COMPLETE}`)
     return result
+  }
+
+  async getBootSourceSettings(): Promise<CIM.Models.BootSourceSetting[]> {
+    logger.silly(`CIM_BootSourceSettings ${messages.REQUEST}`)
+    const xmlRequestBody = this.cim.BootSourceSetting.Enumerate()
+    const result = await this.ciraHandler.Enumerate(this.ciraSocket, xmlRequestBody)
+    if (result == null) {
+      logger.error(`CIM_BootSourceSettings > Enumerate > NULL. Reason: ${messages.ENUMERATION_RESPONSE_NULL}`)
+      return null
+    }
+    const enumContext: string = result?.Envelope?.Body?.EnumerateResponse?.EnumerationContext
+    if (enumContext == null) {
+      logger.error(`CIM_BootSourceSettings > EnumeratioContext > NULL. Reason: ${messages.ENUMERATION_RESPONSE_NULL}`)
+      return null
+    }
+    const pullResponse = await this.ciraHandler.Pull<CIM.Models.BootSourceSetting>(
+      this.ciraSocket,
+      this.cim.BootSourceSetting.Pull(enumContext)
+    )
+    const items = pullResponse?.Envelope?.Body?.PullResponse?.Items
+    if (items == null) {
+      logger.error(`CIM_BootSourceSettings > PullResponse.Items > NULL. Reason: ${messages.RESPONSE_NULL}`)
+      return null
+    }
+    if ('CIM_BootSourceSetting' in items) {
+      if (Array.isArray(items.CIM_BootSourceSetting)) {
+        logger.silly(`CIM_BootSourceSettings ${messages.COMPLETE}`)
+        return items.CIM_BootSourceSetting as CIM.Models.BootSourceSetting[]
+      }
+    }
+    logger.error(`CIM_BootSourceSettings > CIM_BootSourceSetting is missing in the response. Reason: ${messages.RESPONSE_NULL}`)
+    return null
+  }
+
+  async getBootService(): Promise<any> {
+    logger.silly(`getBootService ${messages.REQUEST}`)
+    const xmlRequestBody = this.cim.BootService.Get()    
+    const result = await this.ciraHandler.Send(this.ciraSocket, xmlRequestBody)
+
+    const content= result?.Envelope?.Body
+    if (content == null) {
+      logger.error(`getBootService > Envelope.Body > NULL. Reason: ${messages.RESPONSE_NULL}`)
+      return null
+    }
+    if ('CIM_BootService' in content) {
+      logger.silly(`getBootService ${messages.COMPLETE}`)      
+      return content.CIM_BootService 
+    }
+
+    logger.error(`getBootService > Envelope.Body > NULL. Reason: ${messages.RESPONSE_NULL}`)
+    return null
   }
 
   async changeBootOrder(bootSource?: CIM.Types.BootConfigSetting.InstanceID): Promise<any> {
@@ -446,5 +518,114 @@ export class DeviceAction {
     )
     logger.silly(`requestOSPowerSavingStateChange ${messages.COMPLETE}`)
     return result.Envelope
+  }
+
+  async getOCRData(): Promise<OCRData> {
+    const powerCaps = await this.getPowerCapabilities();    
+    let bootCapabilities = powerCaps?.Body?.AMT_BootCapabilities ?? null;
+    if (powerCaps == null || powerCaps.Body == null || powerCaps.Body.AMT_BootCapabilities == null) {
+      bootCapabilities = null;
+    }
+    const ocr: OCRData = {
+      CIM_BootService: await this.getBootService(),
+      CIM_BootSourceSettings: await this.getBootSourceSettings(),
+      AMT_BootCapabilities: bootCapabilities,
+      AMT_BootSettingData: (await this.getBootOptions())?.AMT_BootSettingData
+    };
+    return ocr;
+  }
+
+  findBootSettingInstances(bootSources: CIM.Models.BootSourceSetting[]): BootSettings {
+    if (bootSources == null || bootSources.length === 0) {
+      logger.error(`findBootSettingInstances failed. Reason: bootSources is null or empty`);
+      return null;
+    }
+
+    const targetHTTPSBootInstanceID = "Intel(r) AMT: Force OCR UEFI HTTPS Boot"
+  	const targetsPBAWinREInstanceID = "Intel(r) AMT: Force OCR UEFI Boot Option"
+
+    const bootSettings: BootSettings = {
+      isHTTPSBootExists: false,
+      isPBAWinREExists: false
+    };
+    
+    for (const bootSource of bootSources) {
+      const bs = bootSource as CIM.Models.BootSourceSetting;
+
+      if (typeof bs.InstanceID === 'string') {
+        if (bs.InstanceID.includes(targetHTTPSBootInstanceID)) {
+          bootSettings.isHTTPSBootExists = true;
+        }
+
+        if (bs.InstanceID.includes(targetsPBAWinREInstanceID)) {
+          bootSettings.isPBAWinREExists = true;  
+        }
+      }
+    }
+
+    return bootSettings;
+  }
+
+async getOneClickRecoverySettings() {  
+    const ocrdata=await this.getOCRData()    
+    if (ocrdata == null) {
+      return null
+    }
+    let isOCR = false
+    if(ocrdata.CIM_BootService==null) {
+      return null
+    }
+    else {
+      if(ocrdata.CIM_BootService?.EnabledState === 32769 || ocrdata.CIM_BootService?.EnabledState === 32771) {
+        isOCR = true        
+      }
+    }
+
+    if (ocrdata.CIM_BootSourceSettings == null) {
+      return null
+    }
+    
+    const result:BootSettings = await this.findBootSettingInstances(ocrdata.CIM_BootSourceSettings)
+
+    if (result == null || ocrdata.AMT_BootCapabilities == null || ocrdata.AMT_BootSettingData == null) {
+      return null
+    }
+    // AMT_BootSettingData.UEFIHTTPSBootEnabled is read-only. AMT_BootCapabilities instance is read-only.
+    // So, these cannot be updated
+    let isHTTPSBootSupported = false
+    if (result.isHTTPSBootExists == true) {
+      if ('ForceUEFIHTTPSBoot' in ocrdata.AMT_BootCapabilities && ocrdata.AMT_BootCapabilities.ForceUEFIHTTPSBoot === true &&
+          ocrdata.AMT_BootSettingData?.UEFIHTTPSBootEnabled === true) {
+        isHTTPSBootSupported = true
+      }
+    }
+
+    let isWinREBootSupported = false
+    let isLocalPBABootSupported = false
+
+    if (result.isPBAWinREExists == true) {
+      if ('ForceWinREBoot' in ocrdata.AMT_BootCapabilities && ocrdata.AMT_BootCapabilities.ForceWinREBoot === true &&
+        ocrdata.AMT_BootSettingData?.WinREBootEnabled === true) {
+        isWinREBootSupported = true
+      }
+
+      if ('ForceUEFILocalPBABoot' in ocrdata.AMT_BootCapabilities && ocrdata.AMT_BootCapabilities.ForceUEFILocalPBABoot === true &&
+          ocrdata.AMT_BootSettingData?.UEFILocalPBABootEnabled === true) {
+        isLocalPBABootSupported = true
+      }
+    }
+
+    let isRemoteEraseSupported = false
+    if('SecureErase' in ocrdata.AMT_BootCapabilities && ocrdata.AMT_BootCapabilities.SecureErase === true ) {
+      isRemoteEraseSupported = true
+    }
+
+    return {
+      OCR: isOCR,
+      HTTPSBootSupported: isHTTPSBootSupported,
+      WinREBootSupported: isWinREBootSupported,
+      LocalPBABootSupported: isLocalPBABootSupported,
+      RemoteEraseSupported: isRemoteEraseSupported
+    }
   }
 }
