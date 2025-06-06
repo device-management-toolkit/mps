@@ -3,13 +3,13 @@
  * SPDX-License-Identifier: Apache-2.0
  **********************************************************************/
 
-import { type Response, type Request } from 'express'
+import { type AMT, type CIM, type IPS, Common } from '@device-management-toolkit/wsman-messages'
+import { type Request, type Response } from 'express'
 import { logger, messages } from '../../logging/index.js'
-import { UserConsentOptions } from '../../utils/constants.js'
 import { ErrorResponse } from '../../utils/amtHelper.js'
+import { UserConsentOptions } from '../../utils/constants.js'
 import { MPSValidationError } from '../../utils/MPSValidationError.js'
 import { MqttProvider } from '../../utils/MqttProvider.js'
-import { type AMT, type CIM, type IPS, Common } from '@device-management-toolkit/wsman-messages'
 
 export async function getAMTFeatures(req: Request, res: Response): Promise<void> {
   try {
@@ -17,6 +17,7 @@ export async function getAMTFeatures(req: Request, res: Response): Promise<void>
     const amtRedirectionResponse = await req.deviceAction.getRedirectionService()
     const optServiceResponse = await req.deviceAction.getIpsOptInService()
     const kvmRedirectionResponse = await req.deviceAction.getKvmRedirectionSap()
+    const ocrResponse= await req.deviceAction.getOneClickRecoverySettings()
 
     MqttProvider.publishEvent('request', ['AMT_GetFeatures'], messages.AMT_FEATURES_GET_REQUESTED, guid)
 
@@ -28,8 +29,16 @@ export async function getAMTFeatures(req: Request, res: Response): Promise<void>
     MqttProvider.publishEvent('success', ['AMT_GetFeatures'], messages.AMT_FEATURES_GET_SUCCESS, guid)
     res
       .status(200)
-      .json({ userConsent, redirection: redir, KVM: kvm, SOL: sol, IDER: ider, optInState, kvmAvailable })
+      .json({ userConsent, redirection: redir, KVM: kvm, SOL: sol, 
+        IDER: ider, optInState, kvmAvailable ,
+        ocr: ocrResponse?.OCR, 
+        httpsBootSupported: ocrResponse?.HTTPSBootSupported, 
+        winREBootSupported: ocrResponse?.WinREBootSupported,
+        localPBABootSupported: ocrResponse?.LocalPBABootSupported,
+        remoteErase: ocrResponse?.RemoteEraseSupported 
+      })
       .end()
+
   } catch (error) {
     logger.error(`${messages.AMT_FEATURES_EXCEPTION}: ${error}`)
     if (error instanceof MPSValidationError) {

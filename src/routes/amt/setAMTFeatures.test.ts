@@ -3,14 +3,14 @@
  * SPDX-License-Identifier: Apache-2.0
  **********************************************************************/
 
-import { MqttProvider } from '../../utils/MqttProvider.js'
-import { createSpyObj } from '../../test/helper/jest.js'
-import { setAMTFeatures } from './setAMTFeatures.js'
 import { AMT_REDIRECTION_SERVICE_ENABLE_STATE } from '@device-management-toolkit/wsman-messages/models/common.js'
-import { DeviceAction } from '../../amt/DeviceAction.js'
-import { CIRAHandler } from '../../amt/CIRAHandler.js'
-import { HttpHandler } from '../../amt/HttpHandler.js'
 import { type SpyInstance, spyOn } from 'jest-mock'
+import { CIRAHandler } from '../../amt/CIRAHandler.js'
+import { DeviceAction } from '../../amt/DeviceAction.js'
+import { HttpHandler } from '../../amt/HttpHandler.js'
+import { createSpyObj } from '../../test/helper/jest.js'
+import { MqttProvider } from '../../utils/MqttProvider.js'
+import { setAMTFeatures } from './setAMTFeatures.js'
 
 describe('set amt features', () => {
   let resSpy
@@ -23,6 +23,8 @@ describe('set amt features', () => {
   let putRedirectionServiceSpy: SpyInstance<any>
   let putIpsOptInServiceSpy: SpyInstance<any>
   let mqttSpy: SpyInstance<any>
+  let ocrSpy: SpyInstance<any>
+  let setOcrBootServiceStateChange: SpyInstance<any>
 
   beforeEach(() => {
     const handler = new CIRAHandler(new HttpHandler(), 'admin', 'P@ssw0rd')
@@ -56,6 +58,8 @@ describe('set amt features', () => {
     setKvmRedirectionSapSpy = spyOn(device, 'setKvmRedirectionSap')
     putRedirectionServiceSpy = spyOn(device, 'putRedirectionService')
     putIpsOptInServiceSpy = spyOn(device, 'putIpsOptInService')
+    ocrSpy = spyOn(device,'getOneClickRecoverySettings')
+    setOcrBootServiceStateChange = spyOn(device, 'requestBootServiceStateChange')
 
     mqttSpy = spyOn(MqttProvider, 'publishEvent')
 
@@ -69,10 +73,17 @@ describe('set amt features', () => {
         EnabledState: 2
       }
     })
+    ocrSpy.mockResolvedValue({
+      OCR: true,
+      HTTPSBootSupported: true,
+      WinREBootSupported: true,
+      LocalPBABootSupported: false
+    })
     setRedirectionServiceSpy.mockResolvedValue({})
     setKvmRedirectionSapSpy.mockResolvedValue({})
     putIpsOptInServiceSpy.mockResolvedValue({})
     putRedirectionServiceSpy.mockResolvedValue({})
+    setOcrBootServiceStateChange.mockResolvedValue({})
   })
   it('should set amt features - no change', async () => {
     await setAMTFeatures(req, resSpy)

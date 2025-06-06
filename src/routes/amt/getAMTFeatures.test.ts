@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  **********************************************************************/
 
+import { type SpyInstance, spyOn } from 'jest-mock'
 import { CIRAHandler } from '../../amt/CIRAHandler.js'
 import { DeviceAction } from '../../amt/DeviceAction.js'
 import { HttpHandler } from '../../amt/HttpHandler.js'
@@ -11,7 +12,6 @@ import { createSpyObj } from '../../test/helper/jest.js'
 import { ErrorResponse } from '../../utils/amtHelper.js'
 import { MqttProvider } from '../../utils/MqttProvider.js'
 import { getAMTFeatures } from './getAMTFeatures.js'
-import { type SpyInstance, spyOn } from 'jest-mock'
 
 describe('get amt features', () => {
   let resSpy
@@ -20,6 +20,7 @@ describe('get amt features', () => {
   let optInServiceSpy: SpyInstance<any>
   let kvmRedirectionSpy: SpyInstance<any>
   let mqttSpy: SpyInstance<any>
+  let ocrSpy: SpyInstance<any>
 
   // let processAmtRedirectionResponse
   // let processKvmRedirectionResponse
@@ -45,6 +46,7 @@ describe('get amt features', () => {
     redirectionSpy = spyOn(device, 'getRedirectionService')
     optInServiceSpy = spyOn(device, 'getIpsOptInService')
     kvmRedirectionSpy = spyOn(device, 'getKvmRedirectionSap')
+    ocrSpy = spyOn(device,'getOneClickRecoverySettings')
     mqttSpy = spyOn(MqttProvider, 'publishEvent')
 
     // processAmtRedirectionResponse = spyOn(amtFeatures, 'processAmtRedirectionResponse')
@@ -53,6 +55,15 @@ describe('get amt features', () => {
   })
 
   it('should get feature', async () => {
+    ocrSpy.mockResolvedValue({
+      OCR: {
+        "OCR": true,
+        "HTTPSBootSupported": true,
+        "WinREBootSupported": true,
+        "LocalPBABootSupported": false,
+        "RemoteEraseSupported": true
+        }
+    })
     redirectionSpy.mockResolvedValue({
       AMT_RedirectionService: {
         CreationClassName: 'AMT_RedirectionService',

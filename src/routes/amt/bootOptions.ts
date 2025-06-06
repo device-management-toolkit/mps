@@ -3,12 +3,12 @@
  * SPDX-License-Identifier: Apache-2.0
  **********************************************************************/
 
-import { type Response, type Request } from 'express'
+import { type AMT, type CIM } from '@device-management-toolkit/wsman-messages'
+import { type Request, type Response } from 'express'
 import { logger, messages } from '../../logging/index.js'
 import { ErrorResponse } from '../../utils/amtHelper.js'
-import { MqttProvider } from '../../utils/MqttProvider.js'
 import { AMTStatusCodes } from '../../utils/constants.js'
-import { type AMT, type CIM } from '@device-management-toolkit/wsman-messages'
+import { MqttProvider } from '../../utils/MqttProvider.js'
 
 export async function bootOptions(req: Request, res: Response): Promise<void> {
   try {
@@ -68,7 +68,9 @@ export function setBootData(
 
 const enum BootSources {
   IDER_CD_ROM = 'Intel(r) AMT: Force CD/DVD Boot',
-  PXE = 'Intel(r) AMT: Force PXE Boot'
+  PXE = 'Intel(r) AMT: Force PXE Boot',
+  OCR_UEFI_HTTPS = 'Intel(r) AMT: Force OCR UEFI HTTPS Boot',
+  OCR_UEFI_BOOT_OPTION = 'Intel(r) AMT: Force OCR UEFI Boot Option'
 }
 
 export function setBootSource(action: number): CIM.Types.BootConfigSetting.InstanceID {
