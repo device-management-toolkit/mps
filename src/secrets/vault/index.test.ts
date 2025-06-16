@@ -7,13 +7,13 @@ import { VaultSecretManagerService } from './index.js'
 import { logger } from '../../logging/index.js'
 import { config } from '../../test/helper/config.js'
 import { Environment } from '../../utils/Environment.js'
-import { type SpyInstance, spyOn } from 'jest-mock'
+import { spyOn } from 'jest-mock'
 import { jest } from '@jest/globals'
 import { type Got } from 'got'
 
 let secretManagerService: VaultSecretManagerService = null
 Environment.Config = config
-let gotSpy: SpyInstance<any>
+let gotSpy: jest.Spied<any>
 const secretPath = '4c4c4544-004b-4210-8033-b6c04f504633'
 const secretCreds = {
   data: {

@@ -7,11 +7,11 @@ import { logger, messages } from '../../logging/index.js'
 import { devices } from '../../server/mpsserver.js'
 import { disconnect } from './disconnect.js'
 import { jest } from '@jest/globals'
-import { type SpyInstance, spyOn } from 'jest-mock'
+import { spyOn } from 'jest-mock'
 
 let res: Express.Response
-let statusSpy: SpyInstance<any>
-let jsonSpy: SpyInstance<any>
+let statusSpy: jest.Spied<any>
+let jsonSpy: jest.Spied<any>
 
 beforeEach(() => {
   res = {

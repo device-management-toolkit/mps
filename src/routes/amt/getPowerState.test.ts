@@ -87,17 +87,16 @@ describe('power state', () => {
     expect(resSpy.status).toHaveBeenCalledWith(404)
     expect(resSpy.json).toHaveBeenCalledWith({
       error: {
-         action: "Power action type does not exist",
-         alarm: "Alarm instance not found",
-         device: "Device not found/connected. Please connect again using CIRA.",
-         guid: "GUID does not exist in the payload",
-         invalidGuid: "GUID empty/invalid",
-         method: "Request does not contain method",
-         noMethod: "Requested method does not exists",
-         payload: "Request does not contain payload",
-       },
+        action: 'Power action type does not exist',
+        alarm: 'Alarm instance not found',
+        device: 'Device not found/connected. Please connect again using CIRA.',
+        guid: 'GUID does not exist in the payload',
+        invalidGuid: 'GUID empty/invalid',
+        method: 'Request does not contain method',
+        noMethod: 'Requested method does not exists',
+        payload: 'Request does not contain payload'
+      },
       errorDescription: messages.POWER_STATE_EXCEPTION
     })
   })
-
 })

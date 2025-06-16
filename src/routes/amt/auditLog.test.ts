@@ -10,14 +10,14 @@ import { DeviceAction } from '../../amt/DeviceAction.js'
 import { CIRAHandler } from '../../amt/CIRAHandler.js'
 import { HttpHandler } from '../../amt/HttpHandler.js'
 import { type AMT } from '@device-management-toolkit/wsman-messages'
-import { type SpyInstance, spyOn } from 'jest-mock'
+import { spyOn } from 'jest-mock'
 
 describe('auditLog', () => {
   let req
   let resSpy
   let device: DeviceAction
-  let mqttSpy: SpyInstance<any>
-  let getAuditLogSpy: SpyInstance<any>
+  let mqttSpy: jest.Spied<any>
+  let getAuditLogSpy: jest.Spied<any>
   const fakeGuid = '00000000-0000-0000-0000-000000000000'
   const eventRecords = [
     'ABUAAAAJJCRPc0FkbWluP/Nj6wAJMTI3LjAuMC4xBFyZIW4=',

@@ -9,16 +9,16 @@ import { DeviceAction } from '../../amt/DeviceAction.js'
 import { HttpHandler } from '../../amt/HttpHandler.js'
 import { createSpyObj } from '../../test/helper/jest.js'
 import { bootOptions, determinePowerAction, setBootData, setBootSource } from './bootOptions.js'
-import { type SpyInstance, spyOn } from 'jest-mock'
+import { spyOn } from 'jest-mock'
 
 describe('Boot Options', () => {
   let resSpy: any
   let req: any
-  let getBootOptionsSpy: SpyInstance<any>
-  let setBootConfigurationSpy: SpyInstance<any>
-  let forceBootModeSpy: SpyInstance<any>
-  let changeBootOrderSpy: SpyInstance<any>
-  let sendPowerActionSpy: SpyInstance<any>
+  let getBootOptionsSpy: jest.Spied<any>
+  let setBootConfigurationSpy: jest.Spied<any>
+  let forceBootModeSpy: jest.Spied<any>
+  let changeBootOrderSpy: jest.Spied<any>
+  let sendPowerActionSpy: jest.Spied<any>
   let bootSettingData: AMT.Models.BootSettingData | any
   beforeEach(() => {
     const handler = new CIRAHandler(new HttpHandler(), 'admin', 'P@ssw0rd')

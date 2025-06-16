@@ -4,7 +4,7 @@
  **********************************************************************/
 
 import { type CIM } from '@device-management-toolkit/wsman-messages'
-import { type SpyInstance, spyOn } from 'jest-mock'
+import { spyOn } from 'jest-mock'
 import { CIRAHandler } from '../../amt/CIRAHandler.js'
 import { DeviceAction } from '../../amt/DeviceAction.js'
 import { HttpHandler } from '../../amt/HttpHandler.js'
@@ -17,13 +17,13 @@ import { powerAction } from './powerAction.js'
 describe('Power Capabilities', () => {
   let req: Express.Request
   let resSpy
-  let mqttSpy: SpyInstance<any>
+  let mqttSpy: jest.Spied<any>
   let powerActionFromDevice: CIM.Models.PowerActionResponse
   let osPowerActionFromDevice
-  let getBootOptionsSpy: SpyInstance<any>
-  let setBootConfigurationSpy: SpyInstance<any>
-  let osPowerStateChangeSpy: SpyInstance<any>
-  let osPowerStateGetSpy: SpyInstance<any>
+  let getBootOptionsSpy: jest.Spied<any>
+  let setBootConfigurationSpy: jest.Spied<any>
+  let osPowerStateChangeSpy: jest.Spied<any>
+  let osPowerStateGetSpy: jest.Spied<any>
   let device: DeviceAction
 
   beforeEach(() => {

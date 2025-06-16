@@ -10,7 +10,7 @@ describe('Check index from routes', () => {
     { path: '/ciracert', method: 'get' }]
   it('should have routes', () => {
     routes.forEach((route) => {
-      const match = router.stack.find((s) => s.route?.path === route.path && s.route?.methods[route.method])
+      const match = router.stack.find((s) => s.route?.path === route.path && (s.route as any)?.methods?.[route.method])
       expect(match).toBeTruthy()
     })
   })

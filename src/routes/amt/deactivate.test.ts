@@ -6,14 +6,14 @@
 import { deactivate } from './deactivate.js'
 import { messages } from '../../logging/index.js'
 import { createSpyObj } from '../../test/helper/jest.js'
-import { type SpyInstance, spyOn } from 'jest-mock'
+import { spyOn } from 'jest-mock'
 
 describe('deactivate', () => {
   let resSpy: any
   let req: any
-  let deleteSpy: SpyInstance<any>
-  let deleteSecretAtPathSpy: SpyInstance<any>
-  let deprovisionDeviceSpy: SpyInstance<any>
+  let deleteSpy: jest.Spied<any>
+  let deleteSecretAtPathSpy: jest.Spied<any>
+  let deprovisionDeviceSpy: jest.Spied<any>
 
   beforeEach(() => {
     resSpy = createSpyObj('Response', ['status', 'json'])

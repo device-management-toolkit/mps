@@ -18,7 +18,9 @@ describe('Check index from devices', () => {
   ]
   it('should have routes', async () => {
     routes.forEach((route) => {
-      const match = router.stack.find((s) => s.route?.path === route.path && s.route?.methods[route.method])
+      const match = router.stack.find(
+        (s) => s.route?.path === route.path && s.route && (s.route as any).methods[route.method]
+      )
       expect(match).toBeTruthy()
     })
   })

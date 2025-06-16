@@ -9,13 +9,13 @@ import { createSpyObj } from '../../test/helper/jest.js'
 import { MqttProvider } from '../../utils/MqttProvider.js'
 import { ErrorResponse } from '../../utils/amtHelper.js'
 import { messages } from '../../logging/index.js'
-import { type SpyInstance, spyOn } from 'jest-mock'
+import { spyOn } from 'jest-mock'
 
 describe('Checks health of dependent services', () => {
   describe('getHealthCheck tests', () => {
     let resSpy
     let req
-    let mqttSpy: SpyInstance<any>
+    let mqttSpy: jest.Spied<any>
     beforeEach(() => {
       resSpy = createSpyObj('Response', [
         'status',

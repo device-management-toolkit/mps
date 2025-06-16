@@ -14,13 +14,13 @@ import { CIRAHandler } from '../../amt/CIRAHandler.js'
 import { DeviceAction } from '../../amt/DeviceAction.js'
 import { HttpHandler } from '../../amt/HttpHandler.js'
 import { messages } from '../../logging/index.js'
-import { type SpyInstance, spyOn } from 'jest-mock'
+import { spyOn } from 'jest-mock'
 
 describe('version', () => {
   let resSpy
   let req
-  let setupAndConfigurationServiceSpy: SpyInstance<any>
-  let softwareIdentitySpy: SpyInstance<any>
+  let setupAndConfigurationServiceSpy: jest.Spied<any>
+  let softwareIdentitySpy: jest.Spied<any>
   beforeEach(() => {
     const handler = new CIRAHandler(new HttpHandler(), 'admin', 'P@ssw0rd')
     const device = new DeviceAction(handler, null)

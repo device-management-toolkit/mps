@@ -16,15 +16,15 @@ import { DeviceAction } from '../../amt/DeviceAction.js'
 import { CIRAHandler } from '../../amt/CIRAHandler.js'
 import { HttpHandler } from '../../amt/HttpHandler.js'
 import { messages } from '../../logging/index.js'
-import { type SpyInstance, spyOn } from 'jest-mock'
+import { spyOn } from 'jest-mock'
 
 describe('Power Capabilities', () => {
   let req: Express.Request
   let resSpy
-  let mqttSpy: SpyInstance<any>
+  let mqttSpy: jest.Spied<any>
   let powerCaps
-  let swIdentitySpy: SpyInstance<any>
-  let setupAndConfigSpy: SpyInstance<any>
+  let swIdentitySpy: jest.Spied<any>
+  let setupAndConfigSpy: jest.Spied<any>
   let device: DeviceAction
   beforeEach(() => {
     const handler = new CIRAHandler(new HttpHandler(), 'admin', 'P@ssw0rd')

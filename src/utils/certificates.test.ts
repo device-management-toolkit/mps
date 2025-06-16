@@ -8,17 +8,17 @@ import { type certAndKeyType, type certificatesType } from '../models/Config.js'
 import forge from 'node-forge'
 import { type ISecretManagerService } from '../interfaces/ISecretManagerService.js'
 import { jest } from '@jest/globals'
-import { type SpyInstance, spyOn } from 'jest-mock'
+import { spyOn } from 'jest-mock'
 
 let certificates: Certificates
 let certificatesTls12: Certificates
-let generateKeyPairSpy: SpyInstance<any>
-let createCertificateSpy: SpyInstance<any>
-let getPublicKeyFingerprintSpy: SpyInstance<any>
-let sha384CreateSpy: SpyInstance<any>
-let getMPSCertsSpy: SpyInstance<any>
-let storeCertificatesSpy: SpyInstance<any>
-let writeSecretWithObjectSpy: SpyInstance<any>
+let generateKeyPairSpy: jest.Spied<any>
+let createCertificateSpy: jest.Spied<any>
+let getPublicKeyFingerprintSpy: jest.Spied<any>
+let sha384CreateSpy: jest.Spied<any>
+let getMPSCertsSpy: jest.Spied<any>
+let storeCertificatesSpy: jest.Spied<any>
+let writeSecretWithObjectSpy: jest.Spied<any>
 const config = {
   common_name: 'me',
   country: 'us',
@@ -79,10 +79,10 @@ describe('generateCertificates', () => {
     expect(result.mps_tls_config).toBeTruthy()
     expect(result.web_tls_config).toBeTruthy()
     expect(result.root_key).toBeTruthy()
-    expect(certificateToPemSpy).toBeCalled()
-    expect(privateKeyToPemSpy).toBeCalled()
-    expect(issueWebServerCertificateSpy).toBeCalled()
-    expect(generateRootCertificateSpy).toBeCalled()
+    expect(certificateToPemSpy).toHaveBeenCalled()
+    expect(privateKeyToPemSpy).toHaveBeenCalled()
+    expect(issueWebServerCertificateSpy).toHaveBeenCalled()
+    expect(generateRootCertificateSpy).toHaveBeenCalled()
   })
 
   it('should generate certificates for TLS1.2', () => {
@@ -94,10 +94,10 @@ describe('generateCertificates', () => {
     expect(result.mps_tls_config).toBeTruthy()
     expect(result.web_tls_config).toBeTruthy()
     expect(result.root_key).toBeTruthy()
-    expect(certificateToPemSpy).toBeCalled()
-    expect(privateKeyToPemSpy).toBeCalled()
-    expect(issueWebServerCertificateSpy).toBeCalled()
-    expect(generateRootCertificateSpy).toBeCalled()
+    expect(certificateToPemSpy).toHaveBeenCalled()
+    expect(privateKeyToPemSpy).toHaveBeenCalled()
+    expect(issueWebServerCertificateSpy).toHaveBeenCalled()
+    expect(generateRootCertificateSpy).toHaveBeenCalled()
   })
 })
 
@@ -150,7 +150,7 @@ describe('getCertificates', () => {
     getMPSCertsSpy.mockReturnValue(expectedCertificates)
     const result = await certificates.getCertificates()
     expect(result).toEqual(expectedCertificates)
-    expect(storeCertificatesSpy).not.toBeCalled()
+    expect(storeCertificatesSpy).not.toHaveBeenCalled()
   })
 
   it('should get certificates after generating them first if they do not already exist', async () => {
@@ -160,8 +160,8 @@ describe('getCertificates', () => {
     const generateCertificatesSpy = spyOn(certificates, 'generateCertificates').mockReturnValue(expectedCertificates)
     const result = await certificates.getCertificates()
     expect(result).toEqual(expectedCertificates)
-    expect(generateCertificatesSpy).toBeCalled()
-    expect(storeCertificatesSpy).toBeCalled()
+    expect(generateCertificatesSpy).toHaveBeenCalled()
+    expect(storeCertificatesSpy).toHaveBeenCalled()
   })
 })
 
@@ -174,7 +174,7 @@ describe('storeCertificates', () => {
     writeSecretWithObjectSpy.mockImplementation(() => {})
     await certificates.storeCertificates(certificatesData)
     const expectedData = { data: certificatesData }
-    expect(writeSecretWithObjectSpy).toBeCalledWith('MPSCerts', expectedData)
+    expect(writeSecretWithObjectSpy).toHaveBeenCalledWith('MPSCerts', expectedData)
   })
 })
 

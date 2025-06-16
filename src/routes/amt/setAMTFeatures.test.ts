@@ -10,19 +10,19 @@ import { AMT_REDIRECTION_SERVICE_ENABLE_STATE } from '@device-management-toolkit
 import { DeviceAction } from '../../amt/DeviceAction.js'
 import { CIRAHandler } from '../../amt/CIRAHandler.js'
 import { HttpHandler } from '../../amt/HttpHandler.js'
-import { type SpyInstance, spyOn } from 'jest-mock'
+import { spyOn } from 'jest-mock'
 
 describe('set amt features', () => {
   let resSpy
   let req
-  let redirectionSpy: SpyInstance<any>
-  let optInServiceSpy: SpyInstance<any>
-  let kvmRedirectionSpy: SpyInstance<any>
-  let setRedirectionServiceSpy: SpyInstance<any>
-  let setKvmRedirectionSapSpy: SpyInstance<any>
-  let putRedirectionServiceSpy: SpyInstance<any>
-  let putIpsOptInServiceSpy: SpyInstance<any>
-  let mqttSpy: SpyInstance<any>
+  let redirectionSpy: jest.Spied<any>
+  let optInServiceSpy: jest.Spied<any>
+  let kvmRedirectionSpy: jest.Spied<any>
+  let setRedirectionServiceSpy: jest.Spied<any>
+  let setKvmRedirectionSapSpy: jest.Spied<any>
+  let putRedirectionServiceSpy: jest.Spied<any>
+  let putIpsOptInServiceSpy: jest.Spied<any>
+  let mqttSpy: jest.Spied<any>
 
   beforeEach(() => {
     const handler = new CIRAHandler(new HttpHandler(), 'admin', 'P@ssw0rd')
