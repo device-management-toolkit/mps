@@ -11,15 +11,15 @@ import { createSpyObj } from '../../test/helper/jest.js'
 import { ErrorResponse } from '../../utils/amtHelper.js'
 import { MqttProvider } from '../../utils/MqttProvider.js'
 import { getAMTFeatures } from './getAMTFeatures.js'
-import { type SpyInstance, spyOn } from 'jest-mock'
+import { spyOn } from 'jest-mock'
 
 describe('get amt features', () => {
   let resSpy
   let req
-  let redirectionSpy: SpyInstance<any>
-  let optInServiceSpy: SpyInstance<any>
-  let kvmRedirectionSpy: SpyInstance<any>
-  let mqttSpy: SpyInstance<any>
+  let redirectionSpy: jest.Spied<any>
+  let optInServiceSpy: jest.Spied<any>
+  let kvmRedirectionSpy: jest.Spied<any>
+  let mqttSpy: jest.Spied<any>
 
   // let processAmtRedirectionResponse
   // let processKvmRedirectionResponse

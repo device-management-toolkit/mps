@@ -7,12 +7,12 @@ import { MPSValidationError } from '../../utils/MPSValidationError.js'
 import { updateDevice } from './update.js'
 import { logger } from '../../logging/index.js'
 import { jest } from '@jest/globals'
-import { type SpyInstance, spyOn } from 'jest-mock'
+import { spyOn } from 'jest-mock'
 
 let res: Express.Response
-let statusSpy: SpyInstance<any>
-let jsonSpy: SpyInstance<any>
-let endSpy: SpyInstance<any>
+let statusSpy: jest.Spied<any>
+let jsonSpy: jest.Spied<any>
+let endSpy: jest.Spied<any>
 
 beforeEach(() => {
   res = {
@@ -46,9 +46,9 @@ describe('update', () => {
       }
     }
     await updateDevice(req as any, res as any)
-    expect(statusSpy).toBeCalledWith(404)
-    expect(jsonSpy).toBeCalledWith({ error: 'NOT FOUND', message: `Device ID ${guid} not found` })
-    expect(endSpy).toBeCalled()
+    expect(statusSpy).toHaveBeenCalledWith(404)
+    expect(jsonSpy).toHaveBeenCalledWith({ error: 'NOT FOUND', message: `Device ID ${guid} not found` })
+    expect(endSpy).toHaveBeenCalled()
   })
 
   it('should set status to 200 if getById gets a result', async () => {
@@ -69,9 +69,9 @@ describe('update', () => {
     const updateSpy = spyOn(req.db.devices, 'update').mockReturnValue(expectedDevice)
     await updateDevice(req as any, res as any)
     expect(updateSpy).toHaveBeenCalled()
-    expect(statusSpy).toBeCalledWith(200)
-    expect(jsonSpy).toBeCalledWith(expectedDevice)
-    expect(endSpy).toBeCalled()
+    expect(statusSpy).toHaveBeenCalledWith(200)
+    expect(jsonSpy).toHaveBeenCalledWith(expectedDevice)
+    expect(endSpy).toHaveBeenCalled()
   })
 
   it('should set status to that of MPSValidationError if it occurs', async () => {
@@ -91,9 +91,9 @@ describe('update', () => {
       }
     }
     await updateDevice(req as any, res as any)
-    expect(statusSpy).toBeCalled()
-    expect(jsonSpy).toBeCalledWith({ error: errorName, message: errorMessage })
-    expect(endSpy).toBeCalled()
+    expect(statusSpy).toHaveBeenCalled()
+    expect(jsonSpy).toHaveBeenCalledWith({ error: errorName, message: errorMessage })
+    expect(endSpy).toHaveBeenCalled()
     expect(errorSpy).toHaveBeenCalled()
   })
 
@@ -111,8 +111,8 @@ describe('update', () => {
       }
     }
     await updateDevice(req as any, res as any)
-    expect(statusSpy).toBeCalledWith(500)
-    expect(endSpy).toBeCalled()
+    expect(statusSpy).toHaveBeenCalledWith(500)
+    expect(endSpy).toHaveBeenCalled()
     expect(errorSpy).toHaveBeenCalled()
   })
 })

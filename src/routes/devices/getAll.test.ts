@@ -8,17 +8,17 @@ import { getAllDevices } from './getAll.js'
 import { type Device } from '../../models/models.js'
 import { type DataWithCount } from '../../models/Config.js'
 import { jest } from '@jest/globals'
-import { type SpyInstance, spyOn } from 'jest-mock'
+import { spyOn } from 'jest-mock'
 
 let req
 let res
-let statusSpy: SpyInstance<any>
-let jsonSpy: SpyInstance<any>
-let endSpy: SpyInstance<any>
+let statusSpy: jest.Spied<any>
+let jsonSpy: jest.Spied<any>
+let endSpy: jest.Spied<any>
 let mockDevice: Device
 let allDevices: Device[]
-let getSpy: SpyInstance<any>
-let getCountSpy: SpyInstance<any>
+let getSpy: jest.Spied<any>
+let getCountSpy: jest.Spied<any>
 
 beforeEach(() => {
   mockDevice = {

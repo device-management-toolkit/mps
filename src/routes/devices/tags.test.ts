@@ -6,12 +6,12 @@
 import { getDistinctTags } from './tags.js'
 import { logger } from '../../logging/index.js'
 import { jest } from '@jest/globals'
-import { type SpyInstance, spyOn } from 'jest-mock'
+import { spyOn } from 'jest-mock'
 
 let req: any
 let res: any
-let statusSpy: SpyInstance<any>
-let jsonSpy: SpyInstance<any>
+let statusSpy: jest.Spied<any>
+let jsonSpy: jest.Spied<any>
 
 beforeEach(() => {
   req = {
@@ -40,14 +40,14 @@ describe('tags', () => {
     const expectedResult = {}
     req.db.devices.getDistinctTags = jest.fn().mockReturnValue(expectedResult)
     await getDistinctTags(req, res)
-    expect(statusSpy).toBeCalledWith(200)
+    expect(statusSpy).toHaveBeenCalledWith(200)
   })
 
   it('should set status to 404 when getting no results from getDistinctTags', async () => {
     const expectedResult = null
     req.db.devices.getDistinctTags = jest.fn().mockReturnValue(expectedResult)
     await getDistinctTags(req, res)
-    expect(statusSpy).toBeCalledWith(404)
+    expect(statusSpy).toHaveBeenCalledWith(404)
     expect(jsonSpy).not.toHaveBeenCalled()
   })
 
@@ -57,8 +57,8 @@ describe('tags', () => {
     })
     const logSpy = spyOn(logger, 'error')
     await getDistinctTags(req, res)
-    expect(statusSpy).toBeCalledWith(500)
+    expect(statusSpy).toHaveBeenCalledWith(500)
     expect(jsonSpy).not.toHaveBeenCalled()
-    expect(logSpy).toBeCalled()
+    expect(logSpy).toHaveBeenCalled()
   })
 })

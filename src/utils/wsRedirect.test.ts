@@ -12,7 +12,7 @@ import { Socket } from 'node:net'
 import { MqttProvider } from './MqttProvider.js'
 import { EventEmitter } from 'node:events'
 import { jest } from '@jest/globals'
-import { type SpyInstance, spyOn } from 'jest-mock'
+import { spyOn } from 'jest-mock'
 
 const fakeGuid = '00000000-0000-0000-0000-000000000000'
 
@@ -23,8 +23,8 @@ describe('WsRedirect tests', () => {
       resume: jest.fn()
     }
   }
-  let pauseSpy: SpyInstance<any>
-  let resumeSpy: SpyInstance<any>
+  let pauseSpy: jest.Spied<any>
+  let resumeSpy: jest.Spied<any>
   let wsRedirect: WsRedirect
 
   beforeEach(() => {
@@ -56,7 +56,7 @@ describe('WsRedirect tests', () => {
       const publishEventSpy = spyOn(MqttProvider, 'publishEvent')
       await wsRedirect.handleConnection(mockIncomingMessage as any)
 
-      expect(setNormalTCPSpy).toBeCalled()
+      expect(setNormalTCPSpy).toHaveBeenCalled()
       expect(publishEventSpy).toHaveBeenCalled()
       expect(pauseSpy).toHaveBeenCalled()
     })
@@ -80,8 +80,8 @@ describe('WsRedirect tests', () => {
     void wsRedirect.handleMessage(message)
     const closeSpy = spyOn(wsRedirect.websocketFromWeb, 'close')
 
-    expect(interceptorSpy).toBeCalledWith(message.data)
-    expect(writeSpy).toBeCalledWith('binaryData')
+    expect(interceptorSpy).toHaveBeenCalledWith(message.data)
+    expect(writeSpy).toHaveBeenCalledWith('binaryData')
   })
 
   it('should close websocket conn to browser if cira channel is closed', () => {
@@ -102,8 +102,8 @@ describe('WsRedirect tests', () => {
     void wsRedirect.handleMessage(message)
     const closeSpy = spyOn(wsRedirect.websocketFromWeb, 'close')
 
-    expect(interceptorSpy).toBeCalledWith(message.data)
-    expect(closeSpy).toBeCalled()
+    expect(interceptorSpy).toHaveBeenCalledWith(message.data)
+    expect(closeSpy).toHaveBeenCalled()
   })
 
   describe('handleClose tests', () => {
@@ -126,7 +126,7 @@ describe('WsRedirect tests', () => {
     it('should handle close for KVM mode', () => {
       wsRedirect.handleClose(params, null)
       expect(publishEventSpy).toHaveBeenCalled()
-      expect(wsRedirect.websocketFromDevice.CloseChannel).toBeCalled()
+      expect(wsRedirect.websocketFromDevice.CloseChannel).toHaveBeenCalled()
       expect(devices[params.host].kvmConnect).toBeFalsy()
     })
 

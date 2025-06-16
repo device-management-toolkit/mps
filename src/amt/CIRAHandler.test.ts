@@ -111,7 +111,7 @@ describe('CIRA Handler', () => {
   it('should throw error when empty data', () => {
     expect(() => {
       ciraHandler.handleResult('')
-    }).toThrowError('rawMessage has incorrect format')
+    }).toThrow('rawMessage has incorrect format')
   })
   it('should throw Unauthorized Error when 401 from ATM - digest challenge', () => {
     const handleAuthSpy = spyOn(ciraHandler, 'handleAuth')
@@ -119,7 +119,7 @@ describe('CIRA Handler', () => {
     const authSpy = spyOn(ciraHandler.httpHandler, 'authResolve')
     expect(() => {
       ciraHandler.handleResult(unauthorizedResponse)
-    }).toThrowError('Unauthorized')
+    }).toThrow('Unauthorized')
     expect(authSpy).toHaveBeenCalled()
     expect(handleAuthSpy).toHaveBeenCalled()
   })
@@ -153,7 +153,8 @@ describe('CIRA Handler', () => {
         params: [],
         contentType: 'application/soap+xml',
         text: ''
-      }
+      },
+      cookies: []
     })
     expect(response).toEqual(null)
   })
@@ -172,7 +173,7 @@ describe('CIRA Handler', () => {
       }
     } as any
     const channel = ciraHandler.SetupCiraChannel(socket, 16692)
-    expect(sendChannelSpy).toBeCalledTimes(1)
+    expect(sendChannelSpy).toHaveBeenCalledTimes(1)
     expect(channel.state).toEqual(1)
   })
 })

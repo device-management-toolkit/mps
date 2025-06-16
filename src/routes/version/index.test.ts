@@ -4,10 +4,10 @@
  **********************************************************************/
 
 import index from './index.js'
-import { type SpyInstance, spyOn } from 'jest-mock'
+import { spyOn } from 'jest-mock'
 
 describe('Check index from version', () => {
-  let indexSpy: SpyInstance<any>
+  let indexSpy: jest.Spied<any>
   beforeEach(() => {
     indexSpy = spyOn(index, 'get')
   })

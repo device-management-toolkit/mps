@@ -26,7 +26,7 @@ describe('Postgres', () => {
     const dbQuery = spyOn(db.pool, 'query').mockImplementation(async () => qr)
     const result = await db.query('SELECT * FROM devices', null)
     expect(result.rowCount).toBe(0)
-    expect(dbQuery).toBeCalledWith('SELECT * FROM devices', null)
+    expect(dbQuery).toHaveBeenCalledWith('SELECT * FROM devices', null)
     expect(dbQuery).toHaveBeenCalled()
   })
 

@@ -6,7 +6,7 @@
 import { type AMT, type CIM } from '@device-management-toolkit/wsman-messages'
 import { type Selector } from '@device-management-toolkit/wsman-messages/WSMan.js'
 import { type Models } from '@device-management-toolkit/wsman-messages/ips/models.js'
-import { type SpyInstance, spyOn } from 'jest-mock'
+import { spyOn } from 'jest-mock'
 import { type CIRASocket } from '../models/models.js'
 import {
   addAlarmClockOccurrenceResponse,
@@ -42,11 +42,11 @@ import { DeviceAction } from './DeviceAction.js'
 import { HttpHandler } from './HttpHandler.js'
 
 describe('Device Action Tests', () => {
-  let enumerateSpy: SpyInstance<any>
-  let pullSpy: SpyInstance<any>
-  let getSpy: SpyInstance<any>
-  let sendSpy: SpyInstance<any>
-  let deleteSpy: SpyInstance<any>
+  let enumerateSpy: jest.Spied<any>
+  let pullSpy: jest.Spied<any>
+  let getSpy: jest.Spied<any>
+  let sendSpy: jest.Spied<any>
+  let deleteSpy: jest.Spied<any>
   let device: DeviceAction
   beforeEach(() => {
     const socket: CIRASocket = null

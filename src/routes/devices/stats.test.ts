@@ -5,11 +5,11 @@
 
 import { stats } from './stats.js'
 import { jest } from '@jest/globals'
-import { type SpyInstance, spyOn } from 'jest-mock'
+import { spyOn } from 'jest-mock'
 
 let res: Express.Response
-let jsonSpy: SpyInstance<any>
-let resSpy: SpyInstance<any>
+let jsonSpy: jest.Spied<any>
+let resSpy: jest.Spied<any>
 
 beforeEach(() => {
   res = {
@@ -47,7 +47,7 @@ describe('stats', () => {
       connectedCount: expectedConnectedCount,
       disconnectedCount: expectedDisconnectedCount
     }
-    expect(jsonSpy).toBeCalledWith(expectedJson)
+    expect(jsonSpy).toHaveBeenCalledWith(expectedJson)
   })
   it('should return 500 when error', async () => {
     const req = {
@@ -80,6 +80,6 @@ describe('stats', () => {
       connectedCount: expectedConnectedCount,
       disconnectedCount: expectedDisconnectedCount
     }
-    expect(jsonSpy).toBeCalledWith(expectedJson)
+    expect(jsonSpy).toHaveBeenCalledWith(expectedJson)
   })
 })
