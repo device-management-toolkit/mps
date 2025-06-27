@@ -181,12 +181,72 @@ export class DeviceAction {
     return result
   }
 
+  async requestBootServiceStateChange(reqState: CIM.Types.BootService.RequestedState): Promise<number> {
+    logger.silly(`BootServiceStateChange ${messages.REQUEST}`)
+    //const bootSource = 'Intel(r) AMT: Boot Configuration 0'
+    const xmlRequestBody = this.cim.BootService.RequestStateChange(reqState)
+    const result = await this.ciraHandler.Send(this.ciraSocket, xmlRequestBody)
+    logger.silly(`BootServiceStateChange ${messages.COMPLETE}`)
+    return result
+  }
+
   async getBootSettingSource(): Promise<any> {
     logger.silly(`getBootSettingSource ${messages.REQUEST}`)
     const xmlRequestBody = this.cim.BootSourceSetting.Get()
     const result = await this.ciraHandler.Send(this.ciraSocket, xmlRequestBody)
     logger.silly(`getBootSettingSource ${messages.COMPLETE}`)
     return result
+  }
+
+  async getBootSourceSettings(): Promise<CIM.Models.BootSourceSetting[]> {
+    logger.silly(`CIM_BootSourceSettings ${messages.REQUEST}`)
+    const xmlRequestBody = this.cim.BootSourceSetting.Enumerate()
+    const result = await this.ciraHandler.Enumerate(this.ciraSocket, xmlRequestBody)
+    if (result == null) {
+      logger.error(`CIM_BootSourceSettings > Enumerate > NULL. Reason: ${messages.ENUMERATION_RESPONSE_NULL}`)
+      return null
+    }
+    const enumContext: string = result?.Envelope?.Body?.EnumerateResponse?.EnumerationContext
+    if (enumContext == null) {
+      logger.error(`CIM_BootSourceSettings > EnumeratioContext > NULL. Reason: ${messages.ENUMERATION_RESPONSE_NULL}`)
+      return null
+    }
+    const pullResponse = await this.ciraHandler.Pull<CIM.Models.BootSourceSetting>(
+      this.ciraSocket,
+      this.cim.BootSourceSetting.Pull(enumContext)
+    )
+    const items = pullResponse?.Envelope?.Body?.PullResponse?.Items
+    if (items == null) {
+      logger.error(`CIM_BootSourceSettings > PullResponse.Items > NULL. Reason: ${messages.RESPONSE_NULL}`)
+      return null
+    }
+    if ('CIM_BootSourceSetting' in items) {
+      if (Array.isArray(items.CIM_BootSourceSetting)) {
+        logger.silly(`CIM_BootSourceSettings ${messages.COMPLETE}`)
+        return items.CIM_BootSourceSetting as CIM.Models.BootSourceSetting[]
+      }
+    }
+    logger.error(`CIM_BootSourceSettings > CIM_BootSourceSetting is missing in the response. Reason: ${messages.RESPONSE_NULL}`)
+    return null
+  }
+
+  async getBootService(): Promise<any> {
+    logger.silly(`getBootService ${messages.REQUEST}`)
+    const xmlRequestBody = this.cim.BootService.Get()    
+    const result = await this.ciraHandler.Send(this.ciraSocket, xmlRequestBody)
+
+    const content= result?.Envelope?.Body
+    if (content == null) {
+      logger.error(`getBootService > Envelope.Body > NULL. Reason: ${messages.RESPONSE_NULL}`)
+      return null
+    }
+    if ('CIM_BootService' in content) {
+      logger.silly(`getBootService ${messages.COMPLETE}`)      
+      return content.CIM_BootService 
+    }
+
+    logger.error(`getBootService > Envelope.Body > NULL. Reason: ${messages.RESPONSE_NULL}`)
+    return null
   }
 
   async getBootSourceSettings(): Promise<CIM.Models.BootSourceSetting[]> {
