@@ -103,8 +103,10 @@ export async function setAMTFeatures(req: Request, res: Response): Promise<void>
         ocrChange = true // enable OCR
       }
     }
-      
-    await req.deviceAction.requestBootServiceStateChange(requestedState)
+    
+    if (ocrChange) {
+      await req.deviceAction.requestBootServiceStateChange(requestedState)
+    }    
     
     MqttProvider.publishEvent('success', ['AMT_SetFeatures'], messages.AMT_FEATURES_SET_SUCCESS, guid)
     res.status(200).json({ status: messages.AMT_FEATURES_SET_SUCCESS }).end()

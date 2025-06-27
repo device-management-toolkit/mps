@@ -15,6 +15,31 @@ export async function powerState(req: Request, res: Response): Promise<void> {
     const guid: string = req.params.guid
     MqttProvider.publishEvent('request', ['AMT_PowerState'], messages.POWER_STATE_GET_REQUESTED, guid)
 
+    //testMJD
+    //********************* */
+    try{
+      const retcert=await req.deviceAction.getDeviceCIMCredentialContext()
+      if (retcert != null) {
+        for (const item of retcert) {
+          logger.silly(`testMJD: *List>Certificate* CIM_CredentialContext ${JSON.stringify(item, null, '\t')}`)
+        }
+      }
+    } catch (err) {
+      logger.error(`testMJD: CIM_CredentialContext: ${err}`)
+    }
+
+    try{
+      const retcert=await req.deviceAction.getDeviceConcreteDependency()
+      if (retcert != null) {
+        for (const item of retcert) {
+          logger.silly(`testMJD: *List>ConcreteDep* ${JSON.stringify(item, null, '\t')}`)
+        }
+      }
+    } catch (err) {
+      logger.error(`testMJD: ConcreteDependency: ${err}`)
+    }
+
+    //******************* */
     let osresponse
     try {
       logger.info(messages.OS_POWER_SAVING_STATE_GET_REQUESTED)

@@ -4,7 +4,7 @@
  **********************************************************************/
 
 import { AMT, CIM, IPS, type Common } from '@device-management-toolkit/wsman-messages'
-import { type Selector } from '@device-management-toolkit/wsman-messages/WSMan.js'
+import { Base, type Selector } from '@device-management-toolkit/wsman-messages/WSMan.js'
 import { logger, messages } from '../logging/index.js'
 import { type CIRASocket } from '../models/models.js'
 import { type CIRAHandler } from './CIRAHandler.js'
@@ -21,18 +21,53 @@ export interface BootSettings {
 	isPBAWinREExists  : boolean
 }
 
+export interface AMT_PublicPrivateKeyPair{
+  DERKey: string
+  ElementName: string
+  InstanceID: string
+}
+export interface Certificates {
+	ConcreteDependencyResponse:CIM_ConcreteDependency[] | null;    
+	PublicKeyCertificateResponse:AMT.Models.PublicKeyCertificate[]|null; 
+	PublicPrivateKeyPairResponse:AMT_PublicPrivateKeyPair[]|null; 
+	CIMCredentialContextResponse:CIM.Models.CredentialContext[]|null; 
+}
+
+export class CIM_CredentialContext extends Base {
+  Antecedent
+  Dependent
+  className = 'CIM_CredentialContext' as unknown as CIM.Classes;
+  
+  constructor(wsmanMessageCreator) {
+    super(wsmanMessageCreator);
+  }
+}
+
+export class CIM_ConcreteDependency extends Base {  
+  className = 'CIM_ConcreteDependency' as unknown as CIM.Classes;
+  
+  constructor(wsmanMessageCreator) {
+    super(wsmanMessageCreator);
+  }
+}
+
 export class DeviceAction {
   ciraHandler: CIRAHandler
   ciraSocket: CIRASocket
   cim: CIM.Messages
   amt: AMT.Messages
   ips: IPS.Messages
+  credentialContext: CIM_CredentialContext
+  concreteDependency: CIM_ConcreteDependency
+
   constructor(ciraHandler: CIRAHandler, ciraSocket: CIRASocket) {
     this.ciraHandler = ciraHandler
     this.ciraSocket = ciraSocket
     this.cim = new CIM.Messages()
     this.amt = new AMT.Messages()
     this.ips = new IPS.Messages()
+    this.credentialContext = new CIM_CredentialContext(this.cim.wsmanMessageCreator)
+    this.concreteDependency = new CIM_ConcreteDependency(this.cim.wsmanMessageCreator)
   }
 
   async getPowerState(): Promise<Common.Models.Pull<CIM.Models.AssociatedPowerManagementService>> {
@@ -628,4 +663,371 @@ async getOneClickRecoverySettings() {
       RemoteEraseSupported: isRemoteEraseSupported
     }
   }
+
+  async getDevicePublicKeyCertificates(): Promise<AMT.Models.PublicKeyCertificate[]> {
+    logger.silly(`AMT_PublicKeyCertificate ${messages.REQUEST}`)
+    const xmlRequestBody = this.amt.PublicKeyCertificate.Enumerate()
+    const result = await this.ciraHandler.Enumerate(this.ciraSocket, xmlRequestBody)
+    if (result == null) {
+      logger.error(`AMT_PublicKeyCertificate > Enumerate > NULL. Reason: ${messages.ENUMERATION_RESPONSE_NULL}`)
+      return null
+    }
+    const enumContext: string = result?.Envelope?.Body?.EnumerateResponse?.EnumerationContext
+    if (enumContext == null) {
+      logger.error(`AMT_PublicKeyCertificate > EnumeratioContext > NULL. Reason: ${messages.ENUMERATION_RESPONSE_NULL}`)
+      return null
+    }
+    const pullResponse = await this.ciraHandler.Pull<AMT.Models.PublicKeyCertificate>(
+      this.ciraSocket,
+      this.amt.PublicKeyCertificate.Pull(enumContext)
+    )
+    const items = pullResponse?.Envelope?.Body?.PullResponse?.Items
+    if (items == null) {
+      logger.error(`AMT_PublicKeyCertificate > PullResponse.Items > NULL. Reason: ${messages.RESPONSE_NULL}`)
+      return null
+    }
+
+    logger.silly(`testMJD: AMT_PublicKeyCertificate ${JSON.stringify(items, null, '\t')}`)    
+    if ('AMT_PublicKeyCertificate' in items) {
+      if (Array.isArray(items.AMT_PublicKeyCertificate)) {
+        logger.silly(`AMT_PublicKeyCertificate ${messages.COMPLETE}`)
+        return items.AMT_PublicKeyCertificate as AMT.Models.PublicKeyCertificate[]// Class AMT_PublicKeyCertificate[]
+      }
+    }
+    logger.error(`AMT_PublicKeyCertificate > AMT_PublicKeyCertificate is missing in the response. Reason: ${messages.RESPONSE_NULL}`)
+    return null
+  }
+
+  async getDevicePublicPrivateKeyPair(): Promise<AMT_PublicPrivateKeyPair[]> {
+    logger.silly(`AMT_PublicPrivateKeyPair ${messages.REQUEST}`)
+    const xmlRequestBody = this.amt.PublicPrivateKeyPair.Enumerate()
+    const result = await this.ciraHandler.Enumerate(this.ciraSocket, xmlRequestBody)
+    if (result == null) {
+      logger.error(`AMT_PublicPrivateKeyPair > Enumerate > NULL. Reason: ${messages.ENUMERATION_RESPONSE_NULL}`)
+      return null
+    }
+    const enumContext: string = result?.Envelope?.Body?.EnumerateResponse?.EnumerationContext
+    if (enumContext == null) {
+      logger.error(`AMT_PublicPrivateKeyPair > EnumeratioContext > NULL. Reason: ${messages.ENUMERATION_RESPONSE_NULL}`)
+      return null
+    }
+    const pullResponse = await this.ciraHandler.Pull<AMT_PublicPrivateKeyPair>(
+      this.ciraSocket,
+      this.amt.PublicPrivateKeyPair.Pull(enumContext)
+    )
+
+    const items = pullResponse?.Envelope?.Body?.PullResponse?.Items
+    if (items == null) {
+      logger.error(`AMT_PublicPrivateKeyPair > PullResponse.Items > NULL. Reason: ${messages.RESPONSE_NULL}`)
+      return null
+    }
+
+    logger.silly(`testMJD: AMT_PublicPrivateKeyPair ${JSON.stringify(items, null, '\t')}`)    
+    if ('AMT_PublicPrivateKeyPair' in items) {
+      if (Array.isArray(items.AMT_PublicPrivateKeyPair)) {
+        logger.silly(`AMT_PublicPrivateKeyPair ${messages.COMPLETE}`)
+        return items.AMT_PublicPrivateKeyPair as AMT_PublicPrivateKeyPair[] //as AMT.Models.P[]// Class AMT_PublicKeyCertificate[]
+      } else {
+        return [items.AMT_PublicPrivateKeyPair as AMT_PublicPrivateKeyPair] // Class AMT_PublicKeyCertificate[]
+      }
+    }
+    
+    logger.error(`AMT_PublicPrivateKeyPair > AMT_PublicPrivateKeyPair is missing in the response. Reason: ${messages.RESPONSE_NULL}`)    
+    return null
+  }
+
+  async getDeviceTLSCredentialContext(): Promise<CIM.Models.CredentialContext[]> {    
+    logger.silly(`AMT_TLSCredentialContext}`)
+    const xmlRequestBody = this.amt.TLSCredentialContext.Enumerate()
+    const result = await this.ciraHandler.Enumerate(this.ciraSocket, xmlRequestBody)
+    if (result == null) {
+      logger.error(`AMT_TLSCredentialContext > Enumerate > NULL. Reason: ${messages.ENUMERATION_RESPONSE_NULL}`)
+      return null
+    }
+
+    const enumContext: string = result?.Envelope?.Body?.EnumerateResponse?.EnumerationContext
+    if (enumContext == null) {
+      logger.error(`AMT_TLSCredentialContext > EnumeratioContext > NULL. Reason: ${messages.ENUMERATION_RESPONSE_NULL}`)
+      return null
+    }
+    const pullResponse = await this.ciraHandler.Pull<CIM.Models.CredentialContext>(
+      this.ciraSocket,
+      this.amt.TLSCredentialContext.Pull(enumContext)
+    )
+
+    const items = pullResponse?.Envelope?.Body?.PullResponse?.Items
+    if (items == null) {
+      logger.error(`AMT_TLSCredentialContext > PullResponse.Items > NULL. Reason: ${messages.RESPONSE_NULL}`)
+      return null
+    }
+    
+    if ('AMT_TLSCredentialContext' in items) {
+      if (Array.isArray(items.AMT_TLSCredentialContext)) {
+        logger.silly(`AMT_TLSCredentialContext ${messages.COMPLETE}`)
+        return items.AMT_TLSCredentialContext as CIM.Models.CredentialContext[] 
+      } else {
+        return [items.AMT_TLSCredentialContext as CIM.Models.CredentialContext]
+      }
+    }
+    
+    logger.error(`AMT.Models.TLSCredentialContext > AMT.Models.TLSCredentialContext is missing in the response. Reason: ${messages.RESPONSE_NULL}`)    
+    return null
+  }
+
+  async getDeviceIEEE8021xCredentialContext(): Promise<CIM.Models.CredentialContext[]> {        
+    logger.silly(`IPS_IEEE8021xCredentialContext}`)
+    const xmlRequestBody = this.ips.IEEE8021xCredentialContext.Enumerate()
+    const result = await this.ciraHandler.Enumerate(this.ciraSocket, xmlRequestBody)
+    if (result == null) {
+      logger.error(`IPS_IEEE8021xCredentialContext > Enumerate > NULL. Reason: ${messages.ENUMERATION_RESPONSE_NULL}`)
+      return null
+    }
+
+    const enumContext: string = result?.Envelope?.Body?.EnumerateResponse?.EnumerationContext
+    if (enumContext == null) {
+      logger.error(`IPS_IEEE8021xCredentialContext > EnumeratioContext > NULL. Reason: ${messages.ENUMERATION_RESPONSE_NULL}`)
+      return null
+    }
+    const pullResponse = await this.ciraHandler.Pull<CIM.Models.CredentialContext>(
+      this.ciraSocket,
+      this.ips.IEEE8021xCredentialContext.Pull(enumContext)
+    )
+
+    const items = pullResponse?.Envelope?.Body?.PullResponse?.Items
+    if (items == null ||
+      (typeof items === 'string' && (items as string).trim().length === 0)
+    ) {
+      logger.error(`IPS_IEEE8021xCredentialContext > PullResponse.Items > NULL. Reason: ${messages.RESPONSE_NULL}`)
+      return null
+    }
+    
+    if ('IPS_IEEE8021xCredentialContext' in items) {
+      if (Array.isArray(items.IPS_IEEE8021xCredentialContext)) {
+        logger.silly(`IPS_IEEE8021xCredentialContext ${messages.COMPLETE}`)
+        return items.IPS_IEEE8021xCredentialContext as CIM.Models.CredentialContext[] 
+      } else {
+        return [items.IPS_IEEE8021xCredentialContext as CIM.Models.CredentialContext]
+      }
+    }
+    
+    logger.error(`IPS_IEEE8021xCredentialContext > IPS_IEEE8021xCredentialContext is missing in the response. Reason: ${messages.RESPONSE_NULL}`)    
+    return null
+  }
+
+  async getDeviceCIMCredentialContext(): Promise<CIM.Models.CredentialContext[]> {        
+    logger.silly(`CIM_CredentialContext`)
+        
+    const xmlRequestBody = this.credentialContext.Enumerate();
+    const result = await this.ciraHandler.Enumerate(this.ciraSocket, xmlRequestBody);
+    if (result == null) {
+      logger.error(`CIM_CredentialContext > Enumerate > NULL. Reason: ${messages.ENUMERATION_RESPONSE_NULL}`)
+      return null
+    }
+    
+    const enContext: string = result?.Envelope?.Body?.EnumerateResponse?.EnumerationContext
+    if (enContext == null) {
+      logger.error(`CIM_CredentialContext > EnumeratioContext > NULL. Reason: ${messages.ENUMERATION_RESPONSE_NULL}`)
+      return null
+    }
+    
+    const puResponse = await this.ciraHandler.Pull<CIM.Models.CredentialContext>(
+      this.ciraSocket,
+      this.credentialContext.Pull(enContext)
+    )
+
+    const mitems = puResponse?.Envelope?.Body?.PullResponse?.Items
+    if (mitems == null ||
+      (typeof mitems === 'string' && (mitems as string).trim().length === 0)
+    ) {
+      logger.error(`CIM_CredentialContext > PullResponse.Items > NULL. Reason: ${messages.RESPONSE_NULL}`)
+      return null
+    }
+
+    let cimCredentialContext: CIM.Models.CredentialContext[] = [];
+
+    // AMT_TLSCredentialContext
+    if ('AMT_TLSCredentialContext' in mitems) 
+    {
+      if (Array.isArray(mitems.AMT_TLSCredentialContext)) {          
+        const tls= mitems.AMT_TLSCredentialContext as CIM.Models.CredentialContext[]
+        if (tls.length > 0) {
+          cimCredentialContext = cimCredentialContext.concat(tls)
+        }
+      } else {
+        const tls = [mitems.AMT_TLSCredentialContext as CIM.Models.CredentialContext]
+        if (tls.length > 0) {
+          cimCredentialContext = cimCredentialContext.concat(tls)
+        }
+      }
+    }
+
+    // IPS_8021xCredentialContext
+    if ('IPS_8021xCredentialContext' in mitems) 
+    {
+      if (Array.isArray(mitems.IPS_8021xCredentialContext)) {          
+        const tls= mitems.IPS_8021xCredentialContext as CIM.Models.CredentialContext[]
+        if (tls.length > 0) {
+          cimCredentialContext = cimCredentialContext.concat(tls)
+        }
+      } else {
+        const tls = [mitems.IPS_8021xCredentialContext as CIM.Models.CredentialContext]
+        if (tls.length > 0) {
+          cimCredentialContext = cimCredentialContext.concat(tls)
+        }
+      }
+    }
+
+    // AMT_EACCredentialContext
+    if ('AMT_EACCredentialContext' in mitems) 
+    {
+      if (Array.isArray(mitems.AMT_EACCredentialContext)) {          
+        const tls= mitems.AMT_EACCredentialContext as CIM.Models.CredentialContext[]
+        if (tls.length > 0) {
+          cimCredentialContext = cimCredentialContext.concat(tls)
+        }
+      } else {
+        const tls = [mitems.AMT_EACCredentialContext as CIM.Models.CredentialContext]
+        if (tls.length > 0) {
+          cimCredentialContext = cimCredentialContext.concat(tls)
+        }
+      }
+    }
+
+    // AMT_RemoteAccessCredentialContext
+    if ('AMT_RemoteAccessCredentialContext' in mitems) 
+    {
+      if (Array.isArray(mitems.AMT_RemoteAccessCredentialContext)) {          
+        const tls= mitems.AMT_RemoteAccessCredentialContext as CIM.Models.CredentialContext[]
+        if (tls.length > 0) {
+          cimCredentialContext = cimCredentialContext.concat(tls)
+        }
+      } else {
+        const tls = [mitems.AMT_RemoteAccessCredentialContext as CIM.Models.CredentialContext]
+        if (tls.length > 0) {
+          cimCredentialContext = cimCredentialContext.concat(tls)
+        }
+      }
+    }
+
+    // AMT_8021xCredentialContext
+    if ('AMT_8021xCredentialContext' in mitems) 
+    {
+      if (Array.isArray(mitems.AMT_8021xCredentialContext)) {          
+        const tls= mitems.AMT_8021xCredentialContext as CIM.Models.CredentialContext[]
+        if (tls.length > 0) {
+          cimCredentialContext = cimCredentialContext.concat(tls)
+        }
+      } else {
+        const tls = [mitems.AMT_8021xCredentialContext as CIM.Models.CredentialContext]
+        if (tls.length > 0) {
+          cimCredentialContext = cimCredentialContext.concat(tls)
+        }
+      }
+    }
+
+    logger.silly(`CIM_CredentialContext ${messages.COMPLETE}`)
+    
+    return cimCredentialContext
+  }
+
+  async getDeviceIEEE8021xCredentialContextAMT(): Promise<CIM.Models.CredentialContext[]> {        
+    logger.silly(`AMT_IEEE8021xCredentialContext}`)
+    const xmlRequestBody = this.amt.IEEE8021xCredentialContext.Enumerate()
+    const result = await this.ciraHandler.Enumerate(this.ciraSocket, xmlRequestBody)
+    if (result == null) {
+      logger.error(`AMT_IEEE8021xCredentialContext > Enumerate > NULL. Reason: ${messages.ENUMERATION_RESPONSE_NULL}`)
+      return null
+    }
+
+    const enumContext: string = result?.Envelope?.Body?.EnumerateResponse?.EnumerationContext
+    if (enumContext == null) {
+      logger.error(`AMT_IEEE8021xCredentialContext > EnumeratioContext > NULL. Reason: ${messages.ENUMERATION_RESPONSE_NULL}`)
+      return null
+    }
+    const pullResponse = await this.ciraHandler.Pull<CIM.Models.CredentialContext>(
+      this.ciraSocket,
+      this.amt.IEEE8021xCredentialContext.Pull(enumContext)
+    )
+
+    const items = pullResponse?.Envelope?.Body?.PullResponse?.Items
+    if (items == null ||
+      (typeof items === 'string' && (items as string).trim().length === 0)
+    ) {
+      logger.error(`AMT_IEEE8021xCredentialContext > PullResponse.Items > NULL. Reason: ${messages.RESPONSE_NULL}`)
+      return null
+    }
+
+    if ('AMT_IEEE8021xCredentialContext' in items) {
+      logger.silly(`AMT_IEEE8021xCredentialContext ${messages.COMPLETE}`)
+
+      if (Array.isArray(items.AMT_IEEE8021xCredentialContext)) {
+        return items.AMT_IEEE8021xCredentialContext as CIM.Models.CredentialContext[] 
+      } else {
+        return [items.AMT_IEEE8021xCredentialContext as CIM.Models.CredentialContext]
+      }
+    }
+
+    logger.error(`AMT_IEEE8021xCredentialContext > AMT_IEEE8021xCredentialContext is missing in the response. Reason: ${messages.RESPONSE_NULL}`)
+    return null
+  }
+
+  async getDeviceConcreteDependency(): Promise<CIM_ConcreteDependency[]> {
+    logger.silly(`CIM_ConcreteDependency`)
+        
+    const xmlRequestBody = this.concreteDependency.Enumerate();
+    const result = await this.ciraHandler.Enumerate(this.ciraSocket, xmlRequestBody);
+    if (result == null) {
+      logger.error(`CIM_ConcreteDependency > Enumerate > NULL. Reason: ${messages.ENUMERATION_RESPONSE_NULL}`)
+      return null
+    }
+    
+    const enContext: string = result?.Envelope?.Body?.EnumerateResponse?.EnumerationContext
+    if (enContext == null) {
+      logger.error(`CIM_ConcreteDependency > EnumerationContext > NULL. Reason: ${messages.ENUMERATION_RESPONSE_NULL}`)
+      return null
+    }
+    
+    const puResponse = await this.ciraHandler.Pull<CIM_ConcreteDependency>(
+      this.ciraSocket,
+      this.concreteDependency.Pull(enContext)
+    )
+
+    const mitems = puResponse?.Envelope?.Body?.PullResponse?.Items
+    if (mitems == null ||
+      (typeof mitems === 'string' && (mitems as string).trim().length === 0)
+    ) {
+      logger.error(`CIM_ConcreteDependency > PullResponse.Items > NULL. Reason: ${messages.RESPONSE_NULL}`)
+      return null
+    }
+    
+    logger.silly(`testMJD: CIM_ConcreteDependency ${JSON.stringify(mitems, null, '\t')}`)
+
+    if ('CIM_ConcreteDependency' in mitems) 
+    {
+      logger.silly(`AMT_IEEE8021xCredentialContext ${messages.COMPLETE}`)
+      if (Array.isArray(mitems.CIM_ConcreteDependency)) {          
+        return mitems.CIM_ConcreteDependency as CIM_ConcreteDependency[]
+      } else {
+        return [mitems.CIM_ConcreteDependency as CIM_ConcreteDependency]
+      }
+    }
+
+    logger.error(`CIM_ConcreteDependency > EnumerationContext > NULL. Reason: ${messages.ENUMERATION_RESPONSE_NULL}`)
+
+    return null
+  }
+
+  async getDeviceCertificates(): Promise<Certificates> {
+    logger.silly(`getDeviceCertificates ${messages.REQUEST}`)
+    
+    const mycertificates: Certificates = {
+      ConcreteDependencyResponse: await this.getDeviceConcreteDependency(), 
+      PublicKeyCertificateResponse: await this.getDevicePublicKeyCertificates(), 
+      PublicPrivateKeyPairResponse: await this.getDevicePublicPrivateKeyPair(),
+      CIMCredentialContextResponse: await this.getDeviceCIMCredentialContext() 
+    };
+
+    return mycertificates
+  }
+
 }
