@@ -441,4 +441,101 @@ describe('Device Action Tests', () => {
       expect(result).toEqual({ Body: { ReturnValue: 0 } })
     })
   })
+
+  describe('addCertificate', () => {
+    // getCIMCredentialContext
+    it('should return null if getCIMCredentialContext returns null', async () => {
+      enumerateSpy.mockResolvedValueOnce(null)
+      const result = await device.getCIMCredentialContext()
+      expect(result).toBeNull()
+    })
+    it('should return CIMCredentialContextResponse', async () => {
+      enumerateSpy.mockResolvedValueOnce(enumerateResponse)
+      pullSpy.mockResolvedValueOnce({ Envelope: { Body: { PullResponse: { Items: [] } } } })
+      const result = await device.getCIMCredentialContext()
+      expect(result).toEqual([])
+    })
+    // getPublicPrivateKeyPair
+    it('should return null if getPublicPrivateKeyPair returns null', async () => {
+      enumerateSpy.mockResolvedValueOnce(null)
+      const result = await device.getPublicPrivateKeyPair()
+      expect(result).toBeNull()
+    })
+    it('should return PublicPrivateKeyPairResponse', async () => {
+      enumerateSpy.mockResolvedValueOnce(enumerateResponse)
+      pullSpy.mockResolvedValueOnce({ Envelope: { Body: { PullResponse: { Items: [] } } } })
+      const result = await device.getPublicPrivateKeyPair()
+      expect(result).toEqual([])
+    })
+    // getConcreteDependency
+    it('should return null if getConcreteDependency returns null', async () => {
+      enumerateSpy.mockResolvedValueOnce(null)
+      const result = await device.getConcreteDependency()
+      expect(result).toBeNull()
+    })
+    it('should return ConcreteDependencyResponse', async () => {
+      enumerateSpy.mockResolvedValueOnce(enumerateResponse)
+      pullSpy.mockResolvedValueOnce({ Envelope: { Body: { PullResponse: { Items: [] } } } })
+      const result = await device.getConcreteDependency()
+      expect(result).toEqual([])
+    })
+    // getpublicKeyCertificates
+    it('should return null if getpublicKeyCertificates returns null', async () => {
+      enumerateSpy.mockResolvedValueOnce(null)
+      const result = await device.getpublicKeyCertificates()
+      expect(result).toBeNull()
+    })
+    it('should return PublicKeyCertificateResponse', async () => {
+      enumerateSpy.mockResolvedValueOnce(enumerateResponse)
+      pullSpy.mockResolvedValueOnce({ Envelope: { Body: { PullResponse: { Items: [] } } } })
+      const result = await device.getpublicKeyCertificates()
+      expect(result).toEqual([])
+    })
+  })
+
+  describe('addCertificate', () => {
+    it('should call AddTrustedRootCertificate for trusted certs', async () => {
+      sendSpy.mockResolvedValue({
+        Envelope: {
+          Body: {
+            AddTrustedRootCertificate_OUTPUT: {
+              CreatedCertificate: {
+                ReferenceParameters: {
+                  SelectorSet: { Selector: 'trusted-cert-handle' }
+                }
+              }
+            }
+          }
+        }
+      })
+
+      const result = await device.addCertificate('dummy-cert', true)
+      expect(result).toBe('trusted-cert-handle')
+    })
+
+    it('should call AddCertificate for untrusted certs', async () => {
+      sendSpy.mockResolvedValue({
+        Envelope: {
+          Body: {
+            AddCertificate_OUTPUT: {
+              CreatedCertificate: {
+                ReferenceParameters: {
+                  SelectorSet: { Selector: 'untrusted-cert-handle' }
+                }
+              }
+            }
+          }
+        }
+      })
+
+      const result = await device.addCertificate('dummy-cert', false)
+      expect(result).toBe('untrusted-cert-handle')
+    })
+
+    it('should return null and log error if response is null', async () => {
+      sendSpy.mockResolvedValue(null)
+      const result = await device.addCertificate('dummy-cert', false)
+      expect(result).toBeNull()
+    })
+  })
 })
