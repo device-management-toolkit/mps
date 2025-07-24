@@ -45,7 +45,6 @@ export class MqttProvider {
     MqttProvider.instance = this
   }
 
-  // eslint-disable-next-line @typescript-eslint/promise-function-async
   // Return type is any to get around the linter - Rule : no-floating-promises
   // Publish event is meant to be fire and forget
   static publishEvent(type: eventType, methods: string[], message: string, guid?: string): any {

@@ -13,9 +13,7 @@ import { fileURLToPath } from 'node:url'
 
 const web = (): webConfigType => {
   try {
-    // eslint-disable-next-line @typescript-eslint/naming-convention
     const __filename = fileURLToPath(import.meta.url)
-    // eslint-disable-next-line @typescript-eslint/naming-convention
     const __dirname = dirname(__filename)
     const webTlsConfigPath = join(__dirname, '../../private/webtlsconfig.json')
     let webConfig: webConfigType
@@ -97,9 +95,7 @@ const web = (): webConfigType => {
 
 const mps = (): mpsConfigType => {
   try {
-    // eslint-disable-next-line @typescript-eslint/naming-convention
     const __filename = fileURLToPath(import.meta.url)
-    // eslint-disable-next-line @typescript-eslint/naming-convention
     const __dirname = dirname(__filename)
     const mpsTlsConfigPath = join(__dirname, '../../private/mpstlsconfig.json')
 

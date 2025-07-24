@@ -41,9 +41,7 @@ export class WebServer {
   __dirname: string
   constructor(secrets: ISecretManagerService, certs: certificatesType) {
     try {
-      // eslint-disable-next-line @typescript-eslint/naming-convention
       this.__filename = fileURLToPath(import.meta.url)
-      // eslint-disable-next-line @typescript-eslint/naming-convention
       this.__dirname = path.dirname(this.__filename)
       this.secrets = secrets
       this.certs = certs

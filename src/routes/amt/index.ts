@@ -30,6 +30,9 @@ import { request } from './userConsent/request.js'
 import { send } from './userConsent/send.js'
 import { validator as userConsentValidator } from './userConsent/validator.js'
 import { deactivate } from './deactivate.js'
+import { getAMTCertificates } from './certificates/get.js'
+import { addAMTCertificate } from './certificates/add.js'
+import { certValidator } from './certificates/validator.js'
 
 const amtRouter: Router = Router()
 
@@ -52,5 +55,8 @@ amtRouter.post('/userConsentCode/:guid', userConsentValidator(), validateMiddlew
 amtRouter.get('/alarmOccurrences/:guid', ciraMiddleware, getAlarmOccurrences)
 amtRouter.post('/alarmOccurrences/:guid', validateMiddleware, ciraMiddleware, setAlarmOccurrence)
 amtRouter.delete('/alarmOccurrences/:guid', validateMiddleware, ciraMiddleware, deleteAlarmOccurrence)
+
+amtRouter.get('/certificates/:guid', validateMiddleware, ciraMiddleware, getAMTCertificates)
+amtRouter.post('/certificates/:guid', certValidator(), validateMiddleware, ciraMiddleware, addAMTCertificate)
 
 export default amtRouter
