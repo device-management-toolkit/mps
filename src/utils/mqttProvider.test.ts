@@ -8,7 +8,7 @@ import { Environment } from './Environment.js'
 import { config } from '../test/helper/config.js'
 import { jest } from '@jest/globals'
 import { spyOn } from 'jest-mock'
-// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+
 jest.unstable_mockModule('mqtt', () => ({ ...(jest.requireActual('mqtt') as object) }))
 describe('MQTT Turned ON Tests', () => {
   beforeEach(() => {

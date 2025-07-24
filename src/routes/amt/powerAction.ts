@@ -135,7 +135,6 @@ async function handleOSPowerSavingStateChange(req: Request, res: Response, actio
   const returnValue = await changeOSPowerSavingState(req, targetState)
 
   if (returnValue === 0) {
-    
     sendOSPowerResponse(res, 0, OSPowerSavingStateStatusCodesToString(0))
   } else {
     logger.error(messages.OS_POWER_SAVING_STATE_CHANGE_FAILED)

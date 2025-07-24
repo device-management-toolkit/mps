@@ -64,7 +64,6 @@ export class WsRedirect {
   }
 
   async handleMessage(msg: WebSocket.MessageEvent): Promise<void> {
-    // eslint-disable-next-line @typescript-eslint/no-base-to-string
     let msgStr = msg.data.toString('binary')
 
     if (this.interceptor) {

@@ -6,7 +6,7 @@
 import { AMT, CIM, IPS, type Common } from '@device-management-toolkit/wsman-messages'
 import { type Selector } from '@device-management-toolkit/wsman-messages/WSMan.js'
 import { logger, messages } from '../logging/index.js'
-import { type CIRASocket } from '../models/models.js'
+import { Certificates, type CIRASocket } from '../models/models.js'
 import { type CIRAHandler } from './CIRAHandler.js'
 
 export class DeviceAction {
@@ -446,5 +446,121 @@ export class DeviceAction {
     )
     logger.silly(`requestOSPowerSavingStateChange ${messages.COMPLETE}`)
     return result.Envelope
+  }
+
+  async getConcreteDependency(): Promise<any> {
+    let xmlRequestBody = await this.cim.ConcreteDependency.Enumerate()
+    const concreteDepEnumResp = await this.ciraHandler.Enumerate(this.ciraSocket, xmlRequestBody)
+    if (concreteDepEnumResp == null) {
+      logger.error(`getCertificates failed. Reason: ${messages.ENUMERATION_RESPONSE_NULL}`)
+      return null
+    }
+
+    const concreteDepEnumContext = concreteDepEnumResp.Envelope.Body.EnumerateResponse.EnumerationContext
+    xmlRequestBody = await this.cim.ConcreteDependency.Pull(concreteDepEnumContext)
+    const concreteDepPullResp = await this.ciraHandler.Pull(this.ciraSocket, xmlRequestBody)
+    if (concreteDepPullResp == null) {
+      return null
+    }
+    return concreteDepPullResp.Envelope.Body.PullResponse.Items ?? null
+  }
+
+  async getpublicKeyCertificates(): Promise<any> {
+    let xmlRequestBody = await this.amt.PublicKeyCertificate.Enumerate()
+    const pubKeyCertEnumResp = await this.ciraHandler.Enumerate(this.ciraSocket, xmlRequestBody)
+    if (pubKeyCertEnumResp == null) {
+      logger.error(`getCertificates failed. Reason: ${messages.ENUMERATION_RESPONSE_NULL}`)
+      return null
+    }
+
+    const pubKeyCertEnumContext = pubKeyCertEnumResp.Envelope.Body.EnumerateResponse.EnumerationContext
+    xmlRequestBody = await this.amt.PublicKeyCertificate.Pull(pubKeyCertEnumContext)
+    const pubKeyCertResponse = await this.ciraHandler.Pull<AMT.Models.PublicKeyCertificate>(
+      this.ciraSocket,
+      xmlRequestBody
+    )
+    if (pubKeyCertResponse == null) {
+      return null
+    }
+
+    return pubKeyCertResponse.Envelope.Body.PullResponse.Items ?? null
+  }
+
+  async getPublicPrivateKeyPair(): Promise<any> {
+    let xmlRequestBody = await this.amt.PublicPrivateKeyPair.Enumerate()
+    const pubPrivKeyPairEnumResp = await this.ciraHandler.Enumerate(this.ciraSocket, xmlRequestBody)
+    if (pubPrivKeyPairEnumResp == null) {
+      logger.error(`getCertificates failed. Reason: ${messages.ENUMERATION_RESPONSE_NULL}`)
+      return null
+    }
+
+    const pubPrivKeyPairEnumContext = pubPrivKeyPairEnumResp.Envelope.Body.EnumerateResponse.EnumerationContext
+    xmlRequestBody = await this.amt.PublicPrivateKeyPair.Pull(pubPrivKeyPairEnumContext)
+    const pubPrivKeyPairResponse = await this.ciraHandler.Pull(this.ciraSocket, xmlRequestBody)
+    if (pubPrivKeyPairResponse == null) {
+      return null
+    }
+
+    return pubPrivKeyPairResponse.Envelope.Body.PullResponse.Items ?? null
+  }
+
+  async getCIMCredentialContext(): Promise<any> {
+    let xmlRequestBody = await this.cim.CredentialContext.Enumerate()
+    const cimCredContextEnumResp = await this.ciraHandler.Enumerate(this.ciraSocket, xmlRequestBody)
+    if (cimCredContextEnumResp == null) {
+      logger.error(`getCertificates failed. Reason: ${messages.ENUMERATION_RESPONSE_NULL}`)
+      return null
+    }
+
+    const cimCredContextEnumContext = cimCredContextEnumResp.Envelope.Body.EnumerateResponse.EnumerationContext
+    xmlRequestBody = await this.cim.CredentialContext.Pull(cimCredContextEnumContext)
+    const cimCredContextResponse = await this.ciraHandler.Pull(this.ciraSocket, xmlRequestBody)
+    if (cimCredContextResponse == null) {
+      return null
+    }
+    return cimCredContextResponse.Envelope.Body.PullResponse.Items ?? null
+  }
+
+  async getCertificates(): Promise<Certificates> {
+    const concreteDependency = await this.getConcreteDependency()
+    const publicKeyCertificates = await this.getpublicKeyCertificates()
+    const pubPrivKeyPairResponse = await this.getPublicPrivateKeyPair()
+    const cimCredContextResponse = await this.getCIMCredentialContext()
+
+    return {
+      ConcreteDependencyResponse: concreteDependency,
+      PublicKeyCertificateResponse: publicKeyCertificates,
+      PublicPrivateKeyPairResponse: pubPrivKeyPairResponse,
+      CIMCredentialContextResponse: cimCredContextResponse
+    }
+  }
+
+  async addCertificate(cert: string, isTrusted: boolean): Promise<string> {
+    let result: any
+    let handle: string
+
+    if (isTrusted) {
+      const xmlRequestBody = this.amt.PublicKeyManagementService.AddTrustedRootCertificate({ CertificateBlob: cert })
+      result = await this.ciraHandler.Send(this.ciraSocket, xmlRequestBody)
+      if (result == null) {
+        logger.error(`addCertificate failed. Reason: ${messages.RESPONSE_NULL}`)
+        return null
+      }
+      handle =
+        result.Envelope.Body?.AddTrustedRootCertificate_OUTPUT?.CreatedCertificate?.ReferenceParameters?.SelectorSet
+          ?.Selector
+    } else {
+      const xmlRequestBody = this.amt.PublicKeyManagementService.AddCertificate({ CertificateBlob: cert })
+      result = await this.ciraHandler.Send(this.ciraSocket, xmlRequestBody)
+      if (result == null) {
+        logger.error(`addCertificate failed. Reason: ${messages.RESPONSE_NULL}`)
+        return null
+      }
+      handle =
+        result.Envelope.Body?.AddCertificate_OUTPUT?.CreatedCertificate?.ReferenceParameters?.SelectorSet?.Selector
+    }
+
+    logger.silly(`addCertificate ${messages.COMPLETE}`)
+    return handle
   }
 }

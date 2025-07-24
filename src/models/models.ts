@@ -129,3 +129,83 @@ export interface DeviceSecrets {
   MEBX_PASSWORD?: string
   MPS_PASSWORD?: string
 }
+
+export interface AMTCertificate {
+  ElementName: string;
+  InstanceID: string;
+  X509Certificate: string;
+  TrustedRootCertificate: boolean;
+  Issuer: string;
+  Subject: string;
+  ReadOnlyCertificate: boolean;
+  PublicKeyHandle: string;
+  AssociatedProfiles?: string[];
+}
+
+export interface AMTPublicKeyCertificateResponse {
+  AMT_PublicKeyCertificate?: AMTCertificate | AMTCertificate[];
+}
+
+export interface AMTPublicPrivateKeyPair {
+  ElementName: string;
+  InstanceID: string;
+  DERKey: string;
+  CertificateHandle?: string;
+}
+
+export interface AMTPublicPrivateKeyPairResponse {
+  AMT_PublicPrivateKeyPair?: AMTPublicPrivateKeyPair | AMTPublicPrivateKeyPair[];
+}
+
+
+export interface Certificates {
+  ConcreteDependencyResponse: any
+  PublicKeyCertificateResponse: AMTPublicKeyCertificateResponse
+  PublicPrivateKeyPairResponse: AMTPublicPrivateKeyPairResponse
+  CIMCredentialContextResponse: any
+}
+
+export interface SecuritySettings {
+  certificates: {
+    publicKeyCertificateItems: CertificateItem[]
+  }
+  publicKeys: {
+    publicPrivateKeyPairItems: PublicPrivateKeyPairItem[]
+  }
+  profileAssociation: ProfileAssociation[]
+}
+
+export interface CertificateItem {
+  elementName: string
+  instanceID: string
+  x509Certificate: string
+  trustedRootCertificate?: boolean
+  issuer: string
+  subject: string
+  readOnlyCertificate: boolean
+  publicKeyHandle?: string
+  associatedProfiles: string[]
+  displayName: string
+}
+
+export interface PublicPrivateKeyPairItem {
+  elementName: string
+  instanceID: string
+  derKey: string
+  certificateHandle?: string
+}
+export interface ProfileAssociation {
+  type: string
+  profileID: string
+  rootCertificate?: CertificateItem
+  clientCertificate?: CertificateItem
+  publicKey?: PublicPrivateKeyPairItem
+}
+export interface CertificatesDTO {
+  keyManagementItems: PublicPrivateKeyPairItem[];
+  publicKeyCertificateItems: CertificateItem[];
+}
+
+export interface KeyPairsDTO {
+  publicPrivateKeyPairItems: PublicPrivateKeyPairItem[];
+}

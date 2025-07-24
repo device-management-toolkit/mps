@@ -1,3 +1,10 @@
+# [2.18.0](https://github.com/device-management-toolkit/mps/compare/v2.17.0...v2.18.0) (2025-07-24)
+
+
+### Features
+
+* **api:** get and add amt certificates ([#2052](https://github.com/device-management-toolkit/mps/issues/2052)) ([fcb5e6e](https://github.com/device-management-toolkit/mps/commit/fcb5e6e735770c0cd3a76258a82656352cda9320))
+
 # [2.17.0](https://github.com/device-management-toolkit/mps/compare/v2.16.1...v2.17.0) (2025-05-01)
 
 
