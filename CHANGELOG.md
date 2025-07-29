@@ -1,3 +1,10 @@
+# [2.19.0](https://github.com/device-management-toolkit/mps/compare/v2.18.0...v2.19.0) (2025-07-29)
+
+
+### Features
+
+* **api:** add OCR to get and set of amt features ([#2064](https://github.com/device-management-toolkit/mps/issues/2064)) ([24c73ea](https://github.com/device-management-toolkit/mps/commit/24c73ea06138378de3c26200d155baef7b132655))
+
 # [2.18.0](https://github.com/device-management-toolkit/mps/compare/v2.17.0...v2.18.0) (2025-07-24)
 
 

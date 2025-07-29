@@ -10,6 +10,7 @@ import { MqttProvider } from '../../utils/MqttProvider.js'
 import { UserConsentOptions } from '../../utils/constants.js'
 import { type AMT, type IPS, Common } from '@device-management-toolkit/wsman-messages'
 import { type DeviceAction } from '../../amt/DeviceAction.js'
+import { processOCRData } from './getAMTFeatures.js'
 
 export async function setAMTFeatures(req: Request, res: Response): Promise<void> {
   try {
@@ -79,6 +80,16 @@ export async function setAMTFeatures(req: Request, res: Response): Promise<void>
       optResponse.OptInRequired = optInRequiredValue
       await setUserConsent(req.deviceAction, optServiceResponse, payload.guid as string)
     }
+
+    // Configure OCR settings
+    let requestedState = 0
+    if (payload.httpsBootSupported) {
+      requestedState = 32769
+    } else {
+      requestedState = 32768
+    }
+
+    await req.deviceAction.BootServiceStateChange(requestedState)
 
     MqttProvider.publishEvent('success', ['AMT_SetFeatures'], messages.AMT_FEATURES_SET_SUCCESS, guid)
     res.status(200).json({ status: messages.AMT_FEATURES_SET_SUCCESS }).end()

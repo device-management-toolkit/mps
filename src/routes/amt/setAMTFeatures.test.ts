@@ -22,6 +22,7 @@ describe('set amt features', () => {
   let setKvmRedirectionSapSpy: SpyInstance<any>
   let putRedirectionServiceSpy: SpyInstance<any>
   let putIpsOptInServiceSpy: SpyInstance<any>
+  let bootServiceStateChangeSpy: SpyInstance<any>
   let mqttSpy: SpyInstance<any>
 
   beforeEach(() => {
@@ -41,7 +42,8 @@ describe('set amt features', () => {
         userConsent: 'all',
         enableSOL: true,
         enableIDER: false,
-        enableKVM: true
+        enableKVM: true,
+        httpsBootSupported: false
       },
       deviceAction: device
     }
@@ -56,6 +58,7 @@ describe('set amt features', () => {
     setKvmRedirectionSapSpy = spyOn(device, 'setKvmRedirectionSap')
     putRedirectionServiceSpy = spyOn(device, 'putRedirectionService')
     putIpsOptInServiceSpy = spyOn(device, 'putIpsOptInService')
+    bootServiceStateChangeSpy = spyOn(device, 'BootServiceStateChange')
 
     mqttSpy = spyOn(MqttProvider, 'publishEvent')
 
@@ -73,7 +76,9 @@ describe('set amt features', () => {
     setKvmRedirectionSapSpy.mockResolvedValue({})
     putIpsOptInServiceSpy.mockResolvedValue({})
     putRedirectionServiceSpy.mockResolvedValue({})
+    bootServiceStateChangeSpy.mockResolvedValue({})
   })
+
   it('should set amt features - no change', async () => {
     await setAMTFeatures(req, resSpy)
     expect(resSpy.status).toHaveBeenCalledWith(200)
@@ -83,7 +88,9 @@ describe('set amt features', () => {
     expect(setRedirectionServiceSpy).not.toHaveBeenCalled()
     expect(setKvmRedirectionSapSpy).not.toHaveBeenCalled()
     expect(putRedirectionServiceSpy).not.toHaveBeenCalled()
+    expect(bootServiceStateChangeSpy).toHaveBeenCalledWith(32768)
   })
+
   it('should set amt features - change user consent from all to kvm', async () => {
     req.body.userConsent = 'kvm'
     await setAMTFeatures(req, resSpy)
@@ -94,7 +101,9 @@ describe('set amt features', () => {
     expect(setRedirectionServiceSpy).not.toHaveBeenCalled()
     expect(setKvmRedirectionSapSpy).not.toHaveBeenCalled()
     expect(putIpsOptInServiceSpy).toHaveBeenCalled()
+    expect(bootServiceStateChangeSpy).toHaveBeenCalledWith(32768)
   })
+
   it('should set amt features - disable KVM', async () => {
     req.body.enableKVM = false
 
@@ -106,7 +115,9 @@ describe('set amt features', () => {
     expect(setRedirectionServiceSpy).toHaveBeenCalledWith(32770)
     expect(setKvmRedirectionSapSpy).toHaveBeenCalledWith(AMT_REDIRECTION_SERVICE_ENABLE_STATE.Disabled)
     expect(putIpsOptInServiceSpy).not.toHaveBeenCalled()
+    expect(bootServiceStateChangeSpy).toHaveBeenCalledWith(32768)
   })
+
   it('should set amt features - disable SOL', async () => {
     req.body.enableSOL = false
 
@@ -118,7 +129,9 @@ describe('set amt features', () => {
     expect(setRedirectionServiceSpy).toHaveBeenCalledWith(32768)
     expect(setKvmRedirectionSapSpy).toHaveBeenCalledWith(AMT_REDIRECTION_SERVICE_ENABLE_STATE.Enabled)
     expect(putIpsOptInServiceSpy).not.toHaveBeenCalled()
+    expect(bootServiceStateChangeSpy).toHaveBeenCalledWith(32768)
   })
+
   it('should set amt features - enable IDER', async () => {
     req.body.enableIDER = true
 
@@ -130,7 +143,9 @@ describe('set amt features', () => {
     expect(setRedirectionServiceSpy).toHaveBeenCalledWith(32771)
     expect(setKvmRedirectionSapSpy).toHaveBeenCalledWith(AMT_REDIRECTION_SERVICE_ENABLE_STATE.Enabled)
     expect(putIpsOptInServiceSpy).not.toHaveBeenCalled()
+    expect(bootServiceStateChangeSpy).toHaveBeenCalledWith(32768)
   })
+
   it('should set amt features - disable IDER', async () => {
     redirectionSpy.mockResolvedValue({
       AMT_RedirectionService: { EnabledState: AMT_REDIRECTION_SERVICE_ENABLE_STATE.Other, ListenerEnabled: 'false' }
@@ -144,7 +159,9 @@ describe('set amt features', () => {
     expect(setRedirectionServiceSpy).toHaveBeenCalledWith(32770)
     expect(setKvmRedirectionSapSpy).toHaveBeenCalledWith(AMT_REDIRECTION_SERVICE_ENABLE_STATE.Enabled)
     expect(putIpsOptInServiceSpy).not.toHaveBeenCalled()
+    expect(bootServiceStateChangeSpy).toHaveBeenCalledWith(32768)
   })
+
   it('should set amt features - disable all', async () => {
     redirectionSpy.mockResolvedValue({
       AMT_RedirectionService: { EnabledState: AMT_REDIRECTION_SERVICE_ENABLE_STATE.Disabled, ListenerEnabled: 'false' }
@@ -162,7 +179,29 @@ describe('set amt features', () => {
     expect(setRedirectionServiceSpy).toHaveBeenCalledWith(32768)
     expect(setKvmRedirectionSapSpy).toHaveBeenCalledWith(AMT_REDIRECTION_SERVICE_ENABLE_STATE.Disabled)
     expect(putIpsOptInServiceSpy).not.toHaveBeenCalled()
+    expect(bootServiceStateChangeSpy).toHaveBeenCalledWith(32768)
   })
+
+  it('should set amt features - enable HTTPS boot support', async () => {
+    req.body.httpsBootSupported = true
+
+    await setAMTFeatures(req, resSpy)
+    expect(resSpy.status).toHaveBeenCalledWith(200)
+    expect(resSpy.json).toHaveBeenCalled()
+    expect(mqttSpy).toHaveBeenCalled()
+    expect(bootServiceStateChangeSpy).toHaveBeenCalledWith(32769)
+  })
+
+  it('should set amt features - disable HTTPS boot support', async () => {
+    req.body.httpsBootSupported = false
+
+    await setAMTFeatures(req, resSpy)
+    expect(resSpy.status).toHaveBeenCalledWith(200)
+    expect(resSpy.json).toHaveBeenCalled()
+    expect(mqttSpy).toHaveBeenCalled()
+    expect(bootServiceStateChangeSpy).toHaveBeenCalledWith(32768)
+  })
+
   it('should set amt features - and fail', async () => {
     redirectionSpy.mockRejectedValue({})
     await setAMTFeatures(req, resSpy)
