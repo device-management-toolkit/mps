@@ -19,11 +19,8 @@ describe('get amt features', () => {
   let redirectionSpy: SpyInstance<any>
   let optInServiceSpy: SpyInstance<any>
   let kvmRedirectionSpy: SpyInstance<any>
+  let ocrDataSpy: SpyInstance<any>
   let mqttSpy: SpyInstance<any>
-
-  // let processAmtRedirectionResponse
-  // let processKvmRedirectionResponse
-  // let processOptServiceResponse
 
   beforeEach(() => {
     const handler = new CIRAHandler(new HttpHandler(), 'admin', 'P@ssw0rd')
@@ -45,11 +42,8 @@ describe('get amt features', () => {
     redirectionSpy = spyOn(device, 'getRedirectionService')
     optInServiceSpy = spyOn(device, 'getIpsOptInService')
     kvmRedirectionSpy = spyOn(device, 'getKvmRedirectionSap')
+    ocrDataSpy = spyOn(device, 'getOCRData')
     mqttSpy = spyOn(MqttProvider, 'publishEvent')
-
-    // processAmtRedirectionResponse = spyOn(amtFeatures, 'processAmtRedirectionResponse')
-    // processKvmRedirectionResponse = spyOn(amtFeatures, 'processKvmRedirectionResponse')
-    // processOptServiceResponse = spyOn(amtFeatures, 'processOptServiceResponse')
   })
 
   it('should get feature', async () => {
@@ -92,13 +86,90 @@ describe('get amt features', () => {
       }
     })
 
-    // processAmtRedirectionResponse.mockReturnValueOnce({ redir: false, sol: false, ider: false })
-    // processKvmRedirectionResponse.mockReturnValueOnce(false)
-    // processOptServiceResponse.mockReturnValueOnce({ value: 4294967295, optInState: 0 })
+    ocrDataSpy.mockResolvedValue({
+      bootService: {
+        CIM_BootService: {
+          CreationClassName: 'CIM_BootService',
+          ElementName: 'Intel(r) AMT Boot Service',
+          EnabledState: 32769,
+          Name: 'Intel(r) AMT Boot Service',
+          OperationalStatus: 0,
+          RequestedState: 12,
+          SystemCreationClassName: 'CIM_ComputerSystem',
+          SystemName: 'Intel(r) AMT'
+        }
+      },
+      bootSourceSettings: {
+        Items: {
+          CIM_BootSourceSetting: [
+            {
+              ElementName: 'Intel(r) AMT: Boot Source',
+              FailThroughSupported: 2,
+              InstanceID: 'Intel(r) AMT: Force OCR UEFI HTTPS Boot',
+              StructuredBootString: 'CIM:Hard-Disk:1'
+            },
+            {
+              ElementName: 'Intel(r) AMT: Boot Source',
+              FailThroughSupported: 2,
+              InstanceID: 'Intel(r) AMT: Force OCR UEFI Boot Option',
+              StructuredBootString: 'CIM:Network:1'
+            }
+          ]
+        },
+        EndOfSequence: ''
+      },
+      capabilities: {
+        Body: {
+          AMT_BootCapabilities: {
+            ForceUEFIHTTPSBoot: true,
+            ForceWinREBoot: true,
+            ForceUEFILocalPBABoot: true,
+            ElementName: 'Intel(r) AMT: Boot Capabilities',
+            ForceCDorDVDBoot: true,
+            ForceDiagnosticBoot: false,
+            ForceHardDriveBoot: true,
+            ForceHardDriveSafeModeBoot: false,
+            ForcePXEBoot: true,
+            ForcedProgressEvents: true,
+            IDER: true,
+            InstanceID: 'Intel(r) AMT:BootCapabilities 0',
+            SOL: true
+          }
+        }
+      },
+      bootData: {
+        AMT_BootSettingData: {
+          UEFIHTTPSBootEnabled: true,
+          WinREBootEnabled: true,
+          UEFILocalPBABootEnabled: true,
+          ConfigurationDataReset: false,
+          ElementName: 'Intel(r) AMT Boot Configuration Settings',
+          EnforceSecureBoot: false,
+          IDERBootDevice: 0,
+          InstanceID: 'Intel(r) AMT:BootSettingData 0',
+          UseIDER: false,
+          UseSOL: false
+        }
+      }
+    })
+
     await getAMTFeatures(req, resSpy)
     expect(resSpy.status).toHaveBeenCalledWith(200)
-    expect(resSpy.json).toHaveBeenCalled()
-    expect(mqttSpy).toHaveBeenCalled()
+    expect(resSpy.json).toHaveBeenCalledWith({
+      userConsent: 'all',
+      redirection: false,
+      KVM: false,
+      SOL: true,
+      IDER: true,
+      optInState: 0,
+      kvmAvailable: true,
+      ocr: true,
+      httpsBootSupported: true,
+      winREBootSupported: true,
+      localPBABootSupported: true,
+      remoteErase: false
+    })
+    expect(mqttSpy).toHaveBeenCalledTimes(2)
   })
 
   it('should handle error when get feature', async () => {
@@ -106,6 +177,93 @@ describe('get amt features', () => {
     await getAMTFeatures(req, resSpy)
     expect(resSpy.status).toHaveBeenCalledWith(500)
     expect(resSpy.json).toHaveBeenCalledWith(ErrorResponse(500, messages.AMT_FEATURES_EXCEPTION))
-    expect(mqttSpy).toHaveBeenCalled()
+    expect(mqttSpy).toHaveBeenCalledWith('fail', ['AMT_GetFeatures'], messages.INTERNAL_SERVICE_ERROR)
+  })
+
+  it('should handle OCR data when boot service is disabled', async () => {
+    redirectionSpy.mockResolvedValue({
+      AMT_RedirectionService: {
+        CreationClassName: 'AMT_RedirectionService',
+        ElementName: 'Intel(r) AMT Redirection Service',
+        EnabledState: 32771,
+        ListenerEnabled: true,
+        Name: 'Intel(r) AMT Redirection Service',
+        SystemCreationClassName: 'CIM_ComputerSystem',
+        SystemName: 'Intel(r) AMT'
+      }
+    })
+
+    optInServiceSpy.mockResolvedValue({
+      IPS_OptInService: {
+        CanModifyOptInPolicy: 0,
+        CreationClassName: 'IPS_OptInService',
+        ElementName: 'Intel(r) AMT OptIn Service',
+        Name: 'Intel(r) AMT OptIn Service',
+        OptInCodeTimeout: 120,
+        OptInDisplayTimeout: 300,
+        OptInRequired: 0,
+        OptInState: 1,
+        SystemCreationClassName: 'CIM_ComputerSystem',
+        SystemName: 'Intel(r) AMT'
+      }
+    })
+
+    kvmRedirectionSpy.mockResolvedValue({
+      CIM_KVMRedirectionSAP: null
+    })
+
+    ocrDataSpy.mockResolvedValue({
+      bootService: {
+        CIM_BootService: {
+          CreationClassName: 'CIM_BootService',
+          ElementName: 'Intel(r) AMT Boot Service',
+          EnabledState: 2, // Disabled
+          Name: 'Intel(r) AMT Boot Service',
+          OperationalStatus: 0,
+          RequestedState: 12,
+          SystemCreationClassName: 'CIM_ComputerSystem',
+          SystemName: 'Intel(r) AMT'
+        }
+      },
+      bootSourceSettings: {
+        Items: {
+          CIM_BootSourceSetting: []
+        },
+        EndOfSequence: ''
+      },
+      capabilities: {
+        Body: {
+          AMT_BootCapabilities: {
+            ForceUEFIHTTPSBoot: false,
+            ForceWinREBoot: false,
+            ForceUEFILocalPBABoot: false
+          }
+        }
+      },
+      bootData: {
+        AMT_BootSettingData: {
+          UEFIHTTPSBootEnabled: false,
+          WinREBootEnabled: false,
+          UEFILocalPBABootEnabled: false
+        }
+      }
+    })
+
+    await getAMTFeatures(req, resSpy)
+    expect(resSpy.status).toHaveBeenCalledWith(200)
+    expect(resSpy.json).toHaveBeenCalledWith({
+      userConsent: 'none',
+      redirection: true,
+      KVM: false,
+      SOL: true,
+      IDER: true,
+      optInState: 1,
+      kvmAvailable: false,
+      ocr: false,
+      httpsBootSupported: false,
+      winREBootSupported: false,
+      localPBABootSupported: false,
+      remoteErase: false
+    })
   })
 })

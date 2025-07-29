@@ -131,32 +131,31 @@ export interface DeviceSecrets {
 }
 
 export interface AMTCertificate {
-  ElementName: string;
-  InstanceID: string;
-  X509Certificate: string;
-  TrustedRootCertificate: boolean;
-  Issuer: string;
-  Subject: string;
-  ReadOnlyCertificate: boolean;
-  PublicKeyHandle: string;
-  AssociatedProfiles?: string[];
+  ElementName: string
+  InstanceID: string
+  X509Certificate: string
+  TrustedRootCertificate: boolean
+  Issuer: string
+  Subject: string
+  ReadOnlyCertificate: boolean
+  PublicKeyHandle: string
+  AssociatedProfiles?: string[]
 }
 
 export interface AMTPublicKeyCertificateResponse {
-  AMT_PublicKeyCertificate?: AMTCertificate | AMTCertificate[];
+  AMT_PublicKeyCertificate?: AMTCertificate | AMTCertificate[]
 }
 
 export interface AMTPublicPrivateKeyPair {
-  ElementName: string;
-  InstanceID: string;
-  DERKey: string;
-  CertificateHandle?: string;
+  ElementName: string
+  InstanceID: string
+  DERKey: string
+  CertificateHandle?: string
 }
 
 export interface AMTPublicPrivateKeyPairResponse {
-  AMT_PublicPrivateKeyPair?: AMTPublicPrivateKeyPair | AMTPublicPrivateKeyPair[];
+  AMT_PublicPrivateKeyPair?: AMTPublicPrivateKeyPair | AMTPublicPrivateKeyPair[]
 }
-
 
 export interface Certificates {
   ConcreteDependencyResponse: any
@@ -202,10 +201,28 @@ export interface ProfileAssociation {
   publicKey?: PublicPrivateKeyPairItem
 }
 export interface CertificatesDTO {
-  keyManagementItems: PublicPrivateKeyPairItem[];
-  publicKeyCertificateItems: CertificateItem[];
+  keyManagementItems: PublicPrivateKeyPairItem[]
+  publicKeyCertificateItems: CertificateItem[]
 }
 
 export interface KeyPairsDTO {
-  publicPrivateKeyPairItems: PublicPrivateKeyPairItem[];
+  publicPrivateKeyPairItems: PublicPrivateKeyPairItem[]
+}
+
+export interface OCRData {
+  bootService: any
+  bootSourceSettings: any
+  capabilities: any
+  bootData: any
+}
+export interface BootSettingResult {
+  isHTTPSBootExists: boolean
+  isPBAWinREExists: boolean
+}
+
+export interface OCRProcessResult {
+  WinREBootSupported: boolean
+  LocalPBABootSupported: boolean
+  HTTPSBootSupported: boolean
+  OCR: boolean
 }

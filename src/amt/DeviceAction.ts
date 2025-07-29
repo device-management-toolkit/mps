@@ -6,7 +6,7 @@
 import { AMT, CIM, IPS, type Common } from '@device-management-toolkit/wsman-messages'
 import { type Selector } from '@device-management-toolkit/wsman-messages/WSMan.js'
 import { logger, messages } from '../logging/index.js'
-import { Certificates, type CIRASocket } from '../models/models.js'
+import { Certificates, OCRData, type CIRASocket } from '../models/models.js'
 import { type CIRAHandler } from './CIRAHandler.js'
 
 export class DeviceAction {
@@ -562,5 +562,67 @@ export class DeviceAction {
 
     logger.silly(`addCertificate ${messages.COMPLETE}`)
     return handle
+  }
+
+  async getBootService(): Promise<any> {
+    const xmlRequestBody = this.cim.BootService.Get()
+    const result = await this.ciraHandler.Get(this.ciraSocket, xmlRequestBody)
+    if (result == null) {
+      logger.error(`getBootService failed. Reason: ${messages.RESPONSE_NULL}`)
+      return null
+    }
+    return result.Envelope.Body ?? null
+  }
+
+  async getBootSourceSetting(): Promise<any> {
+    let xmlRequestBody = this.cim.BootSourceSetting.Enumerate()
+    const enumResponse = await this.ciraHandler.Enumerate(this.ciraSocket, xmlRequestBody)
+    if (enumResponse == null) {
+      logger.error(`GetBootSourceSetting failed. Reason: ${messages.RESPONSE_NULL}`)
+      return null
+    }
+    const enumContext = enumResponse.Envelope.Body.EnumerateResponse.EnumerationContext
+    xmlRequestBody = this.cim.BootSourceSetting.Pull(enumContext)
+    const result = await this.ciraHandler.Pull(this.ciraSocket, xmlRequestBody)
+    if (result == null) {
+      logger.error(`GetBootSourceSetting failed. Reason: ${messages.RESPONSE_NULL}`)
+      return null
+    }
+    return result.Envelope.Body.PullResponse
+  }
+
+  async getBootSettingData(): Promise<any> {
+    const xmlRequestBody = this.amt.BootSettingData.Get()
+    const result = await this.ciraHandler.Get(this.ciraSocket, xmlRequestBody)
+    if (result == null) {
+      logger.error(`getBootSettingData failed. Reason: ${messages.RESPONSE_NULL}`)
+      return null
+    }
+    return result.Envelope.Body ?? null
+  }
+
+  async getOCRData(): Promise<OCRData> {
+    const bootService = await this.getBootService()
+    const bootSourceSettings = await this.getBootSourceSetting()
+    const capabilities = await this.getPowerCapabilities()
+    const bootData = await this.getBootSettingData()
+
+    return {
+      bootService,
+      bootSourceSettings,
+      capabilities,
+      bootData
+    }
+  }
+
+  async BootServiceStateChange(requestedState: number): Promise<void> {
+    logger.silly(`BootServiceStateChange ${messages.REQUEST}`)
+    const xmlRequestBody = this.cim.BootService.RequestStateChange(
+      requestedState as CIM.Types.BootService.RequestedState
+    )
+    const result = await this.ciraHandler.Send(this.ciraSocket, xmlRequestBody)
+    if (result == null || result.Envelope?.Body?.RequestStateChange_OUTPUT?.ReturnValue != 0) {
+      logger.error(`BootServiceStateChange failed. Reason: ${messages.RESPONSE_NULL}`)
+    }
   }
 }

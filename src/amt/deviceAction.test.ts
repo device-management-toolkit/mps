@@ -538,4 +538,30 @@ describe('Device Action Tests', () => {
       expect(result).toBeNull()
     })
   })
+
+  describe('BootServiceStateChange', () => {
+    it('should call BootServiceStateChange with requested state', async () => {
+      sendSpy.mockResolvedValue({
+        Envelope: {
+          Body: {
+            RequestStateChange_OUTPUT: { ReturnValue: 0 }
+          }
+        }
+      })
+      const result = await device.BootServiceStateChange(1)
+      expect(result).toBeUndefined()
+    })
+
+    it('should log error if RequestStateChange fails', async () => {
+      sendSpy.mockResolvedValue({
+        Envelope: {
+          Body: {
+            RequestStateChange_OUTPUT: { ReturnValue: 1 }
+          }
+        }
+      })
+      const result = await device.BootServiceStateChange(1)
+      expect(result).toBeUndefined()
+    })
+  })
 })
