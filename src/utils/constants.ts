@@ -66,6 +66,8 @@ export const DMTFPowerExtendedStates = [
   100,
   101,
   104,
+  105,
+  106,
   200,
   201,
   202,
