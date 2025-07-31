@@ -10,7 +10,6 @@ import { MqttProvider } from '../../utils/MqttProvider.js'
 import { UserConsentOptions } from '../../utils/constants.js'
 import { type AMT, type IPS, Common } from '@device-management-toolkit/wsman-messages'
 import { type DeviceAction } from '../../amt/DeviceAction.js'
-import { processOCRData } from './getAMTFeatures.js'
 
 export async function setAMTFeatures(req: Request, res: Response): Promise<void> {
   try {

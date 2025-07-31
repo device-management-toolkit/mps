@@ -8,7 +8,14 @@ import { CIRAHandler } from '../../amt/CIRAHandler.js'
 import { DeviceAction } from '../../amt/DeviceAction.js'
 import { HttpHandler } from '../../amt/HttpHandler.js'
 import { createSpyObj } from '../../test/helper/jest.js'
-import { bootOptions, determinePowerAction, setBootData, setBootSource } from './bootOptions.js'
+import {
+  bootOptions,
+  determinePowerAction,
+  setBootData,
+  getBootSource,
+  determineBootDevice,
+  validateHTTPBootParams
+} from './bootOptions.js'
 import { type SpyInstance, spyOn } from 'jest-mock'
 
 describe('Boot Options', () => {
@@ -90,109 +97,182 @@ describe('Boot Options', () => {
     await bootOptions(req, resSpy)
     expect(getBootOptionsSpy).toHaveBeenCalled()
     expect(setBootConfigurationSpy).toHaveBeenCalled()
-    expect(forceBootModeSpy).not.toHaveBeenCalledWith('')
-    expect(changeBootOrderSpy).not.toHaveBeenCalledWith(null)
+    expect(forceBootModeSpy).toHaveBeenCalledWith(1)
+    expect(changeBootOrderSpy).toHaveBeenCalledWith('')
     expect(sendPowerActionSpy).toHaveBeenCalledWith(2)
   })
-  it('Should set boot data when Power up to BIOS', () => {
+
+  // Tests for setBootData function
+  it('Should set boot data when Power up to BIOS (action 100)', () => {
     const bootSettingsToSend = setBootData(100, false, bootSettingData)
     expect(bootSettingsToSend.BIOSPause).toBe(false)
-    expect(bootSettingsToSend.BIOSSetup).toBe(true)
+    expect(bootSettingsToSend.BIOSSetup).toBe(true) // action < 104
     expect(bootSettingsToSend.BootMediaIndex).toBe(0)
     expect(bootSettingsToSend.ConfigurationDataReset).toBe(false)
     expect(bootSettingsToSend.FirmwareVerbosity).toBe(0)
     expect(bootSettingsToSend.ForcedProgressEvents).toBe(false)
-    expect(bootSettingsToSend.IDERBootDevice).toBe(0)
+    expect(bootSettingsToSend.IDERBootDevice).toBe(0) // not 202 or 203
     expect(bootSettingsToSend.LockKeyboard).toBe(false)
     expect(bootSettingsToSend.LockPowerButton).toBe(false)
     expect(bootSettingsToSend.LockResetButton).toBe(false)
     expect(bootSettingsToSend.LockSleepButton).toBe(false)
     expect(bootSettingsToSend.ReflashBIOS).toBe(false)
-    expect(bootSettingsToSend.UseIDER).toBe(false)
+    expect(bootSettingsToSend.UseIDER).toBe(false) // not in range 200-299
     expect(bootSettingsToSend.UseSOL).toBe(false)
     expect(bootSettingsToSend.UseSafeMode).toBe(false)
     expect(bootSettingsToSend.UserPasswordBypass).toBe(false)
     expect(bootSettingsToSend.SecureErase).toBe(false)
   })
-  it('Should set boot data when reset to BIOS', () => {
+  it('Should set boot data when reset to BIOS (action 101)', () => {
     const bootSettingsToSend = setBootData(101, false, bootSettingData)
-    expect(bootSettingsToSend.BIOSSetup).toBe(true)
+    expect(bootSettingsToSend.BIOSSetup).toBe(true) // action < 104
+    expect(bootSettingsToSend.UseIDER).toBe(false) // not in range 200-299
   })
-  it('Should set boot data when reset up to BIOS using SOL', () => {
+  it('Should set boot data when reset up to BIOS using SOL (action 101)', () => {
     const bootSettingsToSend = setBootData(101, true, bootSettingData)
-    expect(bootSettingsToSend.BIOSSetup).toBe(true)
+    expect(bootSettingsToSend.BIOSSetup).toBe(true) // action < 104
     expect(bootSettingsToSend.UseSOL).toBe(true)
   })
-  it('Should set boot data IDERBootDevice when reset to IDER-CD-ROM', () => {
+  it('Should set boot data IDERBootDevice when reset to IDER-CD-ROM (action 202)', () => {
     const bootSettingsToSend = setBootData(202, false, bootSettingData)
-    expect(bootSettingsToSend.UseIDER).toBe(true)
-    expect(bootSettingsToSend.IDERBootDevice).toBe(1)
+    expect(bootSettingsToSend.UseIDER).toBe(true) // action > 199 && action < 300
+    expect(bootSettingsToSend.IDERBootDevice).toBe(1) // action === 202
+    expect(bootSettingsToSend.BIOSSetup).toBe(false) // action >= 104
   })
-  it('Should set boot data IDERBootDevice when power up to IDER-CD-ROM', () => {
+  it('Should set boot data IDERBootDevice when power up to IDER-CD-ROM (action 203)', () => {
     const bootSettingsToSend = setBootData(203, false, bootSettingData)
-    expect(bootSettingsToSend.UseIDER).toBe(true)
-    expect(bootSettingsToSend.IDERBootDevice).toBe(1)
+    expect(bootSettingsToSend.UseIDER).toBe(true) // action > 199 && action < 300
+    expect(bootSettingsToSend.IDERBootDevice).toBe(1) // action === 203
+    expect(bootSettingsToSend.BIOSSetup).toBe(false) // action >= 104
   })
-  it('Should set boot data IDERBootDevice when reset to IDER-Floppy', () => {
+  it('Should set boot data IDERBootDevice when reset to IDER-Floppy (action 200)', () => {
     const bootSettingsToSend = setBootData(200, false, bootSettingData)
-    expect(bootSettingsToSend.UseIDER).toBe(true)
-    expect(bootSettingsToSend.IDERBootDevice).toBe(0)
+    expect(bootSettingsToSend.UseIDER).toBe(true) // action > 199 && action < 300
+    expect(bootSettingsToSend.IDERBootDevice).toBe(0) // not 202 or 203
+    expect(bootSettingsToSend.BIOSSetup).toBe(false) // action >= 104
   })
-  it('Should set boot data IDERBootDevice when power up to IDER-Floppy', () => {
+  it('Should set boot data IDERBootDevice when power up to IDER-Floppy (action 201)', () => {
     const bootSettingsToSend = setBootData(201, false, bootSettingData)
-    expect(bootSettingsToSend.UseIDER).toBe(true)
-    expect(bootSettingsToSend.IDERBootDevice).toBe(0)
+    expect(bootSettingsToSend.UseIDER).toBe(true) // action > 199 && action < 300
+    expect(bootSettingsToSend.IDERBootDevice).toBe(0) // not 202 or 203
+    expect(bootSettingsToSend.BIOSSetup).toBe(false) // action >= 104
   })
+
+  // Tests for getBootSource function (corrected function name)
   it('Should NOT set bootSource when 299', () => {
-    const result = setBootSource(299)
-    expect(result).toBeUndefined()
+    const result = getBootSource(299)
+    expect(result).toBe('')
   })
   it('Should NOT set bootSource when 402', () => {
-    const result = setBootSource(402)
-    expect(result).toBeUndefined()
+    const result = getBootSource(402)
+    expect(result).toBe('')
   })
-  it('Should set bootSource when 400', () => {
-    const result = setBootSource(400)
+  it('Should set bootSource when 400 (ResetToPXE)', () => {
+    const result = getBootSource(400)
     expect(result).toBe('Intel(r) AMT: Force PXE Boot')
   })
-  it('Should set bootSource when 401', () => {
-    const result = setBootSource(401)
+  it('Should set bootSource when 401 (PowerOnToPXE)', () => {
+    const result = getBootSource(401)
     expect(result).toBe('Intel(r) AMT: Force PXE Boot')
   })
-  it('Should determine power action when 100', () => {
+  it('Should set bootSource when 202 (ResetToIDERCDROM)', () => {
+    const result = getBootSource(202)
+    expect(result).toBe('Intel(r) AMT: Force CD/DVD Boot')
+  })
+  it('Should set bootSource when 203 (PowerOnIDERCDROM)', () => {
+    const result = getBootSource(203)
+    expect(result).toBe('Intel(r) AMT: Force CD/DVD Boot')
+  })
+  it('Should set bootSource when 105 (HTTPSBoot)', () => {
+    const result = getBootSource(105)
+    expect(result).toBe('Intel(r) AMT: Force OCR UEFI HTTPS Boot')
+  })
+  it('Should set bootSource when 106 (PowerOnHTTPSBoot)', () => {
+    const result = getBootSource(106)
+    expect(result).toBe('Intel(r) AMT: Force OCR UEFI HTTPS Boot')
+  })
+
+  // Tests for determinePowerAction function
+  it('Should determine power action when 100 (power on)', () => {
     const result = determinePowerAction(100)
-    expect(result).toBe(2)
+    expect(result).toBe(2) // Power on
   })
-  it('Should determine power action when 201', () => {
+  it('Should determine power action when 201 (power on)', () => {
     const result = determinePowerAction(201)
-    expect(result).toBe(2)
+    expect(result).toBe(2) // Power on
   })
-  it('Should determine power action when 203', () => {
+  it('Should determine power action when 203 (power on)', () => {
     const result = determinePowerAction(203)
-    expect(result).toBe(2)
+    expect(result).toBe(2) // Power on
   })
-  it('Should determine power action when 401', () => {
+  it('Should determine power action when 401 (power on)', () => {
     const result = determinePowerAction(401)
-    expect(result).toBe(2)
+    expect(result).toBe(2) // Power on
   })
-  it('Should determine power action when 101', () => {
+  it('Should determine power action when 101 (reset)', () => {
     const result = determinePowerAction(101)
-    expect(result).toBe(10)
+    expect(result).toBe(10) // Reset
   })
-  //   it('Should determine power action when 104', () => {
-  //     const result = determinePowerAction(104)
-  //     expect(result).toBe(10)
-  //   })
-  it('Should determine power action when 200', () => {
+  it('Should determine power action when 200 (reset)', () => {
     const result = determinePowerAction(200)
-    expect(result).toBe(10)
+    expect(result).toBe(10) // Reset
   })
-  it('Should determine power action when 202', () => {
+  it('Should determine power action when 202 (reset)', () => {
     const result = determinePowerAction(202)
-    expect(result).toBe(10)
+    expect(result).toBe(10) // Reset
   })
-  it('Should determine power action when 400', () => {
+  it('Should determine power action when 400 (reset)', () => {
     const result = determinePowerAction(400)
-    expect(result).toBe(10)
+    expect(result).toBe(10) // Reset
+  })
+  it('Should determine power action when 105 (reset for HTTPS boot)', () => {
+    const result = determinePowerAction(105)
+    expect(result).toBe(10) // Reset
+  })
+  it('Should determine power action when 301 (reset)', () => {
+    const result = determinePowerAction(301)
+    expect(result).toBe(10) // Reset
+  })
+
+  it('Should set HTTPS boot parameters for action 105', () => {
+    const bootSetting = {
+      action: 105,
+      bootDetails: {
+        url: 'https://192.168.1.100:8080/boot.iso', // Valid HTTPS URL
+        username: '', // Simple username
+        password: '', // Simple password
+        enforceSecureBoot: true
+      }
+    }
+    const newData: any = { IDERBootDevice: 0 }
+
+    determineBootDevice(bootSetting, newData)
+
+    expect(newData.UseIDER).toBe(false)
+    expect(newData.BIOSSetup).toBe(false)
+    expect(newData.UseSOL).toBe(false)
+    expect(newData.BootMediaIndex).toBe(0)
+    expect(newData.EnforceSecureBoot).toBe(true)
+    expect(newData.UserPasswordBypass).toBe(false)
+    expect(newData.ForcedProgressEvents).toBe(true)
+    expect(newData.UefiBootNumberOfParams).toBe(2)
+    expect(newData.UefiBootParametersArray).toBeDefined()
+  })
+
+  it('Should set IDERBootDevice to 0 for default case', () => {
+    const bootSetting = { action: 999 }
+    const newData: any = { IDERBootDevice: 5 }
+
+    determineBootDevice(bootSetting, newData)
+
+    expect(newData.IDERBootDevice).toBe(0)
+  })
+
+  it('Should validate HTTPS boot parameters with only URL', () => {
+    const result = validateHTTPBootParams('https://example.com/boot.img', '', '')
+
+    expect(result.buffer).toBeInstanceOf(Uint8Array)
+    expect(result.paramCount).toBe(2) // URL, SyncRootCA only
+    expect(result.buffer.length).toBeGreaterThan(0)
   })
 })

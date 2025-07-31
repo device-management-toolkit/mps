@@ -99,7 +99,7 @@ function certificatesToDTO(response: AMTPublicKeyCertificateResponse): Certifica
       elementName: cert.ElementName,
       instanceID: cert.InstanceID,
       x509Certificate: cert.X509Certificate,
-      trustedRootCertificate: cert.TrustedRootCertificate,
+      trustedRootCertificate: cert.TrustedRootCertficate, // Note: Typo in AMT_PublicKeyCertificate, should be TrustedRootCertificate
       issuer: cert.Issuer,
       subject: cert.Subject,
       readOnlyCertificate: cert.ReadOnlyCertificate,
