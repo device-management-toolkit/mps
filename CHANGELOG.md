@@ -1,3 +1,10 @@
+# [2.20.0](https://github.com/device-management-toolkit/mps/compare/v2.19.1...v2.20.0) (2025-07-31)
+
+
+### Features
+
+* **api:** update bootoptions for OCR ([#2070](https://github.com/device-management-toolkit/mps/issues/2070)) ([4ab9f73](https://github.com/device-management-toolkit/mps/commit/4ab9f73902792be0a15bb880ff7b80953047d59a))
+
 ## [2.19.1](https://github.com/device-management-toolkit/mps/compare/v2.19.0...v2.19.1) (2025-07-29)
 
 # [2.19.0](https://github.com/device-management-toolkit/mps/compare/v2.18.0...v2.19.0) (2025-07-29)
