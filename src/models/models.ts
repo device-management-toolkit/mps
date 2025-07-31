@@ -217,7 +217,8 @@ export interface OCRData {
 }
 export interface BootSettingResult {
   isHTTPSBootExists: boolean
-  isPBAWinREExists: boolean
+  isPBAExists: boolean
+  isWinREExists: boolean
 }
 
 export interface OCRProcessResult {

@@ -98,10 +98,10 @@ export function processOCRData(ocrData: OCRData): OCRProcessResult {
   const HTTPSBootSupported =
     bootSettings.isHTTPSBootExists && capabilities?.ForceUEFIHTTPSBoot && bootData?.UEFIHTTPSBootEnabled
 
-  const WinREBootSupported = bootSettings.isPBAWinREExists && bootData?.WinREBootEnabled && capabilities?.ForceWinREBoot
+  const WinREBootSupported = bootSettings.isWinREExists && bootData?.WinREBootEnabled && capabilities?.ForceWinREBoot
 
   const LocalPBABootSupported =
-    bootSettings.isPBAWinREExists && bootData?.UEFILocalPBABootEnabled && capabilities?.ForceUEFILocalPBABoot
+    bootSettings.isPBAExists && bootData?.UEFILocalPBABootEnabled && capabilities?.ForceUEFIPBABoot
 
   return {
     WinREBootSupported: !!WinREBootSupported,
@@ -116,21 +116,26 @@ export function findBootSettingInstances(bootSourceSettings: OCRData['bootSource
   const TARGET_PBA_WINRE = 'Intel(r) AMT: Force OCR UEFI Boot Option'
 
   let isHTTPSBootExists = false
-  let isPBAWinREExists = false
+  let isWinREExists = false
+  let isPBAExists = false
 
   const bootItems = bootSourceSettings?.Items?.CIM_BootSourceSetting ?? []
 
-  for (const { InstanceID } of bootItems) {
+  for (const { InstanceID, BIOSBootString } of bootItems) {
     if (!isHTTPSBootExists && InstanceID.startsWith(TARGET_HTTPS_BOOT)) {
       isHTTPSBootExists = true
     }
 
-    if (!isPBAWinREExists && InstanceID.startsWith(TARGET_PBA_WINRE)) {
-      isPBAWinREExists = true
+    if (!isWinREExists && InstanceID.startsWith(TARGET_PBA_WINRE) && BIOSBootString.includes('WinRE')) {
+      isWinREExists = true
     }
 
-    if (isHTTPSBootExists && isPBAWinREExists) break
+    if (!isPBAExists && InstanceID.startsWith(TARGET_PBA_WINRE) && BIOSBootString.includes('PBA')) {
+      isPBAExists = true
+    }
+
+    if (isHTTPSBootExists && isPBAExists && isWinREExists) break
   }
 
-  return { isHTTPSBootExists, isPBAWinREExists }
+  return { isHTTPSBootExists, isPBAExists, isWinREExists }
 }
