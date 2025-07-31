@@ -1,3 +1,10 @@
+## [2.20.1](https://github.com/device-management-toolkit/mps/compare/v2.20.0...v2.20.1) (2025-07-31)
+
+
+### Bug Fixes
+
+* adds HTTP, WinRE and PBA to OCR status ([#2072](https://github.com/device-management-toolkit/mps/issues/2072)) ([3606a8c](https://github.com/device-management-toolkit/mps/commit/3606a8c75ce7d3cc2d5b8b6ba80d4e2e360fcf89))
+
 # [2.20.0](https://github.com/device-management-toolkit/mps/compare/v2.19.1...v2.20.0) (2025-07-31)
 
 
