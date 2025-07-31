@@ -43,7 +43,7 @@ describe('set amt features', () => {
         enableSOL: true,
         enableIDER: false,
         enableKVM: true,
-        httpsBootSupported: false
+        ocr: false
       },
       deviceAction: device
     }
@@ -183,7 +183,7 @@ describe('set amt features', () => {
   })
 
   it('should set amt features - enable HTTPS boot support', async () => {
-    req.body.httpsBootSupported = true
+    req.body.ocr = true
 
     await setAMTFeatures(req, resSpy)
     expect(resSpy.status).toHaveBeenCalledWith(200)
@@ -193,7 +193,7 @@ describe('set amt features', () => {
   })
 
   it('should set amt features - disable HTTPS boot support', async () => {
-    req.body.httpsBootSupported = false
+    req.body.ocr = false
 
     await setAMTFeatures(req, resSpy)
     expect(resSpy.status).toHaveBeenCalledWith(200)

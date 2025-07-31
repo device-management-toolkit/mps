@@ -15,5 +15,6 @@ export const amtFeaturesValidator = (): any => [
     .isString(),
   check('enableSOL').isBoolean().toBoolean(),
   check('enableIDER').isBoolean().toBoolean(),
-  check('enableKVM').isBoolean().toBoolean()
+  check('enableKVM').isBoolean().toBoolean(),
+  check('ocr').optional().isBoolean().toBoolean()
 ]

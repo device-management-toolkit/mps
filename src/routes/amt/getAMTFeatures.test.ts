@@ -112,7 +112,15 @@ describe('get amt features', () => {
               ElementName: 'Intel(r) AMT: Boot Source',
               FailThroughSupported: 2,
               InstanceID: 'Intel(r) AMT: Force OCR UEFI Boot Option',
-              StructuredBootString: 'CIM:Network:1'
+              StructuredBootString: 'CIM:Network:1',
+              BIOSBootString: 'WinRE'
+            },
+            {
+              ElementName: 'Intel(r) AMT: Boot Source',
+              FailThroughSupported: 2,
+              InstanceID: 'Intel(r) AMT: Force OCR UEFI Boot Option',
+              StructuredBootString: 'CIM:Network:1',
+              BIOSBootString: 'OEM PBA'
             }
           ]
         },
@@ -166,7 +174,7 @@ describe('get amt features', () => {
       ocr: true,
       httpsBootSupported: true,
       winREBootSupported: true,
-      localPBABootSupported: true,
+      localPBABootSupported: false,
       remoteErase: false
     })
     expect(mqttSpy).toHaveBeenCalledTimes(2)

@@ -81,14 +81,16 @@ export async function setAMTFeatures(req: Request, res: Response): Promise<void>
     }
 
     // Configure OCR settings
-    let requestedState = 0
-    if (payload.httpsBootSupported) {
-      requestedState = 32769
-    } else {
-      requestedState = 32768
-    }
+    if (payload.ocr !== undefined) {
+      let requestedState = 0
+      if (payload.ocr) {
+        requestedState = 32769
+      } else {
+        requestedState = 32768
+      }
 
-    await req.deviceAction.BootServiceStateChange(requestedState)
+      await req.deviceAction.BootServiceStateChange(requestedState)
+    }
 
     MqttProvider.publishEvent('success', ['AMT_SetFeatures'], messages.AMT_FEATURES_SET_SUCCESS, guid)
     res.status(200).json({ status: messages.AMT_FEATURES_SET_SUCCESS }).end()
