@@ -1,3 +1,10 @@
+## [2.20.2](https://github.com/device-management-toolkit/mps/compare/v2.20.1...v2.20.2) (2025-08-01)
+
+
+### Bug Fixes
+
+* typo in winre boot ([#2074](https://github.com/device-management-toolkit/mps/issues/2074)) ([04ee5ab](https://github.com/device-management-toolkit/mps/commit/04ee5ab6f0e33f735d8a6fbdd21b26ce1b15af52))
+
 ## [2.20.1](https://github.com/device-management-toolkit/mps/compare/v2.20.0...v2.20.1) (2025-07-31)
 
 
