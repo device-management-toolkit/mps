@@ -126,7 +126,7 @@ export function findBootSettingInstances(bootSourceSettings: OCRData['bootSource
       isHTTPSBootExists = true
     }
 
-    if (!isWinREExists && InstanceID.startsWith(TARGET_PBA_WINRE) && BIOSBootString.includes('WinRE')) {
+    if (!isWinREExists && InstanceID.startsWith(TARGET_PBA_WINRE) && BIOSBootString.includes('WinRe')) {
       isWinREExists = true
     }
 

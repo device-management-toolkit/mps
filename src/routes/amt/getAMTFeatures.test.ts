@@ -113,7 +113,7 @@ describe('get amt features', () => {
               FailThroughSupported: 2,
               InstanceID: 'Intel(r) AMT: Force OCR UEFI Boot Option',
               StructuredBootString: 'CIM:Network:1',
-              BIOSBootString: 'WinRE'
+              BIOSBootString: 'One Click RecoveryWinRe'
             },
             {
               ElementName: 'Intel(r) AMT: Boot Source',
