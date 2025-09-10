@@ -1,3 +1,10 @@
+## [2.20.3](https://github.com/device-management-toolkit/mps/compare/v2.20.2...v2.20.3) (2025-09-10)
+
+
+### Performance Improvements
+
+* **cira:** bump default window size to 80KB ([#2109](https://github.com/device-management-toolkit/mps/issues/2109)) ([8b5264b](https://github.com/device-management-toolkit/mps/commit/8b5264bf592c4515076e4d16501f9501f2b45d51))
+
 ## [2.20.2](https://github.com/device-management-toolkit/mps/compare/v2.20.1...v2.20.2) (2025-08-01)
 
 
