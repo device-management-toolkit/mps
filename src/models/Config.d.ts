@@ -49,6 +49,7 @@ export interface configType {
   consul_key_prefix: string
   cira_last_seen: boolean
   timeout_ms_default: string
+  cira_window_size: number
 }
 
 export interface certificatesType {

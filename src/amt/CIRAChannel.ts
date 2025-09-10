@@ -12,6 +12,7 @@ import { EventEmitter } from 'node:events'
 import httpZ, { type HttpZResponseModel } from 'http-z'
 import { parseBody } from '../utils/parseWSManResponseBody.js'
 import { logger } from '../logging/index.js'
+import { Environment } from '../utils/Environment.js'
 
 export class CIRAChannel {
   targetport: number
@@ -47,7 +48,7 @@ export class CIRAChannel {
     this.sendcredits = 0
     this.amtpendingcredits = 0
     this.amtCiraWindow = 0
-    this.ciraWindow = 32768
+    this.ciraWindow = Environment.Config.cira_window_size
     this.onStateChange = new EventEmitter()
 
     this.onData = (data) => {

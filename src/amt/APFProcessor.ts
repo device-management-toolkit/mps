@@ -10,8 +10,7 @@ import { type CIRASocket } from '../models/models.js'
 import { type CIRAChannel } from './CIRAChannel.js'
 import { EventEmitter } from 'node:events'
 import { Environment } from '../utils/Environment.js'
-
-const KEEPALIVE_INTERVAL = 30 // 30 seconds is typical keepalive interval for AMT CIRA connection
+import { CIRA_KEEPALIVE_INTERVAL, MAX_CIRA_WINDOW } from '../utils/constants.js'
 
 export enum APFProtocol {
   UNKNOWN = 0,
@@ -131,7 +130,7 @@ const APFProcessor = {
     if (len < 9) return 0
     const RecipientChannel: number = Common.ReadInt(data, 1)
     const LengthOfData: number = Common.ReadInt(data, 5)
-    if (LengthOfData > 1048576) return -1
+    if (LengthOfData > MAX_CIRA_WINDOW) return -1
     if (len < 9 + LengthOfData) return 0
     logger.silly(`${messages.MPS_CHANNEL_DATA}, ${RecipientChannel.toString()}, ${LengthOfData.toString()}`)
     const cirachannel = socket.tag.channels[RecipientChannel]
@@ -310,7 +309,7 @@ const APFProcessor = {
       // 5900 port is the last TCP port on which connections for forwarding are to be cancelled. Ports order: 16993, 16992, 664, 623, 16995, 16994, 5900
       // Request keepalive interval time
       if (port === 5900) {
-        APFProcessor.SendKeepaliveOptionsRequest(socket, KEEPALIVE_INTERVAL, 0)
+        APFProcessor.SendKeepaliveOptionsRequest(socket, CIRA_KEEPALIVE_INTERVAL, 0)
       }
       return 14 + requestLen + addrLen
     }
