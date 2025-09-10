@@ -21,6 +21,7 @@ import { WebServer } from './server/webserver.js'
 import { MPSServer } from './server/mpsserver.js'
 import { backOff } from 'exponential-backoff'
 import { ConsulService } from './consul/consul.js'
+import { DEFAULT_CIRA_WINDOW, MIN_CIRA_WINDOW, MAX_CIRA_WINDOW } from './utils/constants.js'
 
 export async function main(): Promise<void> {
   try {
@@ -100,6 +101,7 @@ export async function waitForSecretProvider(secrets: ISecretManagerService): Pro
 
 export function loadConfig(config: any): configType {
   // To merge ENV variables. consider after lower-casing ENV since our config keys are lowercase
+  // Web auth check
   if (config.web_auth_enabled) {
     if (!config.web_admin_password || !config.web_admin_user) {
       logger.error(
@@ -108,12 +110,23 @@ export function loadConfig(config: any): configType {
       process.exit(1)
     }
   }
+  // JWT check
   if (!config.jwt_secret) {
     logger.error('jwt secret is mandatory.')
     process.exit(1)
   }
 
   config.instance_name = config.instance_name === '{{.Task.Name}}' ? 'mps' : config.instance_name
+
+  // cira_window_size check
+  const windowsize = Number(config.cira_window_size)
+  if (!Number.isInteger(windowsize) || windowsize < MIN_CIRA_WINDOW || windowsize > MAX_CIRA_WINDOW) {
+    logger.warn(`Invalid cira_window_size "${config.cira_window_size}", using default ${DEFAULT_CIRA_WINDOW}`)
+    config.cira_window_size = DEFAULT_CIRA_WINDOW
+  } else {
+    config.cira_window_size = windowsize
+  }
+
   logger.silly(`Updated config... ${JSON.stringify(config, null, 2)}`)
   return config
 }
