@@ -1061,7 +1061,8 @@ describe('APFProcessor Tests', () => {
         consul_port: '8500',
         consul_key_prefix: 'MPS',
         cira_last_seen: true,
-        timeout_ms_default: '10000'
+        timeout_ms_default: '10000',
+        cira_window_size: 81920
       }
       Environment.Config = config
 

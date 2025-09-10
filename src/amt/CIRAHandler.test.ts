@@ -11,6 +11,9 @@ import APFProcessor from './APFProcessor.js'
 import { CIRAHandler } from './CIRAHandler.js'
 import { HttpHandler } from './HttpHandler.js'
 import { spyOn } from 'jest-mock'
+import { Environment } from '../utils/Environment.js'
+import { config } from '../test/helper/config.js'
+Environment.Config = config
 
 describe('CIRA Handler', () => {
   let ciraHandler: CIRAHandler

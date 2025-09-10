@@ -32,8 +32,7 @@ import { type IDB } from '../interfaces/IDb.js'
 import { type ISecretManagerService } from '../interfaces/ISecretManagerService.js'
 import { ConnectedDevice } from '../amt/ConnectedDevice.js'
 import { MqttProvider } from '../utils/MqttProvider.js'
-// 90 seconds max idle time, higher than the typical KEEP-ALIVE period of 60 seconds
-const MAX_IDLE = 90000
+import { CIRA_MAX_IDLE_TIME } from '../utils/constants.js'
 
 const devices: Record<string, ConnectedDevice> = {}
 
@@ -158,7 +157,7 @@ export class MPSServer {
 
   addHandlers(socket: CIRASocket): void {
     socket.setEncoding('binary')
-    socket.setTimeout(MAX_IDLE) // Setup the CIRA keep alive timer
+    socket.setTimeout(CIRA_MAX_IDLE_TIME * 1000) // Setup the CIRA keep alive timer in milli seconds
     socket.on('timeout', this.onTimeout.bind(this, socket))
     socket.addListener('data', this.onDataReceived.bind(this, socket))
     socket.addListener('close', this.onClose.bind(this, socket))
