@@ -219,6 +219,8 @@ export interface BootSettingResult {
   isHTTPSBootExists: boolean
   isPBAExists: boolean
   isWinREExists: boolean
+  pbaBootFilesPath?: string[]
+  winreBootFilePath?: string
 }
 
 export interface OCRProcessResult {
@@ -226,4 +228,6 @@ export interface OCRProcessResult {
   LocalPBABootSupported: boolean
   HTTPSBootSupported: boolean
   OCR: boolean
+  PBABootFilesPath?: string[]
+  WinREBootFilePath?: string
 }
