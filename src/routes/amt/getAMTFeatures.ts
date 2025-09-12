@@ -103,11 +103,16 @@ export function processOCRData(ocrData: OCRData): OCRProcessResult {
   const LocalPBABootSupported =
     bootSettings.isPBAExists && bootData?.UEFILocalPBABootEnabled && capabilities?.ForceUEFIPBABoot
 
+  const PBABootFilesPath = bootSettings.pbaBootFilesPath.length ? bootSettings.pbaBootFilesPath : undefined
+  const WinREBootFilePath = bootSettings.winreBootFilePath ?? undefined
+
   return {
     WinREBootSupported: !!WinREBootSupported,
     LocalPBABootSupported: !!LocalPBABootSupported,
     HTTPSBootSupported: !!HTTPSBootSupported,
-    OCR: !!isOCR
+    OCR: !!isOCR,
+    PBABootFilesPath,
+    WinREBootFilePath
   }
 }
 
@@ -118,24 +123,28 @@ export function findBootSettingInstances(bootSourceSettings: OCRData['bootSource
   let isHTTPSBootExists = false
   let isWinREExists = false
   let isPBAExists = false
+  let pbaBootFilesPath = []
+  let winreBootFilePath
 
   const bootItems = bootSourceSettings?.Items?.CIM_BootSourceSetting ?? []
 
-  for (const { InstanceID, BIOSBootString } of bootItems) {
+  for (const { InstanceID, BIOSBootString, BootString } of bootItems) {
     if (!isHTTPSBootExists && InstanceID.startsWith(TARGET_HTTPS_BOOT)) {
       isHTTPSBootExists = true
     }
 
     if (!isWinREExists && InstanceID.startsWith(TARGET_PBA_WINRE) && BIOSBootString.includes('WinRe')) {
       isWinREExists = true
+      winreBootFilePath = BootString
     }
 
     if (!isPBAExists && InstanceID.startsWith(TARGET_PBA_WINRE) && BIOSBootString.includes('PBA')) {
       isPBAExists = true
+      pbaBootFilesPath.push(BootString)
     }
 
     if (isHTTPSBootExists && isPBAExists && isWinREExists) break
   }
 
-  return { isHTTPSBootExists, isPBAExists, isWinREExists }
+  return { isHTTPSBootExists, isPBAExists, isWinREExists, pbaBootFilesPath, winreBootFilePath}
 }

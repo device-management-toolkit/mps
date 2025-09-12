@@ -22,6 +22,10 @@ import {
 const BootActions = {
   HTTPSBoot: 105,
   PowerOnHTTPSBoot: 106,
+  PBABoot: 107,
+  PowerOnPBABoot: 108,
+  WinREBoot: 109,
+  PowerOnWinREBoot: 110,
   ResetToIDERCDROM: 202,
   PowerOnIDERCDROM: 203,
   ResetToBIOS: 101,
@@ -34,10 +38,10 @@ const BootActions = {
   CIMPMSPowerOn: 2 // CIM > Power Management Service > Power On
 }
 
-// Result interface for validateHTTPBootParams
-interface HTTPBootParamsResult {
+// Result interface for validateBootParams
+interface BootParamsResult {
   buffer: Uint8Array
-  paramCount: number
+  paramCount?: number
 }
 
 export async function bootOptions(req: Request, res: Response): Promise<void> {
@@ -155,6 +159,25 @@ export function determineBootDevice(bootSetting: any, newData: any): void {
       newData.ForcedProgressEvents = true
       break
     }
+    case BootActions.WinREBoot:
+    case BootActions.PowerOnWinREBoot:
+    case BootActions.PBABoot:
+    case BootActions.PowerOnPBABoot: {
+      const BootParams = validatePBAWinREBootParams(
+        bootSetting.bootDetails.filePath,
+      )
+      newData.BIOSLastStatus = null
+      newData.UseIDER = false
+      newData.BIOSSetup = false
+      newData.UseSOL = false
+      newData.BootMediaIndex = 0
+      newData.EnforceSecureBoot = bootSetting.bootDetails.enforceSecureBoot
+      newData.UserPasswordBypass = false
+      newData.UefiBootNumberOfParams = 2
+      newData.UefiBootParametersArray = Buffer.from(BootParams.buffer).toString('base64')
+      newData.ForcedProgressEvents = true
+      break
+    }
     case BootActions.ResetToIDERCDROM:
     case BootActions.PowerOnIDERCDROM: {
       newData.IDERBootDevice = 1
@@ -167,7 +190,7 @@ export function determineBootDevice(bootSetting: any, newData: any): void {
   }
 }
 
-export function validateHTTPBootParams(url: string, username: string, password: string): HTTPBootParamsResult {
+export function validateHTTPBootParams(url: string, username: string, password: string): BootParamsResult {
   // Create TLV parameters for HTTPS boot
   const parameters: TLVParameter[] = []
 
@@ -200,6 +223,26 @@ export function validateHTTPBootParams(url: string, username: string, password: 
     logger.error(`Validation failed for HTTP Boot parameters - ${sanitizedErrors.length} validation error(s) detected`)
     throw new ValidationUseCaseError()
   }
+
+  // Create the TLV buffer
+  const tlvBuffer = createTLVBuffer(parameters)
+
+  return {
+    buffer: tlvBuffer,
+    paramCount: parameters.length
+  }
+}
+
+export function validatePBAWinREBootParams(file: string): BootParamsResult {
+  // Create TLV parameters for PBA/WinRE boot
+  const parameters: TLVParameter[] = []
+
+  // Create a network device path (URI to PBA/WinRE boot file)
+  const networkPathParam = newStringParameter(ParameterType.OCR_EFI_NETWORK_DEVICE_PATH, file)
+  parameters.push(networkPathParam)
+
+  // Validate the parameters before creating the buffer
+  const { valid, errors } = validateParameters(parameters)
 
   // Create the TLV buffer
   const tlvBuffer = createTLVBuffer(parameters)
