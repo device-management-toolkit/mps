@@ -9,6 +9,9 @@ import { CIRAChannel } from './CIRAChannel.js'
 import { type connectionParams, HttpHandler } from './HttpHandler.js'
 import { jest } from '@jest/globals'
 import { spyOn } from 'jest-mock'
+import { Environment } from '../utils/Environment.js'
+import { config } from '../test/helper/config.js'
+Environment.Config = config
 
 describe('CIRA Channel', () => {
   let ciraChannel: CIRAChannel
@@ -29,7 +32,7 @@ describe('CIRA Channel', () => {
     expect(ciraChannel.state).toBe(1)
     expect(ciraChannel.amtpendingcredits).toBe(0)
     expect(ciraChannel.amtCiraWindow).toBe(0)
-    expect(ciraChannel.ciraWindow).toBe(32768)
+    expect(ciraChannel.ciraWindow).toBe(81920)
     expect(ciraChannel.onStateChange).toBeDefined()
     expect(ciraChannel.onData).toBeDefined()
   })
