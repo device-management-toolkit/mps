@@ -16,12 +16,17 @@ import {
   createTLVBuffer,
   newBoolParameter,
   newStringParameter,
+  newUint16Parameter,
   validateParameters
 } from './bootOptionsValidator.js'
 
 const BootActions = {
   HTTPSBoot: 105,
   PowerOnHTTPSBoot: 106,
+  PBABoot: 107,
+  PowerOnPBABoot: 108,
+  WinREBoot: 109,
+  PowerOnWinREBoot: 110,
   ResetToIDERCDROM: 202,
   PowerOnIDERCDROM: 203,
   ResetToBIOS: 101,
@@ -34,10 +39,10 @@ const BootActions = {
   CIMPMSPowerOn: 2 // CIM > Power Management Service > Power On
 }
 
-// Result interface for validateHTTPBootParams
-interface HTTPBootParamsResult {
+// Result interface for validateBootParams
+interface BootParamsResult {
   buffer: Uint8Array
-  paramCount: number
+  paramCount?: number
 }
 
 export async function bootOptions(req: Request, res: Response): Promise<void> {
@@ -45,12 +50,14 @@ export async function bootOptions(req: Request, res: Response): Promise<void> {
     const payload = req.body // payload.action
     const device = req.deviceAction
 
+    // Use new async getBootSource
+    const guid = req.params?.guid || ''
+    const bootSource = await getBootSource(guid, payload, device)
+
     const results = await device.getBootOptions()
     const bootData = setBootData(payload.action as number, payload.useSOL as boolean, results.AMT_BootSettingData)
 
     await determineBootDevice(payload, bootData)
-
-    const bootSource = getBootSource(payload.action as number)
 
     await device.changeBootOrder(null)
 
@@ -59,7 +66,7 @@ export async function bootOptions(req: Request, res: Response): Promise<void> {
     // set boot config role
     await device.forceBootMode(1)
 
-    await device.changeBootOrder(bootSource as CIM.Types.BootConfigSetting.InstanceID)
+    await device.changeBootOrder(bootSource as unknown as CIM.Types.BootConfigSetting.InstanceID)
 
     const newAction = determinePowerAction(payload.action as number)
 
@@ -109,17 +116,17 @@ const enum BootSources {
 
 export function determinePowerAction(action: number): CIM.Types.PowerManagementService.PowerState {
   let powerState: CIM.Types.PowerManagementService.PowerState = 2
-  if (action === 101 || action === 200 || action === 202 || action === 301 || action === 400 || action === 105) {
+  if (action === 101 || action === 200 || action === 202 || action === 301 || action === 400 || action === 105 || action === 107 || action === 109) {
     powerState = 10
   } // Reset
 
   return powerState
 }
 
-// "Intel(r) AMT: Force PXE Boot".
-// "Intel(r) AMT: Force CD/DVD Boot".
-export function getBootSource(action: number): string {
-  switch (action) {
+// Enhanced getBootSource logic based on Go code
+// Requires: deviceAction, guid, and bootSetting (payload)
+export async function getBootSource(guid: string, bootSetting: any, deviceAction: any): Promise<string> {
+  switch (bootSetting.action) {
     case BootActions.ResetToPXE:
     case BootActions.PowerOnToPXE:
       return 'Intel(r) AMT: Force PXE Boot'
@@ -129,30 +136,92 @@ export function getBootSource(action: number): string {
     case BootActions.HTTPSBoot:
     case BootActions.PowerOnHTTPSBoot:
       return 'Intel(r) AMT: Force OCR UEFI HTTPS Boot'
+    case BootActions.PBABoot:
+    case BootActions.PowerOnPBABoot:
+      return await getPbaBootSource(guid, bootSetting, deviceAction)
+    case BootActions.WinREBoot:
+    case BootActions.PowerOnWinREBoot:
+      return await getWinReBootSource(guid, bootSetting, deviceAction)
     default:
       return ''
   }
 }
 
+// Helper for PBA boot source
+async function getPbaBootSource(guid: string, bootSetting: any, deviceAction: any): Promise<string> {
+  try {
+    const result = await deviceAction.getBootSourceSetting()
+    const sources = Array.isArray(result?.Items) ? result.Items : result?.Items ? [result.Items] : []
+    for (const src of sources) {
+      if (src.BootString === bootSetting.bootDetails?.bootPath) {
+        return src.InstanceID
+      }
+    }
+    return ''
+  } catch (err) {
+    return ''
+  }
+}
+
+// Helper for WinRE boot source
+async function getWinReBootSource(guid: string, bootSetting: any, deviceAction: any): Promise<string> {
+  const TARGET_PBA_WINRE = 'Intel(r) AMT: Force OCR UEFI Boot Option'
+  try {
+    const result = await deviceAction.getBootSourceSetting()
+    const Items = result?.Items.CIM_BootSourceSetting
+    const sources = Array.isArray(Items) ? Items : Items ? [Items] : []
+    if (bootSetting.bootDetails?.bootPath) {
+      for (const src of sources) {
+        if (src.BootString === bootSetting.bootDetails.bootPath) {
+          return src.InstanceID
+        }
+      }
+    } else {
+      for (const src of sources) {
+        if (src.BIOSBootString?.includes('WinRe') && src.InstanceID?.startsWith(TARGET_PBA_WINRE)) {
+          bootSetting.bootDetails.bootPath = src.BootString
+          return src.InstanceID
+        }
+      }
+    }
+    return ''
+  } catch (err) {
+    return ''
+  }
+}
+
+export function setCommonBootProps(newData: any, enforceSecureBoot: boolean) {
+  newData.BIOSLastStatus = null
+  newData.UseIDER = false
+  newData.BIOSSetup = false
+  newData.UseSOL = false
+  newData.BootMediaIndex = 0
+  newData.EnforceSecureBoot = enforceSecureBoot
+  newData.UserPasswordBypass = false
+  newData.ForcedProgressEvents = true
+}
+
 export function determineBootDevice(bootSetting: any, newData: any): void {
-  switch (bootSetting.action as number) {
+  const action = bootSetting.action as number
+  const details = bootSetting.bootDetails || {}
+
+  switch (action) {
     case BootActions.HTTPSBoot:
     case BootActions.PowerOnHTTPSBoot: {
-      const httpBootParams = validateHTTPBootParams(
-        bootSetting.bootDetails.url,
-        bootSetting.bootDetails.username,
-        bootSetting.bootDetails.password
-      )
-      newData.BIOSLastStatus = null
-      newData.UseIDER = false
-      newData.BIOSSetup = false
-      newData.UseSOL = false
-      newData.BootMediaIndex = 0
-      newData.EnforceSecureBoot = bootSetting.bootDetails.enforceSecureBoot
-      newData.UserPasswordBypass = false
+      const httpBootParams = validateHTTPBootParams(details.url, details.username, details.password)
+      setCommonBootProps(newData, details.enforceSecureBoot)
       newData.UefiBootNumberOfParams = httpBootParams.paramCount
       newData.UefiBootParametersArray = Buffer.from(httpBootParams.buffer).toString('base64')
-      newData.ForcedProgressEvents = true
+      break
+    }
+    case BootActions.WinREBoot:
+    case BootActions.PowerOnWinREBoot:
+    case BootActions.PBABoot:
+    case BootActions.PowerOnPBABoot: {
+      const bootParams = validatePBAWinREBootParams(details.bootPath)
+      setCommonBootProps(newData, details.enforceSecureBoot)
+      newData.UefiBootNumberOfParams = bootParams.paramCount
+      newData.UefiBootParametersArray = Buffer.from(bootParams.buffer).toString('base64')
       break
     }
     case BootActions.ResetToIDERCDROM:
@@ -167,7 +236,7 @@ export function determineBootDevice(bootSetting: any, newData: any): void {
   }
 }
 
-export function validateHTTPBootParams(url: string, username: string, password: string): HTTPBootParamsResult {
+export function validateHTTPBootParams(url: string, username: string, password: string): BootParamsResult {
   // Create TLV parameters for HTTPS boot
   const parameters: TLVParameter[] = []
 
@@ -200,6 +269,31 @@ export function validateHTTPBootParams(url: string, username: string, password: 
     logger.error(`Validation failed for HTTP Boot parameters - ${sanitizedErrors.length} validation error(s) detected`)
     throw new ValidationUseCaseError()
   }
+
+  // Create the TLV buffer
+  const tlvBuffer = createTLVBuffer(parameters)
+
+  return {
+    buffer: tlvBuffer,
+    paramCount: parameters.length
+  }
+}
+
+export function validatePBAWinREBootParams(file: string): BootParamsResult {
+  // Create TLV parameters for PBA/WinRE boot
+  const parameters: TLVParameter[] = []
+
+  // Create a network device path (URI to PBA/WinRE boot file)
+  const networkPathParam = newStringParameter(ParameterType.OCR_EFI_FILE_DEVICE_PATH, file)
+  parameters.push(networkPathParam)
+
+  const fileLen = file.length
+  // Create a file path length parameter
+  const filePathLengthParam = newUint16Parameter(ParameterType.OCR_EFI_DEVICE_PATH_LEN, fileLen)
+  parameters.push(filePathLengthParam)
+
+  // Validate the parameters before creating the buffer
+  const { valid, errors } = validateParameters(parameters)
 
   // Create the TLV buffer
   const tlvBuffer = createTLVBuffer(parameters)
