@@ -1,3 +1,10 @@
+# [2.21.0](https://github.com/device-management-toolkit/mps/compare/v2.20.3...v2.21.0) (2025-09-24)
+
+
+### Features
+
+* adds OCR local PBA and WinRE ([#2112](https://github.com/device-management-toolkit/mps/issues/2112)) ([f6d648c](https://github.com/device-management-toolkit/mps/commit/f6d648cc534793b0df866cba8df99b074bdb6316))
+
 ## [2.20.3](https://github.com/device-management-toolkit/mps/compare/v2.20.2...v2.20.3) (2025-09-10)
 
 
