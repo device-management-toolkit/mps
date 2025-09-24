@@ -159,36 +159,36 @@ describe('Boot Options', () => {
   })
 
   // Tests for getBootSource function (corrected function name)
-  it('Should NOT set bootSource when 299', () => {
-    const result = getBootSource(299)
+  it('Should NOT set bootSource when 299', async () => {
+    const result = await getBootSource('test-guid', { action: 299 }, req.deviceAction)
     expect(result).toBe('')
   })
-  it('Should NOT set bootSource when 402', () => {
-    const result = getBootSource(402)
+  it('Should NOT set bootSource when 402', async () => {
+    const result = await getBootSource('test-guid', { action: 402 }, req.deviceAction)
     expect(result).toBe('')
   })
-  it('Should set bootSource when 400 (ResetToPXE)', () => {
-    const result = getBootSource(400)
+  it('Should set bootSource when 400 (ResetToPXE)', async () => {
+    const result = await getBootSource('test-guid', { action: 400 }, req.deviceAction)
     expect(result).toBe('Intel(r) AMT: Force PXE Boot')
   })
-  it('Should set bootSource when 401 (PowerOnToPXE)', () => {
-    const result = getBootSource(401)
+  it('Should set bootSource when 401 (PowerOnToPXE)', async () => {
+    const result = await getBootSource('test-guid', { action: 401 }, req.deviceAction)
     expect(result).toBe('Intel(r) AMT: Force PXE Boot')
   })
-  it('Should set bootSource when 202 (ResetToIDERCDROM)', () => {
-    const result = getBootSource(202)
+  it('Should set bootSource when 202 (ResetToIDERCDROM)', async () => {
+    const result = await getBootSource('test-guid', { action: 202 }, req.deviceAction)
     expect(result).toBe('Intel(r) AMT: Force CD/DVD Boot')
   })
-  it('Should set bootSource when 203 (PowerOnIDERCDROM)', () => {
-    const result = getBootSource(203)
+  it('Should set bootSource when 203 (PowerOnIDERCDROM)', async () => {
+    const result = await getBootSource('test-guid', { action: 203 }, req.deviceAction)
     expect(result).toBe('Intel(r) AMT: Force CD/DVD Boot')
   })
-  it('Should set bootSource when 105 (HTTPSBoot)', () => {
-    const result = getBootSource(105)
+  it('Should set bootSource when 105 (HTTPSBoot)', async () => {
+    const result = await getBootSource('test-guid', { action: 105 }, req.deviceAction)
     expect(result).toBe('Intel(r) AMT: Force OCR UEFI HTTPS Boot')
   })
-  it('Should set bootSource when 106 (PowerOnHTTPSBoot)', () => {
-    const result = getBootSource(106)
+  it('Should set bootSource when 106 (PowerOnHTTPSBoot)', async () => {
+    const result = await getBootSource('test-guid', { action: 106 }, req.deviceAction)
     expect(result).toBe('Intel(r) AMT: Force OCR UEFI HTTPS Boot')
   })
 
