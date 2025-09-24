@@ -186,6 +186,7 @@ export enum messages {
   USER_CONSENT_REQUEST_SUCCESS = 'User Consent code requested',
   USER_CONSENT_SENT_SUCCESS = 'User Consent code sent',
   VERSION_REQUEST_FAILED = 'AMT Version request failed',
+  BOOT_SOURCE_REQUEST_FAILED = 'AMT Boot Source request failed',
   VERSION_EXCEPTION = 'Exception during AMT Version request',
   WEB_PORT_INVALID = 'Chosen web port is invalid or not available',
   WEB_PORT_NULL = 'web_port config variable is null',

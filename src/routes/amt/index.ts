@@ -33,6 +33,7 @@ import { deactivate } from './deactivate.js'
 import { getAMTCertificates } from './certificates/get.js'
 import { addAMTCertificate } from './certificates/add.js'
 import { certValidator } from './certificates/validator.js'
+import { bootSources } from './bootSources.js'
 
 const amtRouter: Router = Router()
 
@@ -48,6 +49,7 @@ amtRouter.get('/features/:guid', ciraMiddleware, getAMTFeatures)
 amtRouter.post('/features/:guid', amtFeaturesValidator(), validateMiddleware, ciraMiddleware, setAMTFeatures)
 amtRouter.get('/version/:guid', ciraMiddleware, version)
 amtRouter.delete('/deactivate/:guid', ciraMiddleware, deactivate)
+amtRouter.get('/power/bootSources/:guid', ciraMiddleware, bootSources)
 
 amtRouter.get('/userConsentCode/cancel/:guid', ciraMiddleware, cancel)
 amtRouter.get('/userConsentCode/:guid', ciraMiddleware, request)

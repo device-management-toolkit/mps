@@ -12,6 +12,7 @@ export const bootOptionsValidator = (): any => [
   check('bootDetails.url').optional().isURL(),
   check('bootDetails.username').optional().isString(),
   check('bootDetails.password').optional().isString(),
+  check('bootDetails.bootPath').optional().isString(),
   check('bootDetails.enforceSecureBoot').optional().isBoolean().toBoolean()
 ]
 // TLV Boot Parser - TypeScript equivalent
@@ -85,7 +86,7 @@ interface ParameterDetail {
 
 const ParameterDetails: Record<ParameterType, ParameterDetail> = {
   [ParameterType.OCR_EFI_NETWORK_DEVICE_PATH]: {
-    mandatory: true,
+    mandatory: false,
     comment: 'Mandatory for boot to HTTPS'
   },
   [ParameterType.OCR_EFI_FILE_DEVICE_PATH]: {
