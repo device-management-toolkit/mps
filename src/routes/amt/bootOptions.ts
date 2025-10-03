@@ -116,7 +116,16 @@ const enum BootSources {
 
 export function determinePowerAction(action: number): CIM.Types.PowerManagementService.PowerState {
   let powerState: CIM.Types.PowerManagementService.PowerState = 2
-  if (action === 101 || action === 200 || action === 202 || action === 301 || action === 400 || action === 105 || action === 107 || action === 109) {
+  if (
+    action === 101 ||
+    action === 200 ||
+    action === 202 ||
+    action === 301 ||
+    action === 400 ||
+    action === 105 ||
+    action === 107 ||
+    action === 109
+  ) {
     powerState = 10
   } // Reset
 

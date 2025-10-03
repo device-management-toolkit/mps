@@ -1,3 +1,10 @@
+# [2.22.0](https://github.com/device-management-toolkit/mps/compare/v2.21.0...v2.22.0) (2025-09-30)
+
+
+### Features
+
+* enable KVM multi-monitor support ([#2129](https://github.com/device-management-toolkit/mps/issues/2129)) ([858f5ad](https://github.com/device-management-toolkit/mps/commit/858f5ad8e6639ae2771b2576590cf08e3a1ecf05))
+
 # [2.21.0](https://github.com/device-management-toolkit/mps/compare/v2.20.3...v2.21.0) (2025-09-24)
 
 

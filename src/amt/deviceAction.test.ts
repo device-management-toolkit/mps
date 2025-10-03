@@ -24,12 +24,15 @@ import {
   enumerateResponse,
   enumerateResponseIPSAlarmClockOccurrence,
   generalSettings,
+  kvmRedirectionSettingDataResponse,
   mediaAccessDevice,
   osPowerSavingStateChangeGetResponse,
   physicalMemory,
   physicalPackage,
   positionToFirstRecord,
   processor,
+  putKVMRedirectionSettingDataResponse,
+  screenSettingDataResponse,
   sendOptInCodeResponse,
   serviceAvailableToElement,
   setupAndConfigurationServiceResponse,
@@ -562,6 +565,66 @@ describe('Device Action Tests', () => {
       })
       const result = await device.BootServiceStateChange(1)
       expect(result).toBeUndefined()
+    })
+  })
+  describe('screen and KVM redirection setting data', () => {
+    it('should get screen setting data', async () => {
+      enumerateSpy.mockResolvedValueOnce(enumerateResponse)
+      pullSpy.mockResolvedValue(screenSettingDataResponse)
+      const result = await device.getScreenSettingData()
+      expect(pullSpy).toHaveBeenCalled()
+      expect(result).toEqual(screenSettingDataResponse.Envelope.Body?.PullResponse)
+    })
+
+    it('should return null if getScreenSettingData fails', async () => {
+      enumerateSpy.mockResolvedValueOnce(enumerateResponse)
+      pullSpy.mockResolvedValue(null)
+      const result = await device.getScreenSettingData()
+      expect(result).toBeNull()
+    })
+
+    it('should get KVM redirection setting data', async () => {
+      getSpy.mockResolvedValueOnce(kvmRedirectionSettingDataResponse)
+      const result = await device.getKVMRedirectionSettingData()
+      expect(getSpy).toHaveBeenCalled()
+      expect(result).toEqual(kvmRedirectionSettingDataResponse.Envelope.Body)
+    })
+
+    it('should return null if getKVMRedirectionSettingData fails', async () => {
+      getSpy.mockResolvedValueOnce(null)
+      const result = await device.getKVMRedirectionSettingData()
+      expect(result).toBeNull()
+    })
+
+    it('should put KVM redirection setting data', async () => {
+      sendSpy.mockResolvedValueOnce(putKVMRedirectionSettingDataResponse)
+      const data = {
+        InstanceID: 'KVMRedirection1',
+        ElementName: 'KVM Redirection',
+        OptInPolicy: true,
+        EnabledByMEBx: true,
+        BackToBackFbMode: false,
+        Is5900PortEnabled: true,
+        SessionTimeout: 0,
+        RFBPort: 5900,
+        UserConsent: 0,
+        UserConsentTimeout: 0,
+        ConsentRequired: 0,
+        ConsentGranted: false,
+        ConsentType: 0,
+        RFBPassword: '',
+        DefaultScreen: 0,
+        InitialDecimationModeForLowRes: 0,
+        GreyscalePixelFormatSupported: false,
+        UserConsentDisplayTimeout: 0,
+        UserConsentDisplayType: 0,
+        ZlibControlSupported: false,
+        DoubleBufferMode: false,
+        DoubleBufferState: false
+      }
+      const result = await device.putKVMRedirectionSettingData(data)
+      expect(sendSpy).toHaveBeenCalled()
+      expect(result).toEqual(putKVMRedirectionSettingDataResponse.Envelope.Body)
     })
   })
 })
