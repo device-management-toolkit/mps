@@ -192,5 +192,7 @@ export enum messages {
   WEB_PORT_NULL = 'web_port config variable is null',
   WEBSERVER_EXCEPTION = 'Exception in Web Server',
   WINDOW_ADJUST_NO_CHANNEL_ID = 'MPS Error in CHANNEL_WINDOW_ADJUST: Unable to find channelId',
-  XML_PARSE_FAILED = 'Failed to parse XML'
+  XML_PARSE_FAILED = 'Failed to parse XML',
+  KVM_GET_EXCEPTION = 'Exception during get KVM display setting data',
+  KVM_SET_EXCEPTION = 'Exception during set KVM display setting data'
 }
