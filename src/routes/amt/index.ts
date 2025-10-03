@@ -34,6 +34,10 @@ import { getAMTCertificates } from './certificates/get.js'
 import { addAMTCertificate } from './certificates/add.js'
 import { certValidator } from './certificates/validator.js'
 import { bootSources } from './bootSources.js'
+import { validator } from './kvm/validator.js'
+import { get } from 'http'
+import { getScreenSettingData } from './kvm/get.js'
+import { setKVMRedirectionSettingData } from './kvm/set.js'
 
 const amtRouter: Router = Router()
 
@@ -60,5 +64,8 @@ amtRouter.delete('/alarmOccurrences/:guid', validateMiddleware, ciraMiddleware, 
 
 amtRouter.get('/certificates/:guid', validateMiddleware, ciraMiddleware, getAMTCertificates)
 amtRouter.post('/certificates/:guid', certValidator(), validateMiddleware, ciraMiddleware, addAMTCertificate)
+
+amtRouter.get('/kvm/displays/:guid', ciraMiddleware, getScreenSettingData)
+amtRouter.put('/kvm/displays/:guid', validator(), ciraMiddleware, setKVMRedirectionSettingData)
 
 export default amtRouter

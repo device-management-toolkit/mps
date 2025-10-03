@@ -1179,3 +1179,78 @@ export const osPowerSavingStateChangeRequest = {
     }
   }
 }
+
+export const screenSettingDataResponse = {
+  Envelope: {
+    Body: {
+      PullResponse: {
+        IPS_ScreenSettingDataItems: [
+          {
+            PrimaryIndex: 0,
+            SecondaryIndex: 1,
+            TertiaryIndex: 2,
+            QuadraryIndex: 3,
+            IsActive: [
+              true,
+              false,
+              true,
+              false
+            ],
+            UpperLeftX: [
+              0,
+              100,
+              200,
+              300
+            ],
+            UpperLeftY: [
+              0,
+              10,
+              20,
+              30
+            ],
+            ResolutionX: [
+              1920,
+              1280,
+              800,
+              640
+            ],
+            ResolutionY: [
+              1080,
+              720,
+              600,
+              480
+            ]
+          }
+        ]
+      }
+    }
+  }
+}
+
+export const kvmRedirectionSettingDataResponse = {
+  Envelope: {
+    Body: {
+      IPS_KVMRedirectionSettingDataItems: [
+        {
+          InstanceID: 'KVMRedirection1',
+          ElementName: 'KVM Redirection',
+          OptInPolicy: true
+        }
+      ]
+    }
+  }
+}
+
+export const putKVMRedirectionSettingDataResponse = {
+  Envelope: {
+    Body: {
+      IPS_KVMRedirectionSettingDataItems: [
+        {
+          InstanceID: 'KVMRedirection1',
+          ElementName: 'KVM Redirection',
+          OptInPolicy: false
+        }
+      ]
+    }
+  }
+}

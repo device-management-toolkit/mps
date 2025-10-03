@@ -625,4 +625,39 @@ export class DeviceAction {
       logger.error(`BootServiceStateChange failed. Reason: ${messages.RESPONSE_NULL}`)
     }
   }
+
+  async getScreenSettingData(): Promise<any> {
+    let xmlRequestBody = this.ips.ScreenSettingData.Enumerate()
+    const enumResponse = await this.ciraHandler.Enumerate(this.ciraSocket, xmlRequestBody)
+    if (enumResponse == null) {
+      logger.error(`enumerateScreenSettingData failed. Reason: ${messages.RESPONSE_NULL}`)
+      return null
+    }
+    const enumContext = enumResponse.Envelope.Body.EnumerateResponse.EnumerationContext
+    xmlRequestBody = this.ips.ScreenSettingData.Pull(enumContext)
+    const result = await this.ciraHandler.Pull(this.ciraSocket, xmlRequestBody)
+    if (result == null) {
+      logger.error(`pullScreenSettingData failed. Reason: ${messages.RESPONSE_NULL}`)
+      return null
+    }
+    return result.Envelope.Body.PullResponse ?? null
+  }
+
+  async getKVMRedirectionSettingData(): Promise<any> {
+    const xmlRequestBody = this.ips.KVMRedirectionSettingData.Get()
+    const result = await this.ciraHandler.Get(this.ciraSocket, xmlRequestBody)
+    if (result == null) {
+      logger.error(`getKVMRedirectionSettingData failed. Reason: ${messages.RESPONSE_NULL}`)
+      return null
+    }
+    return result.Envelope.Body ?? null
+  }
+
+  async putKVMRedirectionSettingData(data: IPS.Models.KVMRedirectionSettingData): Promise<any> {
+    logger.silly(`putKVMRedirectionSettingData ${messages.REQUEST}`)
+    const xmlRequestBody = this.ips.KVMRedirectionSettingData.Put(data)
+    const result = await this.ciraHandler.Send(this.ciraSocket, xmlRequestBody)
+    logger.silly(`putKVMRedirectionSettingData ${messages.COMPLETE}`)
+    return result.Envelope.Body
+  }
 }
