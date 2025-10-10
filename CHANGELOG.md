@@ -1,3 +1,5 @@
+## [2.22.1](https://github.com/device-management-toolkit/mps/compare/v2.22.0...v2.22.1) (2025-10-10)
+
 # [2.22.0](https://github.com/device-management-toolkit/mps/compare/v2.21.0...v2.22.0) (2025-09-30)
 
 
