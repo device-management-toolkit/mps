@@ -22,12 +22,12 @@ export async function bootSources(req: Request, res: Response): Promise<void> {
   const guid: string = req.params.guid
   try {
     const result = await req.deviceAction.getBootSourceSetting()
-    const items = result?.Items
-    if (!items) {
+    const items = result?.Items?.CIM_BootSourceSetting ?? result?.Items
+    const itemsArray = Array.isArray(items) ? items : items ? [items] : []
+    if (itemsArray.length === 0) {
       res.status(200).json([])
       return
     }
-    const itemsArray = Array.isArray(items) ? items : [items]
     const mapped = itemsArray.map(mapBootSource)
     res.status(200).json(mapped)
   } catch (err) {
