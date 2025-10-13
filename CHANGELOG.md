@@ -1,3 +1,10 @@
+## [2.22.2](https://github.com/device-management-toolkit/mps/compare/v2.22.1...v2.22.2) (2025-10-13)
+
+
+### Bug Fixes
+
+* **api:** get boot source ([#2162](https://github.com/device-management-toolkit/mps/issues/2162)) ([3cb6fa8](https://github.com/device-management-toolkit/mps/commit/3cb6fa8b7a1af9f02b670ddffa283c057ffca810))
+
 ## [2.22.1](https://github.com/device-management-toolkit/mps/compare/v2.22.0...v2.22.1) (2025-10-10)
 
 # [2.22.0](https://github.com/device-management-toolkit/mps/compare/v2.21.0...v2.22.0) (2025-09-30)
