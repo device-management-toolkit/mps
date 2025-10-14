@@ -1,3 +1,10 @@
+## [2.22.3](https://github.com/device-management-toolkit/mps/compare/v2.22.2...v2.22.3) (2025-10-14)
+
+
+### Bug Fixes
+
+* get boot source for ocr boot ([#2163](https://github.com/device-management-toolkit/mps/issues/2163)) ([be6e611](https://github.com/device-management-toolkit/mps/commit/be6e6114c590e73209211ba5b42f3fc385c12cc3))
+
 ## [2.22.2](https://github.com/device-management-toolkit/mps/compare/v2.22.1...v2.22.2) (2025-10-13)
 
 
