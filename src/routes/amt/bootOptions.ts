@@ -160,7 +160,8 @@ export async function getBootSource(guid: string, bootSetting: any, deviceAction
 async function getPbaBootSource(guid: string, bootSetting: any, deviceAction: any): Promise<string> {
   try {
     const result = await deviceAction.getBootSourceSetting()
-    const sources = Array.isArray(result?.Items) ? result.Items : result?.Items ? [result.Items] : []
+    const items = result?.Items?.CIM_BootSourceSetting ?? result?.Items
+    const sources = Array.isArray(items) ? items : items ? [items] : []
     for (const src of sources) {
       if (src.BootString === bootSetting.bootDetails?.bootPath) {
         return src.InstanceID
@@ -177,8 +178,8 @@ async function getWinReBootSource(guid: string, bootSetting: any, deviceAction: 
   const TARGET_PBA_WINRE = 'Intel(r) AMT: Force OCR UEFI Boot Option'
   try {
     const result = await deviceAction.getBootSourceSetting()
-    const Items = result?.Items.CIM_BootSourceSetting
-    const sources = Array.isArray(Items) ? Items : Items ? [Items] : []
+    const items = result?.Items?.CIM_BootSourceSetting ?? result?.Items
+    const sources = Array.isArray(items) ? items : items ? [items] : []
     if (bootSetting.bootDetails?.bootPath) {
       for (const src of sources) {
         if (src.BootString === bootSetting.bootDetails.bootPath) {
