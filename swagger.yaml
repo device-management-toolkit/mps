@@ -1,0 +1,3318 @@
+﻿openapi: 3.0.3
+info:
+  version: 2.22.3
+  title: Management Presence Server (MPS) API
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+  description: |
+    Open AMT Cloud Toolkit supports MPS API methods for authorization, user authentication, device-specific actions, such as power actions, and general device information.
+    
+    For direct connection to MPS:
+    * MPS Format of URI: `{{protocol}}://{{host}}:{{port}}/api/v1/{{MPS API}}`
+
+    * Example URI for Authorize: [https://example.site.com:3000/login/api/v1/authorize]()
+
+
+    When running behind the Kong API proxy, prepend the following prefixes to the URI:
+    
+    Kong prefixes:
+    * `/mps/login` for POST authorize method, `/mps` for GET authorize redirection method
+    * `/mps/ws` for websocket routes
+    * `/mps` for all other routes, including GET authorize/redirection method
+    
+    For connection through Kong:
+    
+    * MPS Format of URI: `{{protocol}}://{{host}}/{{Kong Prefix}}/api/v1/{{MPS API}}`
+
+    * Example URI for Authorize: [https://example.site.com/mps/login/api/v1/authorize]()
+
+servers:
+  # Added by API Auto Mocking Plugin
+  - description: SwaggerHub API Auto Mocking
+    url: https://virtserver.swaggerhub.com/rbheopenamt/mps/2.22.0
+security:
+  - BearerAuth: []
+tags:
+  - name: Auth
+    description: User Authentication
+  - name: AMT
+    description: Device-Specific, Out-of-Band Actions
+  - name: Devices
+    description: Device Information
+paths:
+  /api/v1/authorize:
+    post:
+      summary: Generate JWT Token for Authentication
+      description: |
+        Generates a JWT token that can be used for authentication to both MPS and RPS APIs. [Learn more about JWT](https://jwt.io/introduction).
+        
+        **If using Kong**, make sure to use the prefix `/mps/login`
+      tags:
+        - Auth
+      requestBody:
+        description: Payload with username and password
+        required: true 
+        content:
+          application/json:
+            schema:
+              required:
+              - username
+              - password
+              properties:
+                username:
+                  type: string
+                password:
+                  type: string
+      responses:
+        401:
+          description: 'Incorrect Username and/or Password'
+        200:
+          description: 'Success'
+          content:
+            application/json:
+              schema:
+                properties:
+                  token:
+                    type: string
+  /api/v1/authorize/redirection/{guid}:
+    get:
+      summary: Issue Short-lived Bearer Token for Redirection Sessions
+      description: |
+        Authenticate Redirection (KVM or SOL) sessions between the management console and MPS to allow only authenticated and authorized users to initiate.
+        
+        **If using Kong**, make sure to use the prefix `/mps`, **NOT** `/mps/login`.  Authorize Redirection does not use the login route.
+      tags:
+        - Auth
+      parameters:
+      - name: guid
+        in: path
+        description: GUID of device
+        example: 123e4567-e89b-12d3-a456-426614174000
+        required: true
+        schema:
+          type: string
+      responses:
+        200:
+          description: 'Success'
+          content:
+            application/json:
+              schema:
+                properties:
+                  token:
+                    type: string
+  /api/v1/amt/log/audit/{guid}:
+    get:
+      summary: Return Intel┬« AMT Audit Log
+      description: Returns Intel┬« AMT Audit Log data in blocks of 10 records for a specified guid.  Reference [AMT SDK](https://software.intel.com/sites/manageability/AMT_Implementation_and_Reference_Guide/default.htm?turl=WordDocuments%2Freadingtheauditlog.htm) for definition of property return codes.
+      tags:
+        - AMT
+      parameters:
+      - name: guid
+        in: path
+        description: GUID of device
+        example: 123e4567-e89b-12d3-a456-426614174000
+        required: true
+        schema:
+          type: string
+      - name: startIndex
+        in: query
+        description: number of items to skip
+        example: "startIndex=0"
+        required: false
+        schema:
+          type: integer
+          minimum: 0
+          default: 0
+      responses:
+        200:
+          description: 'Successful operation'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuditLogResponse'
+  /api/v1/amt/log/event/{guid}:
+    get:
+      summary: Return Intel┬« AMT Event Log
+      description: Return sensor and hardware event data from the Intel┬« AMT event log.  Reference [AMT SDK](https://software.intel.com/sites/manageability/AMT_Implementation_and_Reference_Guide/default.htm?turl=HTMLDocuments%2FWS-Management_Class_Reference%2FAMT_EventLogEntry.htm) for definition of property return codes.
+      tags:
+        - AMT
+      parameters:
+      - name: guid
+        in: path
+        description: GUID of device
+        example: 123e4567-e89b-12d3-a456-426614174000
+        required: true
+        schema:
+          type: string
+      # - name: startDate
+      #   in: query
+      #   description: Start date of log to retrieve
+      #   required: true
+      #   example: "2019-04-11"
+      #   schema:
+      #     type: string
+      # - name: endDate
+      #   in: query
+      #   description: End date of log to retrieve
+      #   required: true
+      #   example: "2019-04-18"
+      #   schema:
+      #     type: string
+      # - name: logsPerPage
+      #   in: query
+      #   description: Number of logs to return for this page
+      #   required: true
+      #   example: 10
+      #   schema:
+      #     type: number
+      # - name: page
+      #   in: query
+      #   description: Page of logs to retrieve
+      #   required: true
+      #   example: 5
+      #   schema:
+      #     type: number
+      responses:
+        200:
+          description: 'Successful operation'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventLogResponse'
+  /api/v1/amt/version/{guid}:
+    get:
+      summary: Return Intel┬« AMT Version
+      description: Retrieves hardware version information for Intel┬« AMT and the current activation state.
+      tags:
+        - AMT
+      parameters:
+      - name: guid
+        in: path
+        description: GUID of device
+        example: 123e4567-e89b-12d3-a456-426614174000
+        required: true
+        schema:
+          type: string
+      responses:
+        200:
+          description: 'Successful operation'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AMTVersionResponse'
+  /api/v1/amt/generalSettings/{guid}:
+    get:
+      summary: Return Intel┬« AMT General Settings
+      description: Retrieve the Intel┬« AMT general settings.
+      tags:
+        - AMT
+      parameters:
+      - name: guid
+        in: path
+        description: GUID of device
+        example: 123e4567-e89b-12d3-a456-426614174000
+        required: true
+        schema:
+          type: string
+      responses:
+        200:
+          description: 'Successful operation'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GeneralSettingsResponse'
+  /api/v1/amt/hardwareInfo/{guid}:
+    get:
+      summary: Return Hardware Information
+      description: Retrieve hardware information such as processor or storage.
+      tags:
+        - AMT
+      parameters:
+      - name: guid
+        in: path
+        description: GUID of device
+        example: 123e4567-e89b-12d3-a456-426614174000
+        required: true
+        schema:
+          type: string
+      responses:
+        200:
+          description: 'Successful operation'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HardwareInfoResponse'
+  /api/v1/amt/features/{guid}:
+    post:
+      summary: Set Intel┬« AMT Features
+      description: Enable/Disable Intel┬« AMT User Consent, Redirection, KVM, SOL, IDE-R and OCR features.
+      tags:
+        - AMT
+      parameters:
+      - name: guid
+        in: path
+        description: GUID of device
+        example: 123e4567-e89b-12d3-a456-426614174000
+        required: true
+        schema:
+          type: string
+      requestBody:
+        description: Payload to set AMT Features
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SetAMTFeaturesRequest'
+      responses:
+        200:
+          description: 'Successful operation'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SetAMTFeaturesResponse'
+    get:
+      summary: Return Intel┬« AMT Features
+      description: |
+        Retrieves the current Intel┬« AMT Enable/Disable state for User Consent, Redirection, KVM, SOL, IDE-R and One Click Recovery (OCR).
+        
+        `optInState` refers to the current Opt In State if the device has User Consent enabled. Valid values:
+        
+        - 0 (Not Started) - No sessions in progress or user consent requested
+        - 1 (Requested) - Request to AMT device for user consent code successful
+        - 2 (Displayed) - AMT device displaying user consent code for 300 seconds (5 minutes) before timeout by default
+        - 3 (Received) - User consent code was entered correctly, a redirection session can be started. Will expire after 120 seconds (2 minutes) and return to State 0 if no active redirection session (State 4)
+        - 4 (In Session) - Active redirection session in progress
+      tags:
+        - AMT
+      parameters:
+      - name: guid
+        in: path
+        description: GUID of device
+        required: true
+        schema:
+          type: string
+      responses:
+        200:
+          description: 'Successful operation'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetAMTFeaturesResponse'
+  /api/v1/amt/alarmOccurrences/{guid}:
+    post:
+      summary: Set new Alarm Clock Occurence
+      description: Create a new Alarm Clock occurence to wake device for AMT device.
+      tags:
+        - AMT
+      parameters:
+      - name: guid
+        in: path
+        description: GUID of device
+        example: 123e4567-e89b-12d3-a456-426614174000
+        required: true
+        schema:
+          type: string
+      requestBody:
+        description: Payload to set new Alarm Clock
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SetAlarmClockRequest'
+      responses:
+        200:
+          description: 'Successful operation'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SetAlarmClockResponse'
+    get:
+      summary: Return Alarm Clock Occurences
+      description: Retrieves all of the current Alarm Clock occurences for the device.
+      tags:
+        - AMT
+      parameters:
+      - name: guid
+        in: path
+        description: GUID of device
+        required: true
+        schema:
+          type: string
+      responses:
+        200:
+          description: 'Successful operation'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetAlarmClockResponse'
+    delete:
+      summary: Delete Alarm Clock Occurence
+      description: |
+        Delete named Alarm Clock occurence from the device.
+        
+        **IMPORTANT**<br>
+        **The DELETE method DOES REQUIRE a Request Body:**<br><br>
+        **{<br>
+        &emsp;"Name": "string"<br>
+        }**<br>
+        
+        Note: Unfortunately, SwaggerHub and OpenAPI 3.0 spec does not allow DELETE requests to have a Request Body for documentation. This has changed for OpenAPI 3.1 although SwaggerHub has not completed their migration from 3.0 -> 3.1 . We apologize for this deviation from the other documentation, please bear with us as we eagerly await the SwaggerHub update. Thank you!
+      tags:
+        - AMT
+      parameters:
+      - name: guid
+        in: path
+        description: GUID of device
+        example: 123e4567-e89b-12d3-a456-426614174000
+        required: true
+        schema:
+          type: string
+      responses:
+        200:
+          description: 'Successful operation'
+          content:
+           application/json:
+             schema:
+               $ref: '#/components/schemas/DeactivateResponse'
+        404:
+          description: 'Alarm Instance does not exist'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteAlarmErrorResponse'
+        500:
+          description: 'Internal Server Error'
+  /api/v1/amt/power/state/{guid}:
+    get:
+      summary: Return Current Device Power State
+      description: |
+        Retrieve current power state of Intel┬« AMT device, returns a number that maps to a device power state. 
+        Possible power state values: 
+        * 2 = On - corresponding to ACPI state G0 or S0 or D0 
+        * 3 = Sleep - Light, corresponding to ACPI state G1, S1/S2, or D1 
+        * 4 = Sleep - Deep, corresponding to ACPI state G1, S3, or D2 
+        * 6 = Off - Hard, corresponding to ACPI state G3, S5, or D3 
+        * 7 = Hibernate (Off - Soft), corresponding to ACPI state S4, where the state of the managed element is preserved and will be recovered upon powering on 
+        * 8 = Off - Soft, corresponding to ACPI state G2, S5, or D3 
+        * 9 = Power Cycle (Off-Hard), corresponds to the managed element reaching the ACPI state G3 followed by ACPI state S0 
+        * 13 = Off - Hard Graceful, equivalent to Off Hard but preceded by a request to the managed element to perform an orderly shutdown
+        
+        OSPowerSavingState values mapping:
+        * 0 = UNKNOWN
+        * 1 = UNSUPPORTED
+        * 2 = FULL_POWER
+        * 3 = OS_POWER_SAVING
+      tags:
+        - AMT
+      parameters:
+      - name: guid
+        in: path
+        description: GUID of device
+        example: 123e4567-e89b-12d3-a456-426614174000
+        required: true
+        schema:
+          type: string
+      responses:
+        200:
+          description: 'Successful operation'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PowerStateResponse'
+  /api/v1/amt/power/capabilities/{guid}:
+    get:
+      summary: Return Available Power Actions
+      description: View what OOB power actions are available for that device.
+      tags:
+        - AMT
+      parameters:
+      - name: guid
+        in: path
+        description: GUID of device
+        example: 123e4567-e89b-12d3-a456-426614174000
+        required: true
+        schema:
+          type: string
+      responses:
+        200:
+          description: 'Successful operation'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PowerCapabilitiesResponse'
+  /api/v1/amt/power/action/{guid}:
+    post:
+      summary: Perform OOB Power Action (1 to 99)
+      description: |
+        Perform an OOB power actions.  Execute a [GET /power/capabilities/{guid}](#/AMT/get_api_v1_amt_power_capabilities__guid_) call first to get the list of available power actions. See [AMT Power States](https://device-management-toolkit.github.io/docs/2.27/Reference/powerstates/) for ALL potential power actions. <br /><br />
+      tags:
+        - AMT
+      parameters:
+      - name: guid
+        in: path
+        description: GUID of device
+        example: 123e4567-e89b-12d3-a456-426614174000
+        required: true
+        schema:
+          type: string
+      requestBody:
+        description: |
+          **Standard Power Actions:**
+          * 2 = Power up/on
+          * 5 = Power cycle  
+          * 8 = Power down/off
+          * 10 = Reset
+          * 500 = OS to full power
+          * 501 = OS to power saving
+          
+          **Power Actions Requiring Intel LMS:**
+          * 4 = Sleep
+          * 7 = Hibernate
+          * 12 = Soft power down/off
+          * 14 = Soft reset
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PowerActionRequest'
+      responses:
+        200:
+          description: 'Successful operation'
+          content:
+           application/json:
+             schema:
+               $ref: '#/components/schemas/PowerActionResponse'
+  /api/v1/amt/power/bootOptions/{guid}:
+    post:
+      summary: Perform OOB Power Action (100+)
+      description: |
+        Perform an OOB power actions numbered 100+.  Execute a [GET /power/capabilities/{guid}](#/AMT/get_api_v1_amt_power_capabilities__guid_) call first to get the list of available power actions. See [AMT Power States](https://device-management-toolkit.github.io/docs/2.27/Reference/powerstates/) for ALL potential power actions.
+      tags:
+        - AMT
+      parameters:
+      - name: guid
+        in: path
+        description: GUID of device
+        example: 123e4567-e89b-12d3-a456-426614174000
+        required: true
+        schema:
+          type: string
+      requestBody:
+        description: |
+          Possible Power Actions:
+          * 100  = Power up to BIOS settings
+          * 101  = Reset to BIOS settings
+          * 105  = Reset to HTTPS Boot
+          * 106  = Power on HTTPS Boot
+          * 107  = Reset to PBA Boot
+          * 108  = Power on to PBA Boot
+          * 109  = Reset to Win-Re
+          * 110  = Power up to Win-Re
+          * 202  = Reset to IDE-R CD-ROM
+          * 203  = Power on to IDE-R CD-ROM
+          * 400  = Reset to PXE
+          * 401  = Power on to PXE
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PowerActionRequest'
+      responses:
+        200:
+          description: 'Successful operation'
+          content:
+           application/json:
+             schema:
+               $ref: '#/components/schemas/PowerActionResponse'
+  /api/v1/amt/power/bootSources/{guid}:
+    get:
+      summary: Request for boot source settings information
+      description: Boot Source settings information for OCR(HTTPs, PBA and Win-Re)
+      tags:
+        - AMT
+      parameters:
+      - name: guid
+        in: path
+        description: GUID of device
+        example: 123e4567-e89b-12d3-a456-426614174000
+        required: true
+        schema:
+          type: string
+      responses:
+        200:
+          description: 'Successful operation'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BootSourcesResponse'
+  /api/v1/amt/userConsentCode/{guid}:
+    get:
+      summary: Request an user consent code on client device
+      description: If optInState is 0, it will request for a new user consent code
+      tags:
+        - AMT
+      parameters:
+      - name: guid
+        in: path
+        description: GUID of device
+        example: 123e4567-e89b-12d3-a456-426614174000
+        required: true
+        schema:
+          type: string
+      responses:
+        200:
+          description: 'Successful operation'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserConsentResponse'
+    post:
+      summary: Send user consent code 
+      description: Send the user consent code displayed on the client device
+      tags:
+        - AMT
+      parameters:
+      - name: guid
+        in: path
+        description: GUID of device
+        example: 123e4567-e89b-12d3-a456-426614174000
+        required: true
+        schema:
+          type: string
+      requestBody:
+        description: ''
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserConsentRequest'
+      responses:
+        200:
+          description: 'Successful operation'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserConsentResponse'
+  /api/v1/amt/userConsentCode/cancel/{guid}:
+    get:
+      summary: Cancel user consent code
+      description: Cancel six digit user consent code previously generated on client device
+      tags:
+        - AMT
+      parameters:
+      - name: guid
+        in: path
+        description: GUID of device
+        example: 123e4567-e89b-12d3-a456-426614174000
+        required: true
+        schema:
+          type: string
+      responses:
+        200:
+          description: 'Successful operation'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserConsentResponse'
+  /api/v1/amt/deactivate/{guid}:
+    delete:
+      summary: Deactivate AMT over CIRA
+      description: Deactivate an AMT device using the CIRA channel with MPS rather than RPS RPC.
+      tags:
+        - AMT
+      parameters:
+      - name: guid
+        in: path
+        description: GUID of device
+        example: 123e4567-e89b-12d3-a456-426614174000
+        required: true
+        schema:
+          type: string
+      responses:
+        200:
+          description: 'Successful operation'
+          content:
+           application/json:
+             schema:
+               $ref: '#/components/schemas/DeactivateResponse'
+        404:
+          description: 'Device does not exist'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteErrorResponse'
+        500:
+          description: 'Internal Server Error'
+  /api/v1/amt/certificates/{guid}:
+    get:
+      summary: Get device certificates
+      description: Retrieve all certificates associated with the specified AMT device
+      tags:
+        - AMT
+      parameters:
+      - name: guid
+        in: path
+        description: GUID of device
+        example: 123e4567-e89b-12d3-a456-426614174000
+        required: true
+        schema:
+          type: string
+      responses:
+        200:
+          description: 'Successful operation'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetCertificatesResponse'
+        404:
+          description: 'Device not found' 
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DisconnectErrorResponse'
+        500:
+          description: 'Internal server error'
+    post:
+      summary: Add device certificates
+      description: Add new certificates to the specified AMT device
+      tags:
+        - AMT
+      parameters:
+        - name: guid
+          in: path
+          description: GUID of device
+          example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+          schema:
+            type: string
+      requestBody:
+        description: Certificate data to add
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddCertificatesRequest'
+      responses:
+        200:
+          description: 'Certificates added successfully'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AddCertificatesResponse'
+        400:
+          description: 'Invalid certificate format (not valid DER or PEM)'
+        404:
+          description: 'Device not found'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DisconnectErrorResponse'
+        500:
+          description: 'Internal server error'
+  /api/v1/amt/kvm/displays/{guid}:
+    get:
+      summary: Get number of displays information from AMT
+      description: Retrieve all display information of KVM from AMT
+      tags:
+        - AMT
+      parameters:
+      - name: guid
+        in: path
+        description: GUID of device
+        example: 123e4567-e89b-12d3-a456-426614174000
+        required: true
+        schema:
+          type: string
+      responses:
+        200:
+          description: 'Successful operation'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetDisplaysResponse'
+        404:
+          description: 'Device not found' 
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DisconnectErrorResponse'
+        500:
+          description: 'Internal server error'
+    put:
+      summary: Put the changed settings for KVM in AMT
+      description: Modify screen settings for KVM in AMT device
+      tags:
+        - AMT
+      parameters:
+        - name: guid
+          in: path
+          description: GUID of device
+          example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+          schema:
+            type: string
+      requestBody:
+        description: Screen Setting data to update
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateDisplaySettingsRequest'
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UpdateDisplaySettingsResponse'
+        404:
+          description: 'Device not found'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DisconnectErrorResponse'
+        500:
+          description: 'Internal server error'
+  /api/v1/devices:
+    get:
+      summary: List All Known Devices
+      description: Lists all devices known to MPS.
+      tags:
+        - Devices
+      parameters:
+        - in: query
+          name: $count
+          required: false
+          schema:
+            type: boolean
+          description: If set to true, return `totalCount` of devices with `data` array of devices
+        - in: query
+          name: $skip
+          required: false
+          schema:
+            type: integer
+          description: The number of items to skip before starting to collect the result set
+        - in: query
+          name: $top
+          required: false
+          schema:
+            type: integer
+          description: The number of items to return
+        - in: query
+          name: friendlyName
+          description: Device friendly name to query for. Maximum length 255
+          example: 'friendlyName=myname'
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: hostname
+          description: Device hostname to query for. Maximum length 255
+          example: 'hostname=mydevice'
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: method
+          description: Specify a conditional operator 'AND' or 'OR' to fetch the records with given tags .
+          example: 'method=AND'
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: status
+          description: Specify '0' to query for disconnected devices or specify '1' for connected devices. To return all devices, omit this query parameter.
+          example: 'status=1'
+          required: false
+          schema:
+            type: integer
+        - in: query
+          name: tags
+          description: Comma-delimited list of tags to query for
+          example: 'tags=NUC,Store #123'
+          required: false
+          schema:
+            type: string
+      responses:
+        200:
+          description: 'Successful operation'
+          content:
+            application/json:
+              schema:
+                oneOf:
+                   - type: array
+                     items:
+                       $ref: '#/components/schemas/Device'
+                   - $ref: '#/components/schemas/CountDevicesResponse'
+        500:
+          description: 'Internal server error'
+    post:
+      summary: Add New Device to MPS
+      description: Adds a new device to MPS.  This call does not add the device credentials.  In order for MPS to manage the device, a separate call to Vault must be made to add the credentials.  For example, the Remote Provision Server (RPS) makes the call to Vault to add the AMT device credentials during activation of the AMT device.  
+      tags:
+        - Devices
+      requestBody:
+        description: Payload to add AMT device to MPS
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddDevice'
+      responses:
+        200:
+          description: 'Successful operation'
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AddDeviceResponse'
+        500:
+          description: 'Internal server error'
+    patch:
+      summary: Edit a Device
+      description: Edit a single device in the MPS.  This call does not edit the AMT device credentials.  To update these, a separate call to Vault must be made.  For example, the Remote Provision Server (RPS) makes the call to Vault to add the AMT device credentials during activation of the AMT device.
+      tags:
+        - Devices
+      requestBody:
+        description: Payload to edit AMT device in MPS
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EditDevice'
+      responses:
+        200:
+          description: 'Successful operation'
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EditDeviceResponse'
+        500:
+          description: 'Internal server error'
+  /api/v1/devices/redirectStatus/{guid}:
+    get:
+      summary: Find Redirection State of Device by GUID
+      description: Retrieves boolean values for KVM, SOL, and IDER session states.
+      tags:
+        - Devices
+      parameters:
+      - name: guid
+        in: path
+        description: GUID of device to return
+        example: 123e4567-e89b-12d3-a456-426614174000
+        required: true
+        schema:
+          type: string
+      responses:
+        400:
+          description: 'Error in request.  A list of errors will be returned'
+        404:
+          description: 'Device does not exist'
+        200:
+          description: 'Successful operation'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RedirectStatus'
+        500:
+          description: 'Internal server error'
+  /api/v1/devices/stats:
+    get:
+      summary: Return Count of All Devices by Connection Status
+      description: Retrieve the current count of all registered, connected, and disconnected devices.
+      tags:
+        - Devices
+      responses:
+        200:
+          description: 'Successful operation'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Stats'
+  /api/v1/devices/{guid}:
+    get:
+      summary: Find Device by GUID
+      description: Retrieves the device with a specific GUID and all device information from the database.
+      tags:
+        - Devices
+      parameters:
+      - name: guid
+        in: path
+        description: GUID of device to return
+        example: 123e4567-e89b-12d3-a456-426614174000
+        required: true
+        schema:
+          type: string
+      responses:
+        400:
+          description: 'Error in request.  A list of errors will be returned'
+        404:
+          description: 'Device does not exist'
+        200:
+          description: 'Successful operation'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Device'
+        500:
+          description: 'Internal server error'
+    delete:
+      summary: Delete Device Information
+      description: Removes the device with a specific GUID and all device information from the database.  This will prevent the device from connecting to MPS, even if the device has not yet been unprovisioned.  Use the disconnect API after this call to remove a device and prevent it from reconnecting to the MPS.
+      tags:
+        - Devices
+      parameters:
+      - name: guid
+        in: path
+        description: GUID of device to return
+        example: 123e4567-e89b-12d3-a456-426614174000
+        required: true
+        schema:
+          type: string
+      - name: isSecretToBeDeleted
+        in: query
+        description: "Delete device information from both the Database **AND Secret Storage**. Caution: This will delete the stored device passwords in Secret Storage."
+        example: isSecretToBeDeleted=true
+        schema:
+          type: boolean
+      responses:
+        404:
+          description: 'Device does not exist'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteErrorResponse'
+        204:
+          description: 'Successful operation'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteResponse'
+        500:
+          description: 'Internal server error'
+  /api/v1/devices/disconnect/{guid}:
+    delete:
+      summary: Disconnect Device
+      description: Forces a specified device to disconnect from the MPS. Device will reconnect again if it is able. To prevent reconnection, first [delete the device information](#/Devices/delete_api_v1_devices__guid_) from MPS.
+      tags:
+        - Devices
+      parameters:
+      - name: guid
+        in: path
+        description: GUID of device to return
+        example: 123e4567-e89b-12d3-a456-426614174000
+        required: true
+        schema:
+          type: string
+      responses:
+        404:
+          description: 'Device does not exist'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DisconnectErrorResponse'
+        200:
+          description: 'Successful operation'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DisconnectResponse'
+        500:
+          description: 'Request failed while disconnecting device.'
+  /api/v1/devices/refresh/{guid}:      
+    delete:
+      summary: Refresh Stored AMT Password
+      description: |
+        Delete the device's existing cached AMT password and refresh the cache from the secret store.
+      
+        Internal API. After running the RPC [changePassword](https://device-management-toolkit.github.io/docs/2.27/Reference/RPC/commandsRPC/#changepassword) maintenance command, RPS must call this MPS endpoint to update the stored password secrets. Otherwise, all MPS API calls that require device credentials (e.g. Power Actions) will fail due to MPS using the old AMT password.
+      tags:
+        - Devices
+      parameters:
+      - name: guid
+        in: path
+        description: GUID of device to return
+        example: 123e4567-e89b-12d3-a456-426614174000
+        required: true
+        schema:
+          type: string
+      responses:
+        404:
+          description: 'Device does not exist or cannot be found'
+        200:
+          description: 'Successful operation'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RefreshResponse'
+        500:
+          description: 'Exception during Device Refresh'
+  /api/v1/ciracert:
+    get:
+      summary: Return CIRA Certificate
+      description: Returns the self-signed CIRA Certificate for the MPS Instance. Used for creation of CIRA Config in RPS.
+      tags:
+        - Misc
+      responses:
+        200:
+          description: 'Successful operation'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CiracertResponse'
+  /api/v1/health:
+    get:
+      summary: Return Status of DB and Secret Store
+      description: Returns statuses for the database and secret store that MPS is attempting to connect to. 
+      tags:
+        - Misc
+      responses:
+        200:
+          description: 'Successful operation'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthcheckResponse'
+  /api/v1/version:
+    get:
+      tags:
+      - Misc
+      summary: Get Version
+      operationId: GetVersion
+      description: Returns the version of the service and the supported protocol version.  The protocol version is used to check compatibility with RPC
+      responses:
+        200:
+          description: 'successful operation'
+          headers: {}
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VersionResponse'
+      deprecated: false
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    AuditLogResponse:
+      title: AuditLogResponse
+      type: object
+      properties:
+        totalCnt:
+          type: integer
+          description: Total number of audit log records
+        records:
+          type: array
+          items:
+            $ref: '#/components/schemas/AuditLogRecord'
+          description: Array of audit log records
+      example:
+        totalCnt: 2
+        records:
+        - AuditAppID: 18
+          EventID: 10
+          InitiatorType: 0
+          AuditApp: "Redirection Manager"
+          Event: "KVM Enabled"
+          Initiator: "admin"
+          Time: "2003-12-29T05:46:37.000Z"
+          MCLocationType: 0
+          NetAddress: "1.2.3.4"
+          Ex: ""
+          ExStr: null
+        - AuditAppID: 16
+          EventID: 19
+          InitiatorType: 0
+          AuditApp: "Security Admin"
+          Event: "Unprovisioning Started"
+          Initiator: "admin"
+          Time: "2017-12-21T17:30:39.000Z"
+          MCLocationType: 1
+          NetAddress: "::1"
+          Ex: ""
+          ExStr: "Remote WSMAN"
+
+    AuditLogRecord:
+      title: AuditLogRecord
+      type: object
+      properties:
+        AuditAppID:
+          type: integer
+        EventID:
+          type: integer
+        InitiatorType:
+          type: integer
+        AuditApp:
+          type: string
+        Event:
+          type: string
+        Initiator:
+          type: string
+        Time:
+          type: string
+          format: date-time
+        MCLocationType:
+          type: integer
+        NetAddress:
+          type: string
+        Ex:
+          type: string
+        ExStr:
+          type: string
+          nullable: true
+    EventLogResponse:
+      title: EventLogResponse
+      type: array
+      items:
+        $ref: '#/components/schemas/EventLogRecord'
+      example:
+        - DeviceAddress: 255
+          EventSensorType: 15
+          EventType: 111
+          EventOffset: 2
+          EventSourceType: 104
+          EventSeverity: 1
+          SensorNumber: 255
+          Entity: 34
+          EntityInstance: 0
+          EventData: [64, 6, 0, 0, 0, 0, 0, 0]
+          TimeStamp: '2019-04-11T17:57:40.000Z'
+          EntityStr: "BIOS"
+          Desc: "USB resource configuration"
+        - DeviceAddress: 255
+          EventSensorType: 6
+          EventType: 111
+          EventOffset: 1
+          EventSourceType: 104
+          EventSeverity: 1
+          SensorNumber: 255
+          Entity: 34
+          EntityInstance: 0
+          EventData: [32, 3, 0, 0, 0, 0, 0, 0]
+          TimeStamp: '2019-04-11T17:58:15.000Z'
+          EntityStr: "BIOS"
+          Desc: "Authentication failed 3 times. The system may be under attack."
+
+    EventLogRecord:
+      title: EventLogRecord
+      type: object
+      properties:
+        DeviceAddress:
+          type: integer
+        EventSensorType:
+          type: integer
+        EventType:
+          type: integer
+        EventOffset:
+          type: integer
+        EventSourceType:
+          type: integer
+        EventSeverity:
+          type: integer
+        SensorNumber:
+          type: integer
+        Entity:
+          type: integer
+        EntityInstance:
+          type: integer
+        EventData:
+          type: array
+          items:
+            type: integer
+        TimeStamp: 
+          type: string
+        EntityStr:
+          type: string
+        Desc:
+          type: string
+    AMTVersionResponse:
+      title: VersionResponse
+      properties:
+        CIM_SoftwareIdentity:
+          type: object
+          properties:
+            responses:
+              type: array
+              items:
+                type: object
+                properties:
+                  InstanceID:
+                    type: string
+                  IsEntity:
+                    type: boolean
+                  VersionString:
+                    type: string
+            status:
+              type: integer
+        AMT_SetupAndConfigurationService:
+          type: object
+          properties:
+            response:
+              type: object
+              properties:
+                CreationClassName:
+                  type: string
+                ElementName:
+                  type: string
+                EnabledState:
+                  type: integer
+                Name:
+                  type: string
+                PasswordModel:
+                  type: integer
+                ProvisioningMode:
+                  type: integer
+                ProvisioningServerOTP:
+                  type: string
+                ProvisioningState:
+                  type: integer
+                RequestedState:
+                  type: integer
+                SystemCreationClassName:
+                  type: string
+                SystemName:
+                  type: string
+                ZeroTouchConfigurationEnabled:
+                  type: boolean
+            responses:
+              type: object
+              properties:
+                Header:
+                  type: object
+                  properties:
+                    To:
+                      type: string
+                    RelatesTo:
+                      type: string
+                    Action:
+                      type: string
+                    MessageID:
+                      type: string
+                    ResourceURI:
+                      type: string
+                    Method:
+                      type: string
+                Body:
+                  type: object
+                  properties:
+                    CreationClassName:
+                      type: string
+                    ElementName:
+                      type: string
+                    EnabledState:
+                      type: integer
+                    Name:
+                      type: string
+                    PasswordModel:
+                      type: integer
+                    ProvisioningMode:
+                      type: integer
+                    ProvisioningServerOTP:
+                      type: string
+                    ProvisioningState:
+                      type: integer
+                    RequestedState:
+                      type: integer
+                    SystemCreationClassName:
+                      type: string
+                    SystemName:
+                      type: string
+                    ZeroTouchConfigurationEnabled:
+                      type: boolean
+            status:
+              type: integer
+      example:
+        CIM_SoftwareIdentity:
+          responses:
+          - InstanceID: Flash
+            IsEntity: true
+            VersionString: 11.8.50
+          - InstanceID: Netstack
+            IsEntity: true
+            VersionString: 11.8.50
+          - InstanceID: AMTApps
+            IsEntity: true
+            VersionString: 11.8.50
+          - InstanceID: AMT
+            IsEntity: true
+            VersionString: 11.8.50
+          - InstanceID: Sku
+            IsEntity: true
+            VersionString: 16392
+          - InstanceID: VendorID
+            IsEntity: true
+            VersionString: 8086
+          - InstanceID: Build Number
+            IsEntity: true
+            VersionString: 3425
+          - InstanceID: Recovery Version
+            IsEntity: true
+            VersionString: 11.8.50
+          - InstanceID: Recovery Build Num
+            IsEntity: true
+            VersionString: 3425
+          - InstanceID: Legacy Mode
+            IsEntity: true
+            VersionString: 'False'
+          - InstanceID: AMT FW Core Version
+            IsEntity: true
+            VersionString: 11.8.50
+          status: 200
+        AMT_SetupAndConfigurationService:
+          response:
+            CreationClassName: AMT_SetupAndConfigurationService
+            ElementName: Intel(r) AMT Setup and Configuration Service
+            EnabledState: 5
+            Name: Intel(r) AMT Setup and Configuration Service
+            PasswordModel: 1
+            ProvisioningMode: 1
+            ProvisioningServerOTP: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+            ProvisioningState: 2
+            RequestedState: 12
+            SystemCreationClassName: CIM_ComputerSystem
+            SystemName: Intel(r) AMT
+            ZeroTouchConfigurationEnabled: true
+          responses:
+            Header:
+                To: http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous
+                RelatesTo: 3
+                Action: http://schemas.xmlsoap.org/ws/2004/09/transfer/GetResponse
+                MessageID: uuid:00000000-8086-8086-8086-0000000006A4
+                ResourceURI: http://intel.com/wbem/wscim/1/amt-schema/1/AMT_SetupAndConfigurationService
+                Method: AMT_SetupAndConfigurationService
+            Body:
+                CreationClassName: AMT_SetupAndConfigurationService
+                ElementName: Intel(r) AMT Setup and Configuration Service
+                EnabledState: 5
+                Name: Intel(r) AMT Setup and Configuration Service
+                PasswordModel: 1
+                ProvisioningMode: 1
+                ProvisioningServerOTP: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+                ProvisioningState: 2
+                RequestedState: 12
+                SystemCreationClassName: CIM_ComputerSystem
+                SystemName: Intel(r) AMT
+                ZeroTouchConfigurationEnabled: true
+          status: 200          
+    GeneralSettingsResponse:
+      title: GeneralSettingsResponse
+      example:
+        Header:
+          To: http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous
+          RelatesTo: "1"
+          Action: http://schemas.xmlsoap.org/ws/2004/09/transfer/GetResponse
+          MessageID: uuid:00000000-8086-8086-8086-000000000699
+          ResourceURI: http://intel.com/wbem/wscim/1/amt-schema/1/AMT_GeneralSettings
+          Method: AMT_GeneralSettings
+        Body:
+          AMTNetworkEnabled: 1
+          DDNSPeriodicUpdateInterval: 1440
+          DDNSTTL: 900
+          DDNSUpdateByDHCPServerEnabled: true
+          DDNSUpdateEnabled: false
+          DHCPv6ConfigurationTimeout: 0
+          DigestRealm: Digest:A4070000000000000000000000000000
+          DomainName: ''
+          ElementName: 'Intel(r) AMT: General Settings'
+          Hostname: ''
+          HostOSFQDN: 'GEN7-AMT118-W10'
+          IdleWakeTimeout: 65535
+          InstanceID: 'Intel(r) AMT: General Settings'
+          NetworkInterfaceEnabled: true
+          PingResponseEnabled: true
+          PowerSource: 0
+          PreferredAddressFamily: 0
+          PresenceNotificationInterval: 0
+          PrivacyLevel: 0
+          RmcpPingResponseEnabled: true
+          SharedFQDN: true
+          WsmanOnlyMode: false
+      properties:
+        Header:
+          type: object
+          properties:
+            To:
+              type: string
+            RelatesTo:
+              type: string
+            Action:
+              type: string
+            MessageID:
+              type: string
+            ResourceURI:
+              type: string
+            Method:
+              type: string
+        Body:
+          type: object
+          properties:
+            AMTNetworkEnabled:
+              type: integer
+            DDNSPeriodicUpdateInterval:
+              type: integer
+            DDNSTTL:
+              type: integer
+            DDNSUpdateByDHCPServerEnabled:
+              type: boolean
+            DDNSUpdateEnabled: 
+              type: boolean
+            DHCPv6ConfigurationTimeout:
+              type: integer
+            DigestRealm:
+              type: string
+            DomainName:
+              type: string
+            ElementName:
+              type: string
+            HostName:
+              type: string
+            HostOSFQDN:
+              type: string
+            IdleWakeTimeout:
+              type: integer
+            InstanceID:
+              type: string
+            NetworkInterfaceEnabled:
+              type: boolean
+            PingResponseEnabled:
+              type: boolean
+            PowerSource: 
+              type: integer
+            PreferredAddressFamily:
+              type: integer
+            PresenceNotificationInterval:
+              type: integer
+            PrivacyLevel:
+              type: integer
+            RmcpPingResponseEnabled:
+              type: boolean
+            SharedFQDN:
+              type: boolean
+            WsmanOnlyMode:
+              type: boolean
+    HardwareInfoResponse:
+      title: HardwareInfoResponse
+      properties:
+        CIM_ComputerSystemPackage:
+          type: object
+          properties:
+            response:
+              type: object
+              properties:
+                Antecedent:
+                  type: object
+                  properties:
+                    Address:
+                      type: string
+                    ReferenceParameters:
+                      type: object
+                      properties:
+                        ResourceURI:
+                          type: string
+                        SelectorSet:
+                          type: object
+                          properties:
+                            Selector:
+                              type: object
+                              properties:
+                                value:
+                                  type: string
+                                '@name': 
+                                  type: string
+                Dependent:
+                  type: object
+                  properties:
+                    Address:
+                      type: string
+                    ReferenceParameters:
+                      type: object
+                      properties:
+                        ResourceURI:
+                          type: string
+                        SelectorSet:
+                          type: object
+                          properties:
+                            Selector:
+                              type: object
+                              properties:
+                                value:
+                                  type: string
+                                "@name":
+                                  type: string
+                PlatformGUID:
+                  type: string
+            status:
+              type: integer
+        CIM_SystemPackaging:
+          type: object
+          properties:
+            responses:
+              type: object
+              properties:
+                Antecedent:
+                  type: object
+                  properties:
+                    Address:
+                      type: string
+                    ReferenceParameters:
+                      type: object
+                      properties:
+                        ResourceURI:
+                          type: string
+                        SelectorSet:
+                          type: object
+                          properties:
+                            Selector:
+                              type: object
+                              properties:
+                                value:
+                                  type: string
+                                "@name":
+                                  type: string
+                dependent:
+                  type: object
+                  properties:
+                    Address:
+                      type: string
+                    ReferenceParameters:
+                      type: object
+                      properties:
+                        ResourceURI:
+                          type: string
+                        SelectorSet:
+                          type: object
+                          properties:
+                            Selector:
+                              type: object
+                              properties:
+                                value:
+                                  type: string
+                                "@name":
+                                  type: string
+                PlatformGUID:
+                  type: string
+            status:
+              type: integer
+        CIM_Chassis:
+          type: object
+          properties:
+            response:
+              type: object
+              properties:
+                ChassisPackageType:
+                  type: integer
+                CreationClassName:
+                  type: string
+                ElementName:
+                  type: string
+                Manufacturer:
+                  type: string
+                Model:
+                  type: string
+                OperationalStatus:
+                  type: integer
+                PackageType:
+                  type: integer
+                SerialNumber:
+                  type: string
+                Tag:
+                  type: string
+                Version:
+                  type: string
+            responses:
+              type: object
+              properties:
+                Header:
+                  type: object
+                  properties:
+                    To:
+                      type: string
+                    RelatesTo:
+                      type: integer
+                    Action:
+                      type: string
+                    MessageID:
+                      type: string
+                    ResourceURI:
+                      type: string
+                    Method:
+                      type: string
+                Body:
+                  type: object
+                  properties:
+                    ChassisPackageType:
+                      type: integer
+                    CreationClassName:
+                      type: string
+                    ElementName:
+                      type: string
+                    Manufacturer:
+                      type: string
+                    Model:
+                      type: string
+                    OperationalStatus:
+                      type: integer
+                    PackageType:
+                      type: integer
+                    SerialNumber:
+                      type: string
+                    Tag:
+                      type: string
+                    Version:
+                      type: string
+            status:
+              type: integer
+        CIM_Chip:
+          type: object
+          properties:
+            responses:
+              type: array
+              items:
+                type: object
+                properties:
+                  CanBeFRUed:
+                    type: boolean
+                  CreationClassName:
+                    type: string
+                  ElementName:
+                    type: string
+                  Manufacturer:
+                    type: string
+                  OperationalStatus:
+                    type: integer
+                  Tag:
+                    type: string
+                  Version:
+                    type: string
+                  BankLabel: 
+                    type: string
+                  Capacity:
+                    type: integer
+                  FormFactor:
+                    type: integer
+                  MemoryType:
+                    type: integer
+                  PartNumber:
+                    type: string
+                  SerialNumber:
+                    type: string
+                  Speed:
+                    type: integer
+            status:
+              type: integer
+        CIM_Card:
+          type: object
+          properties:
+            response:
+              type: object
+              properties:
+                CanBeFRUed:
+                  type: boolean
+                CreationClassName:
+                  type: string
+                ElementName: 
+                  type: string
+                Manufacturer: 
+                  type: string
+                Model: 
+                  type: string
+                OperationalStatus:
+                  type: integer
+                PackageType:
+                  type: integer
+                SerialNumber: 
+                  type: string
+                Tag: 
+                  type: string
+                Version:
+                  type: string
+            responses:
+              type: object
+              properties:
+                Header:
+                  type: object
+                  properties:
+                    To:
+                      type: string
+                    RelatesTo:
+                      type: integer
+                    Action:
+                      type: string
+                    MessageID:
+                      type: string
+                    ResourceURI:
+                      type: string
+                    Method:
+                      type: string
+                Body:
+                  type: object
+                  properties:
+                    CanBeFRUed:
+                      type: boolean
+                    CreationClassName:
+                      type: string
+                    ElementName: 
+                      type: string
+                    Manufacturer: 
+                      type: string
+                    Model: 
+                      type: string
+                    OperationalStatus:
+                      type: integer
+                    PackageType:
+                      type: integer
+                    SerialNumber: 
+                      type: string
+                    Tag: 
+                      type: string
+                    Version:
+                      type: string
+            status:
+              type: integer
+        CIM_BIOSElement:
+          type: object
+          properties:
+            response:
+              type: object
+              properties:
+                ElementName:
+                  type: string
+                Manufacturer:
+                  type: string
+                Name:
+                  type: string
+                OperationalStatus:
+                  type: integer
+                PrimaryBIOS:
+                  type: boolean
+                ReleaseDate:
+                  type: object
+                  properties:
+                    Datetime:
+                      type: string
+                SoftwareElementID: 
+                  type: string
+                SoftwareElementState:
+                  type: integer
+                TargetOperatingSystem:
+                  type: integer
+                Version: 
+                  type: string
+            responses:
+              type: object
+              properties:
+                Header:
+                  type: object
+                  properties:
+                    To:
+                      type: string
+                    RelatesTo:
+                      type: integer
+                    Action:
+                      type: string
+                    MessageID:
+                      type: string
+                    ResourceURI:
+                      type: string
+                    Method:
+                      type: string
+                Body:
+                  type: object
+                  properties:
+                    ElementName:
+                      type: string
+                    Manufacturer:
+                      type: string
+                    Name:
+                      type: string
+                    OperationalStatus:
+                      type: integer
+                    PrimaryBIOS:
+                      type: boolean
+                    ReleaseDate:
+                      type: object
+                      properties:
+                        Datetime:
+                          type: string
+                    SoftwareElementID: 
+                      type: string
+                    SoftwareElementState:
+                      type: integer
+                    TargetOperatingSystem:
+                      type: integer
+                    Version: 
+                      type: string
+            status:
+              type: integer
+        CIM_Processor:
+          type: object
+          properties:
+            responses:
+              type: array
+              items:
+                type: object
+                properties:
+                  CPUStatus:
+                    type: integer
+                  CreationClassName:
+                    type: string
+                  CurrentClockSpeed:
+                    type: integer
+                  DeviceID:
+                    type: string
+                  ElementName:
+                    type: string
+                  EnabledState:
+                    type: integer
+                  ExternalBusClockSpeed:
+                    type: integer
+                  Family:
+                    type: integer
+                  HealthState:
+                    type: integer
+                  MaxClockSpeed:
+                    type: integer
+                  OperationalStatus:
+                    type: integer
+                  RequestedState:
+                    type: integer
+                  Role:
+                    type: string
+                  Stepping:
+                    type: integer
+                  SystemCreationClassName:
+                    type: string
+                  SystemName:
+                    type: string
+                  UpgradeMethod:
+                    type: integer
+            status:
+              type: integer
+        CIM_PhysicalMemory:
+          type: object
+          properties:
+            responses:
+              type: array
+              items:
+                type: object
+                properties:
+                  BankLabel:
+                    type: string
+                  Capacity:
+                    type: integer
+                  CreationClassName:
+                    type: string
+                  ElementName:
+                    type: string
+                  FormFactor:
+                    type: integer
+                  Manufacturer:
+                    type: string
+                  MemoryType:
+                    type: integer
+                  PartNumber:
+                    type: string
+                  SerialNumber:
+                    type: string
+                  Speed:
+                    type: integer
+                  Tag:
+                    type: integer
+            status:
+              type: integer
+        CIM_MediaAccessDevice:
+          type: object
+          properties:
+            responses:
+              type: array
+              items:
+                type: object
+                properties:
+                  Capabilities:
+                    type: array
+                    items:
+                        type: integer
+                  CreationClassName:
+                    type: string
+                  DeviceID:
+                    type: string
+                  ElementName:
+                    type: string
+                  EnabledDefault:
+                    type: integer
+                  EnabledState:
+                    type: integer
+                  MaxMediaSize:
+                    type: integer
+                  OperationalStatus:
+                    type: integer
+                  RequestedState:
+                    type: integer
+                  Security:
+                    type: integer
+                  SystemCreationClassName:
+                    type: string
+                  SystemName:
+                    type: string
+            status:
+              type: integer
+        CIM_PhysicalPackage:
+          type: object
+          properties:
+            responses:
+              type: array
+              items:
+                type: object
+                properties:
+                  CanBeFRUed:
+                    type: boolean
+                  CreationClassName:
+                    type: string
+                  ElementName:
+                    type: string
+                  Manufacturer:
+                    type: string
+                  Model:
+                    type: string
+                  OperationalStatus:
+                    type: integer
+                  PackageType:
+                    type: integer
+                  SerialNumber:
+                    type: string
+                  Tag:
+                    type: string
+                  Version:
+                    type: string
+                  ChassisPackageType:
+                    type: integer
+            status:
+              type: integer                    
+      example:
+        CIM_ComputerSystemPackage:
+          response:
+            Antecedent:
+              Address: http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous
+              ReferenceParameters:
+                ResourceURI: http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/  CIM_Chassis
+                SelectorSet:
+                  Selector:
+                  - value: CIM_Chassis
+                    "@name": CreationClassName
+                  - value: CIM_Chassis
+                    "@name": Tag
+            Dependent:
+              Address: http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous
+              ReferenceParameters:
+                ResourceURI: http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/  CIM_ComputerSystem
+                SelectorSet:
+                  Selector:
+                  - value: CIM_ComputerSystem
+                    "@name": CreationClassName
+                  - value: ManagedSystem
+                    "@name": Name
+            PlatformGUID: 1095AC4BA6042143BAE2D45DDF07B684
+          status: 200
+        CIM_SystemPackaging:
+          responses:
+          - Antecedent:
+              Address: http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous
+              ReferenceParameters:
+                ResourceURI: http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/  CIM_Chassis
+                SelectorSet:
+                  Selector:
+                  - value: CIM_Chassis
+                    "@name": CreationClassName
+                  - value: CIM_Chassis
+                    "@name": Tag
+            Dependent:
+              Address: http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous
+              ReferenceParameters:
+                ResourceURI: http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/  CIM_ComputerSystem
+                SelectorSet:
+                  Selector:
+                  - value: CIM_ComputerSystem
+                    "@name": CreationClassName
+                  - value: ManagedSystem
+                    "@name": Name
+            PlatformGUID: 1095AC4BA6042143BAE2D45DDF07B684
+          status: 200
+        CIM_Chassis:
+          response:
+            ChassisPackageType: 0
+            CreationClassName: CIM_Chassis
+            ElementName: Managed System Chassis
+            Manufacturer: Intel Corporation
+            Model: NUC7i5DNHE
+            OperationalStatus: 0
+            PackageType: 3
+            SerialNumber: DW1646647500075
+            Tag: CIM_Chassis
+            Version: J57828-503
+          status: 200
+        CIM_Chip:
+          responses:
+          - CanBeFRUed: true
+            CreationClassName: CIM_Chip
+            ElementName: Managed System Processor Chip
+            Manufacturer: Intel(R) Corporation
+            OperationalStatus: 0
+            Tag: CPU 0
+            Version: Intel(R) Core(TM) i5-7300U CPU @ 2.60GHz
+          - BankLabel: BANK 0
+            Capacity: 4294967296
+            CreationClassName: CIM_PhysicalMemory
+            ElementName: Managed System Memory Chip
+            FormFactor: 13
+            Manufacturer: 04EF
+            MemoryType: 26
+            PartNumber: 'TEAMGROUP-SD4-2133  '
+            SerialNumber: 020300C5
+            Speed: 0
+            Tag: 9876543210
+          - BankLabel: BANK 2
+            Capacity: 4294967296
+            CreationClassName: CIM_PhysicalMemory
+            ElementName: Managed System Memory Chip
+            FormFactor: 13
+            Manufacturer: 04EF
+            MemoryType: 26
+            PartNumber: 'TEAMGROUP-SD4-2133  '
+            SerialNumber: 020300BD
+            Speed: 0
+            Tag: 9876543210 (#2)
+          status: 200
+        CIM_Card:
+          response:
+            CanBeFRUed: true
+            CreationClassName: CIM_Card
+            ElementName: Managed System Base Board
+            Manufacturer: Intel Corporation
+            Model: NUC7i5DNB
+            OperationalStatus: 0
+            PackageType: 9
+            SerialNumber: BTDN7490016E
+            Tag: CIM_Card
+            Version: J57626-503
+          status: 200
+        CIM_BIOSElement:
+          response:
+            ElementName: Primary BIOS
+            Manufacturer: Intel Corp.
+            Name: Primary BIOS
+            OperationalStatus: 0
+            PrimaryBIOS: true
+            ReleaseDate:
+              Datetime: '2018-03-15T00:00:00Z'
+            SoftwareElementID: DNKBLi5v.86A.0040.2018.0315.1451
+            SoftwareElementState: 2
+            TargetOperatingSystem: 66
+            Version: DNKBLi5v.86A.0040.2018.0315.1451
+          status: 200
+        CIM_Processor:
+          responses:
+          - CPUStatus: 1
+            CreationClassName: CIM_Processor
+            CurrentClockSpeed: 2500
+            DeviceID: CPU 0
+            ElementName: Managed System CPU
+            EnabledState: 2
+            ExternalBusClockSpeed: 100
+            Family: 205
+            HealthState: 0
+            MaxClockSpeed: 8300
+            OperationalStatus: 0
+            RequestedState: 12
+            Role: Central
+            Stepping: 9
+            SystemCreationClassName: CIM_ComputerSystem
+            SystemName: ManagedSystem
+            UpgradeMethod: 2
+          status: 200
+        CIM_PhysicalMemory:
+          responses:
+          - BankLabel: BANK 0
+            Capacity: 4294967296
+            CreationClassName: CIM_PhysicalMemory
+            ElementName: Managed System Memory Chip
+            FormFactor: 13
+            Manufacturer: 04EF
+            MemoryType: 26
+            PartNumber: 'TEAMGROUP-SD4-2133  '
+            SerialNumber: 020300C5
+            Speed: 0
+            Tag: 9876543210
+          - BankLabel: BANK 2
+            Capacity: 4294967296
+            CreationClassName: CIM_PhysicalMemory
+            ElementName: Managed System Memory Chip
+            FormFactor: 13
+            Manufacturer: 04EF
+            MemoryType: 26
+            PartNumber: 'TEAMGROUP-SD4-2133  '
+            SerialNumber: 020300BD
+            Speed: 0
+            Tag: 9876543210 (#2)
+          status: 200
+        CIM_MediaAccessDevice:
+          responses:
+          - Capabilities:
+            - 4
+            - 10
+            CreationClassName: CIM_MediaAccessDevice
+            DeviceID: MEDIA DEV 0
+            ElementName: Managed System Media Access Device
+            EnabledDefault: 2
+            EnabledState: 0
+            MaxMediaSize: 250059350
+            OperationalStatus: 0
+            RequestedState: 12
+            Security: 2
+            SystemCreationClassName: CIM_ComputerSystem
+            SystemName: ManagedSystem
+          status: 200
+        CIM_PhysicalPackage:
+          responses:
+          - CanBeFRUed: true
+            CreationClassName: CIM_Card
+            ElementName: Managed System Base Board
+            Manufacturer: Intel Corporation
+            Model: NUC7i5DNB
+            OperationalStatus: 0
+            PackageType: 9
+            SerialNumber: BTDN7490016E
+            Tag: CIM_Card
+            Version: J57626-503
+          - CreationClassName: CIM_PhysicalPackage
+            ElementName: Managed System Storage Media Package
+            Model: 'Samsung SSD 850 EVO M.2 250GB           '
+            OperationalStatus: 0
+            PackageType: 15
+            SerialNumber: 'S33CNX0JC36654D     '
+            Tag: Storage Media Package 0
+          - ChassisPackageType: 0
+            CreationClassName: CIM_Chassis
+            ElementName: Managed System Chassis
+            Manufacturer: Intel Corporation
+            Model: NUC7i5DNHE
+            OperationalStatus: 0
+            PackageType: 3
+            SerialNumber: DW1646647500075
+            Tag: CIM_Chassis
+            Version: J57828-503
+          status: 200
+    SetAMTFeaturesRequest:
+      title: SetAMTFeaturesRequest
+      required:
+      - userConsent 
+      - enableSOL
+      - enableIDER
+      - enableKVM
+      properties:
+        userConsent:
+          type: string
+          enum: 
+            - kvm
+            - all
+            - none
+        redirection:
+          type: boolean
+        enableSOL:
+          type: boolean
+        enableIDER:
+          type: boolean
+        enableKVM:
+          type: boolean
+        enableAll:
+          type: boolean
+        ocr: 
+          type: boolean
+    SetAMTFeaturesResponse:
+      type: string
+      example: 
+        status: 'Updated AMT Features'    
+      properties:
+        status:
+          type: string
+    GetAMTFeaturesResponse:
+      title: GetAMTFeaturesResponse
+      properties:
+        userConsent:
+          type: string
+        redirection:
+          type: boolean
+        KVM:
+          type: boolean
+        SOL: 
+          type: boolean
+        IDER: 
+          type: boolean
+        optInState:
+          type: integer
+          enum:
+            - 0
+            - 1
+            - 2
+            - 3
+            - 4
+            - 5
+        ocr:
+          type: boolean
+        httpsBootSupported:
+          type: boolean
+        localPBABootSupported:
+          type: boolean
+        winREBootSupported:
+          type: boolean
+        remoteErase:
+          type: boolean
+      example: 
+        userConsent: kvm
+        redirection: false
+        KVM: false
+        SOL: true
+        IDER: true
+        optInState: 0
+        ocr: true
+        httpsBootSupported: true
+        winREBootSupported: true
+        localPBABootSupported: true
+        remoteErase: false
+        
+    SetAlarmClockRequest:
+      title: SetAlarmClockRequest
+      required:
+      - ElementName 
+      - StartTime
+      - Interval
+      - DeleteOnCompletion
+      properties:
+        ElementName:
+          type: string
+        StartTime:
+          type: string
+          format: date-time
+        Interval:
+          type: integer
+        DeleteOnCompletion:
+          type: boolean
+    SetAlarmClockResponse:
+      type: string
+      example: 
+        status: 'SUCCESS'
+        ReturnValue: 0
+      properties:
+        status:
+          type: string
+        ReturnValue: 
+          type: integer
+    GetAlarmClockResponse:
+      title: GetAlarmClockResponse
+      properties:
+        ElementName:
+          type: string
+        InstanceID:
+          type: string
+        StartTime:
+          type: object
+          properties:
+            DateTime:
+              type: string
+              format: date-time
+        Interval:
+          type: object
+          properties:
+            Interval:
+              type: string
+        DeleteOnCompletion:
+          type: boolean
+      example: 
+        DeleteOnCompletion: false
+        ElementName: testAlarm
+        InstanceID: testAlarm
+        Interval: 
+          Interval: PT10M
+        StartTime:
+          DateTime: 2024-12-31T23:59:00Z
+    DeleteAlarmErrorResponse:
+      title: DeleteAlarmErrorResponse
+      example:
+        error: "Alarm instance not found"
+        errorDescription: "Alarm occurrence delete request failed for guid : 4c4c4544-005a-3510-8047-b4c04f564433."
+      properties:
+        success:
+          description: HTTP returncode
+          type: integer
+        error:
+          description: server error message
+          type: string
+        errorDescription:
+          description: contains device guid
+          type: string
+    PowerStateResponse:
+      title: PowerStateResponse
+      example:
+        powerstate: 2
+        OSPowerSavingState: 2
+      properties:
+        powerstate:
+          type: integer
+        OSPowerSavingState:
+          type: integer
+    PowerCapabilitiesResponse:
+      title: PowerCapabilitiesResponse
+      properties:
+        powerUp:
+          type: integer
+        powerCycle:
+          type: integer
+        powerDown:
+          type: integer
+        reset:
+          type: integer
+        softOff:
+          type: integer
+        softReset:
+          type: integer
+        sleep:
+          type: integer
+        hibernate:
+          type: integer
+        powerUpToBIOS:
+          type: integer
+        resetToBIOS:
+          type: integer
+        resetToSecureErase:
+          type: integer
+        resetToIDE-RFloppy:
+          type: integer
+        powerOnToIDE-RFloppy:
+          type: integer
+        resetToIDE-RCDROM:
+          type: integer
+        powerOnToIDE-RCDROM:
+          type: integer
+        resetToPXE:
+          type: integer
+        powerOnToPXE:
+          type: integer
+      example: 
+        Power up: 2
+        Power cycle: 5
+        Power down: 8
+        Reset: 10
+        Soft-off: 12
+        Soft-reset: 14
+        Sleep: 4
+        Hibernate: 7
+        Power up to BIOS: 100
+        Reset to BIOS: 101
+        Reset to Secure Erase: 104
+        Reset to IDE-R Floppy: 200
+        Power on to IDE-R Floppy: 201
+        Reset to IDE-R CDROM: 202
+        Power on to IDE-R CDROM: 203
+        Reset to PXE: 400
+        Power on to PXE: 401
+    PowerActionRequest:
+      title: PowerActionRequest
+      required:
+      - action 
+      - useSOL
+      example:
+        action: 8
+        useSOL: false
+      properties:
+        action:
+          type: integer
+          enum: 
+            - 2
+            - 5
+            - 8
+            - 10
+            - 4
+            - 7
+            - 12
+            - 14
+            - 100
+            - 101
+            - 104
+            - 105
+            - 106
+            - 107
+            - 108
+            - 109
+            - 110
+            - 200
+            - 201
+            - 202
+            - 203
+            - 300
+            - 301
+            - 400
+            - 401
+            - 500
+            - 501
+        useSOL:
+          type: boolean
+        bootDetails:
+          type: object
+          properties:
+             url: 
+              type: string
+             username: 
+               type: string
+             password: 
+               type: string
+               description: Password for authentication
+             bootPath:
+               type: string
+               description: Boot path for PBA and WinRE boot scenarios
+             enforceSecureBoot: 
+               type: boolean
+    PowerActionResponse:
+      title: PowerActionResponse
+      example:
+        Header:
+          To: "http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous"
+          RelatesTo: 0
+          Action: "http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_PowerManagementService/RequestPowerStateChangeResponse"
+          MessageID: "uuid:00000000-8086-8086-8086-0000000450A6"
+          ResourceURI: "http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_PowerManagementService"
+        Body:
+          ReturnValue: 0
+          ReturnValueStr: SUCCESS
+      properties:
+        Body:
+          type: object
+          properties:
+            ReturnValue:
+              type: integer
+            ReturnValueStr:
+              type: string
+    UserConsentRequest:
+      required: 
+      - consentCode
+      example:
+        consentCode: 123456
+      properties:
+        consentCode:
+          type: integer
+    UserConsentResponse:
+      type: object
+      example:
+        Header: 
+          Action: "http://intel.com/wbem/wscim/1/ips-schema/1/IPS_OptInService/StartOptInResponse"
+          MessageID: "uuid:00000000-8086-8086-8086-000000001ACD"
+          Method: "StartOptIn"
+          RelatesTo: "1"
+          ResourceURI: "http://intel.com/wbem/wscim/1/ips-schema/1/IPS_OptInService"
+          To: "http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous"
+        Body: 
+          ReturnValue: 0
+          ReturnValueStr: "SUCCESS"
+      properties:
+        Header:
+          type: object
+          properties:
+            To:
+              type: string
+            RelatesTo:
+              type: string
+            Action:
+              type: string
+            MessageID:
+              type: string
+            ResourceURI:
+              type: string
+            Method:
+              type: string
+        Body:
+          type: object
+          properties:
+             ReturnValue: 
+              type: integer
+             ReturnValueStr: 
+               type: string
+    DeactivateResponse:
+      title: DeactivateResponse
+      example:
+        status: SUCCESS
+      properties:
+        status:
+          type: string
+    Device:
+      title: Device
+      example:
+        guid: '123e4567-e89b-12d3-a456-426614174000'
+        hostname: 'AMTDEVICENUC1'
+        tags: ['Texas','NUC','Store #123']
+        mpsInstance: 'test.mystack.com'
+        connectionStatus: true
+        mpsusername: 'admin'
+        tenantId: ''
+        friendlyName: ''
+        dnsSuffix: ''
+        deviceInfo: {'fwVersion':'16.1', 'fwBuild':'1111', 'fwSku':'16392', 'currentMode':'0', 'features':'AMT Pro Corporate', 'ipAddress':'', 'lastUpdate':'2023-11-13T17:20:59.043Z'}
+        lastConnected: '2023-11-13T17:21:57.885Z'
+        lastSeen: '2023-11-13T17:33:57.915Z'
+        lastDisconnected: '2023-11-13T17:22:57.885Z'
+      properties:
+        guid:
+          type: string
+        hostname:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        mpsInstance:
+          type: string
+        connectionStatus:
+          type: boolean
+        mpsusername:
+          type: string
+        tenantid:
+          type: string
+        friendlyName:
+          type: string
+        dnsSuffix:
+          type: string
+        lastConnected:
+          type: string
+          format: date-time
+        lastSeen:
+          type: string
+          format: date-time
+        lastDisconnected:
+          type: string
+          format: date-time
+        deviceInfo:
+          type: object
+          properties:
+            fwVersion: 
+              type: string
+            fwBuild: 
+              type: string
+            fwSku: 
+              type: string
+            currentMode: 
+              type: string
+            features:
+              type: string
+            ipAddress: 
+              type: string
+            lastUpdated:
+              type: string
+              format: date-time
+    CountDevicesResponse:
+      title: CountDevicesResponse
+      type: object 
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Device'  
+        totalCount:
+          type: integer
+    AddDevice:
+      title: AddDevice
+      required:
+      - guid
+      - hostname
+      - tags
+      example:
+        guid: '123e4567-e89b-12d3-a456-426614174000'
+        hostname: 'AMTDEVICENUC1'
+        friendlyName: 'store12pos2'
+        tags: ['Texas','NUC','Store #123']
+      properties:
+        guid:
+          type: string
+        hostname:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        deviceInfo:
+          type: object
+          properties:
+            fwVersion: 
+              type: string
+            fwBuild: 
+              type: string
+            fwSku: 
+              type: string
+            currentMode: 
+              type: string
+            ipAddress: 
+              type: string
+    AddDeviceResponse: 
+      title: DeviceResponse 
+      required:
+      - guid
+      - hostname
+      - tags 
+      - mpsInstance 
+      - connectionStatus
+      - mpsusername
+      - tenantID
+      - friendlyName
+      - dnsSuffix
+      example: 
+        guid: '123e4567-e89b-12d3-a456-426614174000'
+        hostname: 'AMTDEVICENUC1'
+        tags: ['Texas', 'NUC', 'Store #123']
+        mpsInstance: null
+        connectionStatus: false 
+        mpsusername: null
+        tenantID: ''
+        friendlyName: 'store12pos2'
+        dnsSuffix: null
+        deviceInfo: {'fwVersion':'16.1', 'fwBuild':'1111', 'fwSku':'16392', 'currentMode':'0', 'features':'AMT Pro Corporate', 'ipAddress':'', 'lastUpdated':'2023-11-13T17:20:59.043Z'}
+        lastConnected: '2023-11-13T17:21:57.885Z'
+        lastSeen: '2023-11-13T17:33:57.915Z'
+        lastDisconnected: '2023-11-13T17:22:57.885Z'
+      properties:
+        guid:
+          type: string
+        hostname:
+          type: string
+        dnsSuffix:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        mpsInstance: 
+          type: string
+        connectionStatus: 
+          type: boolean
+        mpsusername: 
+          type: string
+        tenantID:
+          type: string
+        friendlyName: 
+          type: string
+        lastConnected:
+          type: string
+          format: date-time
+        lastSeen:
+          type: string
+          format: date-time
+        lastDisconnected:
+          type: string
+          format: date-time
+        deviceInfo:
+          type: object
+          properties:
+            fwVersion: 
+              type: string
+            fwBuild: 
+              type: string
+            fwSku: 
+              type: string
+            currentMode: 
+              type: string
+            features:
+              type: string
+            ipAddress: 
+              type: string
+            lastUpdated:
+              type: string
+              format: date-time
+    EditDevice: 
+      title: EditDevice 
+      required:
+      - guid 
+      example:
+        guid: '123e4567-e89b-12d3-a456-426614174000'
+        hostname: 'AMTDEVICENUC1'
+        dnsSuffix: 'os.suffix.com'
+        friendlyName: 'store12pos2'
+        tags: ['Texas','NUC','Store #123']
+      properties:
+        guid:
+          type: string
+        hostname:
+          type: string
+        dnsSuffix:
+          type: string
+        friendlyName:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        deviceInfo:
+          type: object
+          properties:
+            fwVersion: 
+              type: string
+            fwBuild: 
+              type: string
+            fwSku: 
+              type: string
+            currentMode: 
+              type: string
+            ipAddress: 
+              type: string
+    EditDeviceResponse:
+      title: DeviceResponse 
+      required:
+      - guid
+      - hostname
+      - tags 
+      - mpsInstance 
+      - connectionStatus
+      - mpsusername
+      - tenantID
+      - friendlyName
+      - dnsSuffix
+      example: 
+        guid: '123e4567-e89b-12d3-a456-426614174000'
+        hostname: 'AMTDEVICENUC1'
+        tags: ['Texas', 'NUC', 'Store #123']
+        mpsInstance: null
+        connectionStatus: false 
+        mpsusername: 'admin'
+        tenantID: ''
+        friendlyName: 'store12pos2'
+        dnsSuffix: 'os.suffix.com'
+        deviceInfo: {'fwVersion':'16.1', 'fwBuild':'1111', 'fwSku':'16392', 'currentMode':'0', 'features':'AMT Pro Corporate', 'ipAddress':'', 'lastUpdated':'2023-11-13T17:20:59.043Z'}
+        lastConnected: '2023-11-13T17:21:57.885Z'
+        lastSeen: '2023-11-13T17:33:57.915Z'
+        lastDisconnected: '2023-11-13T17:22:57.885Z'
+      properties:
+        guid:
+          type: string
+        hostname:
+          type: string
+        dnsSuffix:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        mpsInstance: 
+          type: string
+        connectionStatus: 
+          type: boolean
+        mpsusername: 
+          type: string
+        tenantID:
+          type: string
+        friendlyName: 
+          type: string
+        lastConnected:
+          type: string
+          format: date-time
+        lastSeen:
+          type: string
+          format: date-time
+        lastDisconnected:
+          type: string
+          format: date-time
+        deviceInfo:
+          type: object
+          properties:
+            fwVersion: 
+              type: string
+            fwBuild: 
+              type: string
+            fwSku: 
+              type: string
+            currentMode: 
+              type: string
+            features:
+              type: string
+            ipAddress: 
+              type: string
+            lastUpdated:
+              type: string
+              format: date-time
+    RedirectStatus:
+      title: RedirectStatus
+      example:
+        isKVMConnected: false
+        isSOLConnected: false
+        isIDERConnected: false
+      properties:
+        isKVMConnected:
+          type: boolean
+        isSOLConnected:
+          type: boolean
+        isIDERConnected:
+          type: boolean
+    Stats:
+      title: Stats
+      example:
+        totalCount: 1
+        connectedCount: 1
+        disconnectedCount: 0
+      properties:
+        totalCount:
+          type: integer
+        connectedCount:
+          type: integer
+        disconnectedCount:
+          type: integer
+    DeleteResponse:
+      title: DeleteResponse
+      example:
+        success: 204
+      properties:
+        success:
+          description: HTTP returncode
+          type: integer
+    DeleteErrorResponse:
+      title: DeleteErrorResponse
+      example:
+        error: "Device not found/connected. Please connect again using CIRA."
+        errorDescription: "guid : 038d0240-045c-05f4-7706-980700080009"
+      properties:
+        success:
+          description: HTTP returncode
+          type: integer
+        error:
+          description: server error message
+          type: string
+        errorDescription:
+          description: contains device guid
+          type: string
+    DisconnectResponse:
+      title: DisconnectResponse
+      example:
+        description: "CIRA connection disconnected : 038d0240-045c-05f4-7706-980700080009"
+      properties:
+        success:
+          description: HTTP returncode
+          type: integer
+        description:
+          description: server response message containing guid
+          type: string
+    DisconnectErrorResponse:
+      title: DisconnectErrorResponse
+      example:
+        error: "Device not found/connected. Please connect again using CIRA."
+        errorDescription: "guid : 038d0240-045c-05f4-7706-980700080009"
+      properties:
+        success:
+          description: HTTP returncode
+          type: integer
+        error:
+          description: server error message
+          type: string
+        errorDescription:
+          description: contains device guid
+          type: string
+    RefreshResponse:
+      title: DeleteResponse
+      example:
+        success: 200
+        description: "Device info refreshed : 4c4c4544-004c-4d10-8050-c2c04f325133"
+      properties:
+        success:
+          description: HTTP returncode
+          type: integer
+    CiracertResponse:
+      title: CiracertResponse
+      example: |
+        "-----BEGIN CERTIFICATE-----        MIIEOzCCAqOgAwIBAgIDAjVCMA0GCSqGSIb3DQEBDAUAMD0xFzAVBgNVBAMTDk1QU1Jvb3QtNmZhNMSDIWEdsqwe89dsNNJSOW2Db3duMRAwDgYDVQQGEwd1bmtub3duMCAXDTIyMDkwNTE4MTgwMloYDzIwNTMwOTA1MTgxODAyWjA9MRcwFQYDVQQDEw5NUFNSb290LTZmYTQ5NEQMA4GA1UEChMHdW5rbm93bjEQMA4GA1UEBhMHdW5rbm93bjCCAaIwDQYJKoZIhNMSDANdnSdsnmasSDWED8oCggGBAPiA+YEPjIlryv8PdJsfIwkqd/7wJriASiM3W5VePKtO5gXKCg3piuUAAIj8Lk36TK6Lvz5He818o1YMLposvTzZJHVPILye5aqp2Lgs079nESgoAt0/yxSMh53S8dzEf5CXBmlA5foEebVUKQoei/bqSkbIC3CvZ/NMIGHF0nUMoKeigzeJbADDQVIMCnqZoPq0pRLUTbCyogAaPQ+9N72XNPw3HYX7voH2EOJxHtZHH8LTJZXKc4ozt/JU9G0onfnSTCJAirbZSfY0bdxdaSEOJg4tGAFAseHikYP6hHGqjutUC7/WiT/3EBcQnO5OjckWDXVOiG6AmNsIqW2cfJnNjd0kOwbdyEC+Tmt3w9VR8491wFexfLodbbk5JUS99bBwf856y70zfmAiCSgQcIjU5Yra7eIkNtqBv1RG4tSBm0fD5YB/mArICoYF0zNWGrqqcbfuyARdEiNCjxIbSZt+l1onUfFWfjoBcE7AhL0EaZmUTbQKP9hl+1zffpa0wIDAQABo0IwQDAMBgNVHRMEBTADAQH/MBEGCWCGSAGG+EIBAQQEAwIABzAdBgNVHQ4EFgQUb6SWpSxsakc8AP/bm+gwt0qIsMEwDQYJKoZIhvcBHgfIJKLOpnmASfdHQaft0QROp4vl1J/hcAfPw0j+l3dMEpKbzJQhaRoRkIECpxhvaYgAUq7hA7MNNn4QV20BOiDfV8ZURFrEmnehP13I7jd7YDLxpfK17x5r6wlAYZ/pGb8u9lgexE14kERmmRZvuh7wxQy0rTcYKe9+jM5R8Ugv/8gWYdpp1gr8fGJJx/e2DfSs+ViXEOWwgWmidTwPgerwWR8AcvW8IXkylXO6+SlTXnv3cWcY3BEh9r0xXBa4lkFAse2+Zj/X9rudYGqOLYtIsef0Q5fOopHJ7JBXUbMQySAIdAbBb0X14rgEC2kwow1NCm0vzi8CAL/14D1csd0c1K8fRu//lQgj+gh7Tk4B7RMZOOwTMAUQj1LoYnjSDNJS87sAmkmNNJOS09PTi9RVW3nddcgMVSSa2wehS4ZpYkZOxLdgcV58dfW9wBKBWuqmnMGPjI5pjNCRK8foPePwuP1avckSdKsen5qT0tfthDV+2TrZuV07eKVrmTXq0GBNEIVQplV1yyA== -----END CERTIFICATE-----"
+    HealthcheckResponse:
+      title: HealthcheckResponse
+      example:
+          db:
+            name: "POSTGRES"
+            status: "OK"
+          secretStore:
+            name: "VAULT"
+            status: 
+              initialized: true
+              sealed: false
+              standby: false
+              performance_standby: false
+              replication_performance_mode: "disabled"
+              replication_dr_mode: "disabled"
+              server_time_utc: 1646337196
+              version: "1.9.3"
+              cluster_name: "vault-cluster-3dc0c596"
+              cluster_id: "469ada72-d74b-4d1e-6e77-476bf9902b72"
+      properties:
+          db:
+            type: object
+            properties:
+              name:
+                type: string
+              status:
+                type: string
+          secretStore: 
+            type: object
+            properties:
+              name:
+                type: string
+              status:
+                type: object
+                properties:
+                  initialized:
+                    type: boolean
+                  sealed:
+                    type: boolean
+                  standby:
+                    type: boolean
+                  performance_standby:
+                    type: boolean
+                  replication_performance_mode:
+                    type: string
+                  replication_dr_mode:
+                    type: string
+                  server_time_utc:
+                    type: integer
+                  version:
+                    type: string
+                  cluster_name:
+                    type: string
+                  cluster_id:
+                    type: string
+    VersionResponse:
+      title: VersionResponse
+      required:
+        - serviceVersion
+      type: object
+      properties:
+        serviceVersion:
+          type: string
+      example:
+        serviceVersion: 2.8.0
+    GetCertificatesResponse:
+      title: GetCertificatesResponse
+      type: object
+      properties:
+        certificates:
+            type: object
+            properties:
+              keyManagementItems:
+                type: array
+                items:
+                  type: object
+                description: Array of key management items
+              publicKeyCertificateItems:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    elementName:
+                      type: string
+                      description: Name of the certificate element
+                    instanceID:
+                      type: string
+                      description: Unique instance identifier for the certificate
+                    x509Certificate:
+                      type: string
+                      description: Base64 encoded X.509 certificate
+                    trustedRootCertificate:
+                      type: boolean
+                      description: Whether this is a trusted root certificate
+                    issuer:
+                      type: string
+                      description: Certificate issuer distinguished name
+                    subject:
+                      type: string
+                      description: Certificate subject distinguished name
+                    readOnlyCertificate:
+                      type: boolean
+                      description: Whether the certificate is read-only
+                    publicKeyHandle:
+                      type: string
+                      description: Handle to the associated public key
+                    associatedProfiles:
+                      type: array
+                      items:
+                        type: string
+                      description: List of profiles associated with this certificate
+                    displayName:
+                      type: string
+                      description: Human-readable display name for the certificate
+                  required:
+                    - elementName
+                    - instanceID
+                    - x509Certificate
+                    - trustedRootCertificate
+                    - issuer
+                    - subject
+                    - readOnlyCertificate
+                    - associatedProfiles
+                    - displayName
+        publicKeys:
+            type: object
+            properties:
+              publicPrivateKeyPairItems:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    elementName:
+                      type: string
+                      description: Name of the key element
+                    instanceID:
+                      type: string
+                      description: Unique instance identifier for the key pair
+                    derKey:
+                      type: string
+                      description: DER-encoded public key
+                  required:
+                    - elementName
+                    - instanceID
+                    - derKey
+        profileAssociation:
+            type: array
+            items:
+              type: object
+              properties:
+                type:
+                  type: string
+                  description: Type of profile association
+                  enum:
+                    - TLS
+                profileID:
+                  type: string
+                  description: Identifier of the associated profile
+                clientCertificate:
+                  type: object
+                  properties:
+                    elementName:
+                      type: string
+                    instanceID:
+                      type: string
+                    x509Certificate:
+                      type: string
+                    trustedRootCertificate:
+                      type: boolean
+                    issuer:
+                      type: string
+                    subject:
+                      type: string
+                    readOnlyCertificate:
+                      type: boolean
+                    publicKeyHandle:
+                      type: string
+                    associatedProfiles:
+                      type: array
+                      items:
+                        type: string
+                    displayName:
+                      type: string
+                  description: Client certificate used for this profile association
+              required:
+                - type
+                - profileID
+                - clientCertificate
+      required:
+        - certificates
+        - publicKeys
+        - profileAssociation
+      example:
+        certificates:
+          keyManagementItems: []
+          publicKeyCertificateItems:
+            - elementName: "Intel(r) AMT Certificate"
+              instanceID: "Intel(r) AMT Certificate: Handle: 0"
+              x509Certificate: "base64_encoded_certificate"
+              trustedRootCertificate: false
+              issuer: "C=US,S=California,L=Santa Clara,O=Intel Corporation,CN=Intel┬« AMT self-signed certificate"
+              subject: "C=US,S=California,L=Santa Clara,O=Intel Corporation,CN=Intel┬« AMT self-signed certificate"
+              readOnlyCertificate: true
+              publicKeyHandle: ""
+              associatedProfiles: ["TLS"]
+              displayName: "Intel┬« AMT self-signed certificate"
+          publicKeys:
+            publicPrivateKeyPairItems:
+              - elementName: "Intel(r) AMT Key"
+                instanceID: "Intel(r) AMT Key: Handle: 0"
+                derKey: "base64_encoded_public_key"
+          profileAssociation:
+            - type: "TLS"
+              profileID: "TLSProtocolEndpoint Instances Collection"
+              clientCertificate:
+                elementName: "Intel(r) AMT Certificate"
+                instanceID: "Intel(r) AMT Certificate: Handle: 0"
+                x509Certificate: "base64_encoded_certificate"
+                trustedRootCertificate: false
+                issuer: "C=US,S=California,L=Santa Clara,O=Intel Corporation,CN=Intel┬« AMT self-signed certificate"
+                subject: "C=US,S=California,L=Santa Clara,O=Intel Corporation,CN=Intel┬« AMT self-signed certificate"
+                readOnlyCertificate: true
+                publicKeyHandle: ""
+                associatedProfiles: ["TLS"]
+                displayName: "Intel┬« AMT self-signed certificate"
+    AddCertificatesRequest:
+      title: AddCertificateRequest
+      type: object
+      properties:
+        cert:
+          type: string
+          description: Base64-encoded X.509 certificate to be added
+        isTrusted:
+          type: boolean
+          description: Whether the certificate should be marked as trusted
+      required:
+        - cert
+        - isTrusted
+      example:
+        cert: "base64_encoded_certificate"
+        isTrusted: true
+    AddCertificatesResponse:
+      type: object
+      properties:
+        handle:
+          type: string
+          description: Unique handle identifier for the newly added certificate
+      required:
+        - handle
+      example:
+        handle: "Intel(r) AMT Certificate: Handle: 2"
+    GetDisplaysResponse:
+      type: object
+      properties:
+        displays:
+          type: array
+          items:
+            $ref: '#/components/schemas/Display'
+          description: List of display configurations
+
+    Display:
+      type: object
+      required:
+        - displayIndex
+        - isActive
+        - upperLeftX
+        - upperLeftY
+        - resolutionX
+        - resolutionY
+        - isDefault
+      properties:
+        displayIndex:
+          type: integer
+          description: Index of the display
+          example: 0
+        isActive:
+          type: boolean
+          description: Whether the display is currently active
+          example: true
+        upperLeftX:
+          type: integer
+          description: X coordinate of the upper left corner
+          example: 1
+        upperLeftY:
+          type: integer
+          description: Y coordinate of the upper left corner
+          example: 2
+        resolutionX:
+          type: integer
+          description: Horizontal resolution in pixels
+          example: 3
+        resolutionY:
+          type: integer
+          description: Vertical resolution in pixels
+          example: 4
+        isDefault:
+          type: boolean
+          description: Whether this is the default display
+          example: true
+        role:
+          type: string
+          enum: ['primary', 'secondary', 'tertiary', 'quaternary']
+          description: Role of the display in multi-display setup
+          example: 'primary'
+    UpdateDisplaySettingsRequest:
+      type: object
+      required:
+        - displayIndex
+      properties:
+        displayIndex:
+          type: integer
+          description: Index of the display to update
+          example: 0
+    UpdateDisplaySettingsResponse:
+      type: object
+      properties:
+        IPS_KVMRedirectionSettingData:
+          $ref: '#/components/schemas/KVMRedirectionSettingData'
+    
+    KVMRedirectionSettingData:
+      type: object
+      properties:
+        BackToBackFbMode:
+          type: boolean
+          example: false
+        DefaultScreen:
+          type: integer
+          example: 0
+        DoubleBufferActive:
+          type: boolean
+          example: true
+        DoubleBufferEnabled:
+          type: boolean
+          example: true
+        ElementName:
+          type: string
+          example: "Intel(r) KVM Redirection Settings"
+        EnabledByMEBx:
+          type: boolean
+          example: true
+        GrayscalePixelFormatSupported:
+          type: boolean
+          example: true
+        InitialDecimationModeForLowRes:
+          type: integer
+          example: 2
+        InstanceID:
+          type: string
+          example: "Intel(r) KVM Redirection Settings"
+        Is5900PortEnabled:
+          type: boolean
+          example: false
+        OptInPolicy:
+          type: boolean
+          example: false
+        RFBPassword:
+          type: string
+          example: ""
+        SessionTimeout:
+          type: integer
+          example: 3
+        ZlibControlSupported:
+          type: boolean
+          example: true
+    BootSourcesResponse:
+      type: array
+      items:
+        $ref: '#/components/schemas/BootSource'
+    
+    BootSource:
+      type: object
+      properties:
+        biosBootString:
+          type: string
+          example: ""
+        bootString:
+          type: string
+          example: ""
+        elementName:
+          type: string
+          example: ""
+        failThroughSupported:
+          type: integer
+          example: 0
+        instanceID:
+          type: string
+          example: ""
+        structuredBiosBootString:
+          type: string
+          example: ""
