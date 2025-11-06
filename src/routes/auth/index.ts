@@ -13,6 +13,6 @@ import { authorizeDevice } from './authorizeDevice.js'
 const authRouter: Router = Router()
 
 authRouter.post('/', authValidator(), login)
-authRouter.get('/redirection/:guid', param('guid').isUUID(), validateMiddleware, authorizeDevice)
+authRouter.get('/redirection/:guid', param('guid').isUUID('loose'), validateMiddleware, authorizeDevice)
 
 export default authRouter
