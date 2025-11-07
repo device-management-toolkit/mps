@@ -1,3 +1,10 @@
+## [2.22.5](https://github.com/device-management-toolkit/mps/compare/v2.22.4...v2.22.5) (2025-11-07)
+
+
+### Bug Fixes
+
+* loosens UUID check for API ([#2194](https://github.com/device-management-toolkit/mps/issues/2194)) ([f741380](https://github.com/device-management-toolkit/mps/commit/f741380937cfc8f69a26d2ca4ef13fccbafcff2e))
+
 ## [2.22.4](https://github.com/device-management-toolkit/mps/compare/v2.22.3...v2.22.4) (2025-11-06)
 
 ## [2.22.3](https://github.com/device-management-toolkit/mps/compare/v2.22.2...v2.22.3) (2025-10-14)
