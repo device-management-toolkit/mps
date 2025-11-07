@@ -24,17 +24,17 @@ const deviceRouter: Router = Router()
 deviceRouter.get('/', odataValidator(), metadataQueryValidator(), validateMiddleware, getAllDevices)
 deviceRouter.get('/stats', stats)
 deviceRouter.get('/tags', getDistinctTags)
-deviceRouter.get('/:guid', param('guid').isUUID(), validateMiddleware, getDevice)
-deviceRouter.get('/redirectstatus/:guid', param('guid').isUUID(), validateMiddleware, ciraMiddleware, getRedirStatus)
+deviceRouter.get('/:guid', param('guid').isUUID('loose'), validateMiddleware, getDevice)
+deviceRouter.get('/redirectstatus/:guid', param('guid').isUUID('loose'), validateMiddleware, ciraMiddleware, getRedirStatus)
 deviceRouter.post('/', validator(), validateMiddleware, insertDevice)
 deviceRouter.patch('/', validator(), validateMiddleware, updateDevice)
 deviceRouter.delete('/refresh/:guid', validator(), validateMiddleware, refreshDevice)
 deviceRouter.delete(
   '/:guid',
-  param('guid').isUUID(),
+  param('guid').isUUID('loose'),
   query('isSecretToBeDeleted').optional().isBoolean(),
   validateMiddleware,
   deleteDevice
 )
-deviceRouter.delete('/disconnect/:guid', param('guid').isUUID(), validateMiddleware, ciraMiddleware, disconnect)
+deviceRouter.delete('/disconnect/:guid', param('guid').isUUID('loose'), validateMiddleware, ciraMiddleware, disconnect)
 export default deviceRouter
