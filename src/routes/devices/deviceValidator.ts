@@ -6,7 +6,7 @@
 import { check, query } from 'express-validator'
 
 export const validator = (): any => [
-  check('guid').isUUID().isString(),
+  check('guid').isUUID('loose').isString(),
   check('friendlyName').optional({ nullable: true }).isString(),
   check('hostname')
     .optional({ nullable: true })
