@@ -660,4 +660,52 @@ export class DeviceAction {
     logger.silly(`putKVMRedirectionSettingData ${messages.COMPLETE}`)
     return result.Envelope.Body
   }
+
+  async getEthernetPortSettings(
+    instanceID: string = 'Intel(r) AMT Ethernet Port Settings 0'
+  ): Promise<AMT.Models.EthernetPortSettings> {
+    logger.silly(`getEthernetPortSettings ${messages.REQUEST}`)
+    const selector = { name: 'InstanceID', value: instanceID }
+    const xmlRequestBody = this.amt.EthernetPortSettings.Get(selector)
+    const result = await this.ciraHandler.Get<AMT.Models.EthernetPortSettings>(this.ciraSocket, xmlRequestBody)
+    logger.silly(`getEthernetPortSettings ${messages.COMPLETE}`)
+    return result.Envelope.Body
+  }
+
+  async enumerateEthernetPortSettings(): Promise<
+    Common.Models.Envelope<Common.Models.Pull<AMT.Models.EthernetPortSettings>>
+  > {
+    logger.silly(`enumerateEthernetPortSettings ${messages.REQUEST}`)
+    let xmlRequestBody = this.amt.EthernetPortSettings.Enumerate()
+    const enumResponse = await this.ciraHandler.Enumerate(this.ciraSocket, xmlRequestBody)
+    if (enumResponse == null) {
+      logger.error(`enumerateEthernetPortSettings failed. Reason: ${messages.ENUMERATION_RESPONSE_NULL}`)
+      return null
+    }
+    xmlRequestBody = this.amt.EthernetPortSettings.Pull(enumResponse.Envelope.Body.EnumerateResponse.EnumerationContext)
+    const pullResponse = await this.ciraHandler.Pull<AMT.Models.EthernetPortSettings>(this.ciraSocket, xmlRequestBody)
+    logger.silly(`enumerateEthernetPortSettings ${messages.COMPLETE}`)
+    return pullResponse.Envelope
+  }
+
+  async setEthernetLinkPreference(
+    linkPreference: AMT.Types.EthernetPortSettings.LinkPreference,
+    timeoutSeconds: number,
+    instanceID: string = 'Intel(r) AMT Ethernet Port Settings 0'
+  ): Promise<Common.Models.Envelope<any>> {
+    logger.silly(`setEthernetLinkPreference ${messages.REQUEST}`)
+    const xmlRequestBody = this.amt.EthernetPortSettings.SetLinkPreference(linkPreference, timeoutSeconds, instanceID)
+    const result = await this.ciraHandler.Get(this.ciraSocket, xmlRequestBody)
+    logger.silly(`setEthernetLinkPreference ${messages.COMPLETE}`)
+    return result.Envelope
+  }
+
+  async setLinkPreferenceME(timeoutSeconds: number, instanceID?: string): Promise<Common.Models.Envelope<any>> {
+    return await this.setEthernetLinkPreference(1, timeoutSeconds, instanceID)
+  }
+
+  async cancelLinkPreference(instanceID?: string): Promise<Common.Models.Envelope<any>> {
+    // Set preference back to HOST with timeout 0
+    return await this.setEthernetLinkPreference(2, 0, instanceID)
+  }
 }

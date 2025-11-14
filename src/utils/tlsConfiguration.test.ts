@@ -5,12 +5,16 @@
 
 import { web, mps } from './tlsConfiguration.js'
 import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import fs from 'node:fs'
 import { logger } from '../logging/index.js'
 import { type mpsConfigType, type webConfigType } from '../models/Config.js'
 import { constants } from 'node:crypto'
 import { jest } from '@jest/globals'
 import { type SpyInstance, spyOn } from 'jest-mock'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
 
 let existsSyncSpy: SpyInstance<any>
 let readFileSyncSpy: SpyInstance<any>
