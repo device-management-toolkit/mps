@@ -27,7 +27,7 @@
     [
       "@semantic-release/exec",
       {
-        "publishCmd": "docker buildx build --platform linux/amd64,linux/arm64 --push -t docker.io/intel/oact-mps:latest -t vprodemo.azurecr.io/mps:v${nextRelease.version} -t docker.io/intel/oact-mps:v${nextRelease.version} -t docker.io/intel/device-mgmt-toolkit-mps:v${nextRelease.version} -t docker.io/intel/device-mgmt-toolkit-mps:latest ."
+        "publishCmd": "docker buildx build --platform linux/amd64,linux/arm64 --push -t vprodemo.azurecr.io/mps:latest -t vprodemo.azurecr.io/mps:v${nextRelease.version} -t docker.io/intel/oact-mps:latest -t docker.io/intel/oact-mps:v${nextRelease.version} -t docker.io/intel/device-mgmt-toolkit-mps:v${nextRelease.version} -t docker.io/intel/device-mgmt-toolkit-mps:latest ."
       }
     ],
     "@semantic-release/git"
