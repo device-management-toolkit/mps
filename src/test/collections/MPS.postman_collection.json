@@ -2682,6 +2682,7 @@
                   "pm.test(\"Body should have JWT Token\", function () {\r",
                   "    var jsonData = pm.response.json();\r",
                   "    pm.expect(jsonData.token).to.be.not.null;\r",
+                  "    pm.environment.set(\"token\", jsonData.token);\r",
                   "});\r",
                   ""
                 ],
@@ -2954,6 +2955,67 @@
             "api",
             "v1",
             "version"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Set Link Preference (Auto-detect WiFi)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 404\", function () {",
+              "    pm.response.to.have.status(404);",
+              "});",
+              "",
+              "pm.test(\"Device should not be found\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.error).to.eq(\"Device not found/connected. Please connect again using CIRA.\")",
+              "    pm.expect(jsonData.errorDescription).to.eq(\"guid : test-guid-123\")",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"linkPreference\": 1,\n  \"timeout\": 300\n}"
+        },
+        "url": {
+          "raw": "{{protocol}}://{{host}}/api/v1/amt/network/linkPreference/test-guid-123",
+          "protocol": "{{protocol}}",
+          "host": [
+            "{{host}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "amt",
+            "network",
+            "linkPreference",
+            "test-guid-123"
           ]
         }
       },
