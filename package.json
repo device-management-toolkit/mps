@@ -39,7 +39,7 @@
     "ci-prettify": "npx prettier --check '**/*.{ts,js,yaml,css,scss,json}'"
   },
   "dependencies": {
-    "@device-management-toolkit/wsman-messages": "^5.13.1",
+    "@device-management-toolkit/wsman-messages": "^5.14.0",
     "bottleneck": "^2.19.5",
     "consul": "^2.0.1",
     "cors": "^2.8.5",
