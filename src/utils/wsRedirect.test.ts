@@ -13,6 +13,7 @@ import { MqttProvider } from './MqttProvider.js'
 import { EventEmitter } from 'node:events'
 import { jest } from '@jest/globals'
 import { type SpyInstance, spyOn } from 'jest-mock'
+import { logger } from '../logging/index.js'
 
 const fakeGuid = '00000000-0000-0000-0000-000000000000'
 
@@ -109,6 +110,7 @@ describe('WsRedirect tests', () => {
   describe('handleClose tests', () => {
     let params: queryParams
     let publishEventSpy
+    let mockEvent: any
 
     beforeEach(() => {
       params = {
@@ -117,14 +119,22 @@ describe('WsRedirect tests', () => {
         mode: 'kvm' // default mode for testing
       } as any
       wsRedirect.websocketFromDevice = {
-        CloseChannel: jest.fn()
+        CloseChannel: jest.fn(),
+        state: 1 // Default state: connecting/active
       } as any
       devices[params.host] = { kvmConnect: true, iderConnect: true, solConnect: true } as any
       publishEventSpy = spyOn(MqttProvider, 'publishEvent')
+      mockEvent = {
+        wasClean: true,
+        code: 1000,
+        reason: 'Normal closure'
+      } as any
     })
 
     it('should handle close for KVM mode', () => {
-      wsRedirect.handleClose(params, null)
+      const logKvmCloseSpy = spyOn(wsRedirect as any, 'logKvmCloseSource')
+      wsRedirect.handleClose(params, mockEvent)
+      expect(logKvmCloseSpy).toHaveBeenCalledWith(true, 1, params.host)
       expect(publishEventSpy).toHaveBeenCalled()
       expect(wsRedirect.websocketFromDevice.CloseChannel).toBeCalled()
       expect(devices[params.host].kvmConnect).toBeFalsy()
@@ -132,20 +142,79 @@ describe('WsRedirect tests', () => {
 
     it('should handle close for IDER mode', () => {
       params.mode = 'ider'
-      wsRedirect.handleClose(params, null)
+      wsRedirect.handleClose(params, mockEvent)
       expect(devices[params.host].iderConnect).toBeFalsy()
     })
 
     it('should handle close for SOL mode', () => {
       params.mode = 'sol'
-      wsRedirect.handleClose(params, null)
+      wsRedirect.handleClose(params, mockEvent)
       expect(devices[params.host].solConnect).toBeFalsy()
     })
 
     it('should do nothing if websocketFromDevice is not set', () => {
+      publishEventSpy.mockClear() // Clear previous calls
       wsRedirect.websocketFromDevice = null
-      wsRedirect.handleClose(params, null)
-      expect(publishEventSpy).toHaveBeenCalled()
+      wsRedirect.handleClose(params, mockEvent)
+      expect(publishEventSpy).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('logKvmCloseSource tests', () => {
+    let publishEventSpy: SpyInstance<any>
+    let loggerInfoSpy: SpyInstance<any>
+
+    beforeEach(() => {
+      publishEventSpy = spyOn(MqttProvider, 'publishEvent')
+      loggerInfoSpy = spyOn(logger, 'info')
+    })
+
+    it('should log device-side closure when wasClean is true and state is 0', () => {
+      // Access private method using bracket notation
+      wsRedirect['logKvmCloseSource'](true, 0, fakeGuid)
+      
+      expect(loggerInfoSpy).toHaveBeenCalledWith(`[${fakeGuid}] KVM session closed by device (state: 0)`)
+      expect(publishEventSpy).toHaveBeenCalledWith('success', ['logKvmCloseSource'], 'KVM session closed by device (state: 0)', fakeGuid)
+    })
+
+    it('should log web-side closure when wasClean is true and state is 1', () => {
+      wsRedirect['logKvmCloseSource'](true, 1, fakeGuid)
+      
+      expect(loggerInfoSpy).toHaveBeenCalledWith(`[${fakeGuid}] KVM session closed by web (state: 1)`)
+      expect(publishEventSpy).toHaveBeenCalledWith('success', ['logKvmCloseSource'], 'KVM session closed by web (state: 1)', fakeGuid)
+    })
+
+    it('should log web-side closure when wasClean is true and state is 2', () => {
+      wsRedirect['logKvmCloseSource'](true, 2, fakeGuid)
+      
+      expect(loggerInfoSpy).toHaveBeenCalledWith(`[${fakeGuid}] KVM session closed by web (state: 2)`)
+      expect(publishEventSpy).toHaveBeenCalledWith('success', ['logKvmCloseSource'], 'KVM session closed by web (state: 2)', fakeGuid)
+    })
+
+    it('should log unexpected closure when wasClean is false', () => {
+      const loggerWarnSpy = spyOn(logger, 'warn')
+      wsRedirect['logKvmCloseSource'](false, 0, fakeGuid)
+      
+      expect(loggerWarnSpy).toHaveBeenCalledWith(`[${fakeGuid}] KVM session closed unexpectedly (state: 0)`)
+      expect(publishEventSpy).toHaveBeenCalledWith('fail', ['logKvmCloseSource'], 'KVM session closed unexpectedly (state: 0)', fakeGuid)
+    })
+
+    it('should log unexpected closure when wasClean is false regardless of state', () => {
+      const loggerWarnSpy = spyOn(logger, 'warn')
+      wsRedirect['logKvmCloseSource'](false, 1, fakeGuid)
+      
+      expect(loggerWarnSpy).toHaveBeenCalledWith(`[${fakeGuid}] KVM session closed unexpectedly (state: 1)`)
+      expect(publishEventSpy).toHaveBeenCalledWith('fail', ['logKvmCloseSource'], 'KVM session closed unexpectedly (state: 1)', fakeGuid)
+    })
+
+    it('should log warning when state is unexpected and return early', () => {
+      const loggerWarnSpy = spyOn(logger, 'warn')
+      loggerInfoSpy.mockClear() // Clear previous calls from other tests
+      wsRedirect['logKvmCloseSource'](true, 999, fakeGuid)
+      
+      expect(loggerWarnSpy).toHaveBeenCalledWith(`[${fakeGuid}] KVM session closed with unexpected channel state: 999`)
+      expect(publishEventSpy).toHaveBeenCalledWith('fail', ['logKvmCloseSource'], 'KVM session closed with unexpected channel state: 999', fakeGuid)
+      expect(loggerInfoSpy).not.toHaveBeenCalled()
     })
   })
 

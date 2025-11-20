@@ -1,3 +1,10 @@
+# [2.23.0](https://github.com/device-management-toolkit/mps/compare/v2.22.5...v2.23.0) (2025-11-20)
+
+
+### Features
+
+* support KVM ending detection in wsRedirect ([#2201](https://github.com/device-management-toolkit/mps/issues/2201)) ([6cb9ef7](https://github.com/device-management-toolkit/mps/commit/6cb9ef757b8198e404ef6f927902bd39b2b5cb2c))
+
 ## [2.22.5](https://github.com/device-management-toolkit/mps/compare/v2.22.4...v2.22.5) (2025-11-07)
 
 

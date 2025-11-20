@@ -42,7 +42,9 @@ export class WsRedirect {
     this.websocketFromWeb.onmessage = this.handleMessage.bind(this)
 
     // If the web socket is closed, close the associated TCP connection.
-    this.websocketFromWeb.onclose = this.handleClose.bind(this, params)
+    this.websocketFromWeb.onclose = (event: WebSocket.CloseEvent) => {
+      this.handleClose(params, event)
+    }
 
     // We got a new web socket connection, initiate a TCP connection to the target Intel AMT host/port.
     logger.debug(`${messages.REDIRECT_OPENING_WEB_SOCKET} to ${params.host}: ${params.port}.`)
@@ -78,12 +80,14 @@ export class WsRedirect {
     }
   }
 
-  handleClose(params: queryParams, CloseEvent: WebSocket.CloseEvent): void {
+  handleClose(params: queryParams, event: WebSocket.CloseEvent): void {
     logger.debug(`${messages.REDIRECT_CLOSING_WEB_SOCKET} to ${params.host}: ${params.port}.`)
     if (this.websocketFromDevice) {
       switch (params.mode) {
         case 'kvm':
           devices[params.host].kvmConnect = false // Indicate no current KVM session on the device
+          // Check if the close was intentional and the source of the closure
+          this.logKvmCloseSource(event.wasClean, this.websocketFromDevice.state, params.host)
           break
         case 'ider':
           devices[params.host].iderConnect = false // Indicate no current ider session on the device
@@ -95,6 +99,45 @@ export class WsRedirect {
 
       this.websocketFromDevice.CloseChannel()
       MqttProvider.publishEvent('success', ['handleClose'], messages.REDIRECTION_SESSION_ENDED)
+    }
+  }
+
+  /**
+   * Determines if a KVM CIRA channel close event was intentional based on the wasClean flag
+   * and determines the source of the closure based on the channel state.
+   * @param wasClean - Whether the connection was closed cleanly
+   * @param state - The current state of the KVM CIRA channel
+   * @param guid - The GUID of the device
+   */
+  private logKvmCloseSource(wasClean: boolean, state: number, guid: string): void {
+    const CHANNEL_STATE = { CLOSED: 0, CONNECTING: 1, ACTIVE: 2 }
+    let message: string
+
+    if (wasClean) {
+      let source: string
+      // if this handleClose is triggered by websocketFromWeb first, this.websocketFromDevice.state would still be 1/2 (connecting/active)
+      // if the state is 0(closed), then it means the close is triggered by websocketFromDevice
+      switch (state) {
+        case CHANNEL_STATE.CLOSED:
+          source = 'device'
+          break
+        case CHANNEL_STATE.CONNECTING:
+        case CHANNEL_STATE.ACTIVE:
+          source = 'web'
+          break
+        default:
+          message = `KVM session closed with unexpected channel state: ${state}`
+          logger.warn(`[${guid}] ${message}`)
+          MqttProvider.publishEvent('fail', ['logKvmCloseSource'], message, guid)
+          return
+      }
+      message = `KVM session closed by ${source} (state: ${state})`
+      logger.info(`[${guid}] ${message}`)
+      MqttProvider.publishEvent('success', ['logKvmCloseSource'], message, guid)
+    } else {
+      message = `KVM session closed unexpectedly (state: ${state})`
+      logger.warn(`[${guid}] ${message}`)
+      MqttProvider.publishEvent('fail', ['logKvmCloseSource'], message, guid)
     }
   }
 
