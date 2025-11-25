@@ -564,6 +564,33 @@ export class DeviceAction {
     return handle
   }
 
+  async removeCertificate(handle: string): Promise<boolean> {
+    logger.silly(`removeCertificate ${messages.DELETE}`)
+    
+    try {
+      // Create selector for the certificate to delete
+      const selector: Selector = { 
+        name: 'InstanceID',
+        value: handle 
+      }
+      
+      // Use AMT PublicKeyCertificate to remove the certificate
+      const xmlRequestBody = this.amt.PublicKeyCertificate.Delete(selector)
+      const result = await this.ciraHandler.Delete(this.ciraSocket, xmlRequestBody)
+      
+      if (result == null) {
+        logger.error(`removeCertificate failed. Reason: ${messages.DELETE_RESPONSE_NULL}`)
+        return false
+      }
+
+      logger.silly(`removeCertificate ${messages.COMPLETE}`)
+      return true
+    } catch (error) {
+      logger.error(`removeCertificate failed. Error: ${error}`)
+      return false
+    }
+  }
+
   async getBootService(): Promise<any> {
     const xmlRequestBody = this.cim.BootService.Get()
     const result = await this.ciraHandler.Get(this.ciraSocket, xmlRequestBody)

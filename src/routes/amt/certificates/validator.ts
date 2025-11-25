@@ -11,6 +11,12 @@ export const certValidator = (): any => [
   check('isTrusted').isBoolean().withMessage('isTrusted must be a boolean value')
 ]
 
+export const deleteCertValidator = (): any => [
+  // Validate instanceId from params, allow optional handle in body for backward compatibility
+  check('instanceId').optional().isString().withMessage('instanceId must be a string'),
+  check('handle').optional().isString().withMessage('handle must be a string')
+]
+
 const expirationValidator: CustomValidator = (value, { req }) => {
   const certInput = req.body.cert as string
   let certData: Buffer
