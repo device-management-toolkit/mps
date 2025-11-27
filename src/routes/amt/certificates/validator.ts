@@ -14,7 +14,13 @@ export const certValidator = (): any => [
 export const deleteCertValidator = (): any => [
   // Validate instanceId from params, allow optional handle in body for backward compatibility
   check('instanceId').optional().isString().withMessage('instanceId must be a string'),
-  check('handle').optional().isString().withMessage('handle must be a string')
+  check('handle').optional().isString().withMessage('handle must be a string'),
+  check(['instanceId', 'handle']).custom((value, { req }) => {
+    if (!req.params.instanceId && !req.body.handle) {
+      throw new Error('At least one of instanceId or handle must be provided')
+    }
+    return true
+  })
 ]
 
 const expirationValidator: CustomValidator = (value, { req }) => {

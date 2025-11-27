@@ -13,6 +13,46 @@ interface DeleteCertificateRequest {
   handle?: string
 }
 
+interface AMTPublicKeyCertificate {
+  InstanceID: string
+  ElementName?: string
+  ReadOnlyCertificate?: boolean
+  AssociatedProfiles?: string[]
+  X509Certificate?: string
+  TrustedRootCertificate?: boolean
+  Issuer?: string
+  Subject?: string
+}
+
+interface AMTCredentialContext {
+  ElementInContext?: {
+    ReferenceParameters?: {
+      SelectorSet?: {
+        Selector?: string
+      }
+    }
+  }
+  ElementProvidingContext?: {
+    ReferenceParameters?: {
+      SelectorSet?: {
+        Selector?: string
+      }
+    }
+  }
+}
+
+interface AMTCertificatesResponse {
+  PublicKeyCertificateResponse?: {
+    AMT_PublicKeyCertificate?: AMTPublicKeyCertificate[] | AMTPublicKeyCertificate
+  }
+  CIMCredentialContextResponse?: {
+    AMT_TLSCredentialContext?: AMTCredentialContext[] | AMTCredentialContext
+    AMT_8021XCredentialContext?: AMTCredentialContext[] | AMTCredentialContext
+    AMT_8021XWiredCredentialContext?: AMTCredentialContext[] | AMTCredentialContext
+  }
+  PublicPrivateKeyPairResponse?: any
+}
+
 export async function deleteAMTCertificate(req: Request, res: Response): Promise<void> {
   try {
     const guid: string = req.params.guid
@@ -51,12 +91,12 @@ export async function deleteAMTCertificate(req: Request, res: Response): Promise
   }
 }
 
-async function validateCertificateForDeletion(handle: string, amtCertificates: any): Promise<void> {
+async function validateCertificateForDeletion(handle: string, amtCertificates: AMTCertificatesResponse): Promise<void> {
   // Find the certificate by handle
   const certificates = amtCertificates.PublicKeyCertificateResponse?.AMT_PublicKeyCertificate || []
   const certificatesArray = Array.isArray(certificates) ? certificates : [certificates]
   
-  const targetCert = certificatesArray.find((cert: any) => 
+  const targetCert = certificatesArray.find((cert: AMTPublicKeyCertificate) => 
     cert.InstanceID === handle || cert.ElementName === handle
   )
 
@@ -84,14 +124,23 @@ async function validateCertificateForDeletion(handle: string, amtCertificates: a
   }
 }
 
-async function getCertificateReferences(handle: string, amtCertificates: any): Promise<string[]> {
+/**
+ * Extracts a clean profile ID from an AMT profile selector string
+ * @param profileSelector - The raw profile selector string from AMT
+ * @returns Clean profile ID or 'Unknown Profile' if extraction fails
+ */
+function extractProfileID(profileSelector?: string): string {
+  return profileSelector?.replace(/^Intel\(r\) AMT:IEEE 802\.1x Settings /, '') || 'Unknown Profile'
+}
+
+async function getCertificateReferences(handle: string, amtCertificates: AMTCertificatesResponse): Promise<string[]> {
   const references: string[] = []
 
   // Check direct AssociatedProfiles on the certificate
   const certificates = amtCertificates.PublicKeyCertificateResponse?.AMT_PublicKeyCertificate || []
   const certificatesArray = Array.isArray(certificates) ? certificates : [certificates]
   
-  const targetCert = certificatesArray.find((cert: any) => 
+  const targetCert = certificatesArray.find((cert: AMTPublicKeyCertificate) => 
     cert.InstanceID === handle || cert.ElementName === handle
   )
 
@@ -111,7 +160,7 @@ async function getCertificateReferences(handle: string, amtCertificates: any): P
       const certificateHandle = context.ElementInContext?.ReferenceParameters?.SelectorSet?.Selector
       if (certificateHandle === handle) {
         const profileSelector = context.ElementProvidingContext?.ReferenceParameters?.SelectorSet?.Selector
-        const profileID = profileSelector?.replace(/^Intel\(r\) AMT:IEEE 802\.1x Settings /, '') || 'Unknown Profile'
+        const profileID = extractProfileID(profileSelector)
         references.push(`TLS - ${profileID}`)
       }
     }
@@ -124,7 +173,7 @@ async function getCertificateReferences(handle: string, amtCertificates: any): P
       const certificateHandle = context.ElementInContext?.ReferenceParameters?.SelectorSet?.Selector
       if (certificateHandle === handle) {
         const profileSelector = context.ElementProvidingContext?.ReferenceParameters?.SelectorSet?.Selector
-        const profileID = profileSelector?.replace(/^Intel\(r\) AMT:IEEE 802\.1x Settings /, '') || 'Unknown Profile'
+        const profileID = extractProfileID(profileSelector)
         references.push(`Wireless - ${profileID}`)
       }
     }
@@ -137,7 +186,7 @@ async function getCertificateReferences(handle: string, amtCertificates: any): P
       const certificateHandle = context.ElementInContext?.ReferenceParameters?.SelectorSet?.Selector
       if (certificateHandle === handle) {
         const profileSelector = context.ElementProvidingContext?.ReferenceParameters?.SelectorSet?.Selector
-        const profileID = profileSelector?.replace(/^Intel\(r\) AMT:IEEE 802\.1x Settings /, '') || 'Unknown Profile'
+        const profileID = extractProfileID(profileSelector)
         references.push(`Wired - ${profileID}`)
       }
     }

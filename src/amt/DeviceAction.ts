@@ -565,7 +565,7 @@ export class DeviceAction {
   }
 
   async removeCertificate(handle: string): Promise<boolean> {
-    logger.silly(`removeCertificate ${messages.DELETE}`)
+    logger.silly(`removeCertificate: ${messages.DELETE}`)
     
     try {
       // Create selector for the certificate to delete
@@ -583,7 +583,7 @@ export class DeviceAction {
         return false
       }
 
-      logger.silly(`removeCertificate ${messages.COMPLETE}`)
+      logger.silly(`removeCertificate: ${messages.COMPLETE}`)
       return true
     } catch (error) {
       logger.error(`removeCertificate failed. Error: ${error}`)
