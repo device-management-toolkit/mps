@@ -99,6 +99,62 @@ describe('generateCertificates', () => {
     expect(issueWebServerCertificateSpy).toBeCalled()
     expect(generateRootCertificateSpy).toBeCalled()
   })
+
+  it('should generate certificates with 3072-bit key size when configured', () => {
+    const config3072 = {
+      common_name: 'test',
+      country: 'US',
+      organization: 'TestOrg',
+      mps_tls_config: {
+        minVersion: 'TLSv1.2',
+        mps_cert_key_size: 3072
+      }
+    }
+    const certificates3072 = new Certificates(config3072 as any, secrets)
+    const generateRootCertificateSpy = spyOn(certificates3072, 'GenerateRootCertificate').mockReturnValue({})
+    const issueWebServerCertificateSpy = spyOn(certificates3072, 'IssueWebServerCertificate').mockReturnValue({})
+    spyOn(forge.pki, 'certificateToPem').mockReturnValue('certificate')
+    spyOn(forge.pki, 'privateKeyToPem').mockReturnValue('private key')
+    const result: certificatesType = certificates3072.generateCertificates()
+    expect(result).toBeTruthy()
+    expect(issueWebServerCertificateSpy).toHaveBeenCalledWith(
+      expect.anything(),
+      false,
+      'test',
+      'US',
+      'TestOrg',
+      null,
+      true
+    )
+  })
+
+  it('should generate certificates with 2048-bit key size by default', () => {
+    const config2048 = {
+      common_name: 'test',
+      country: 'US',
+      organization: 'TestOrg',
+      mps_tls_config: {
+        minVersion: 'TLSv1.2',
+        mps_cert_key_size: 2048
+      }
+    }
+    const certificates2048 = new Certificates(config2048 as any, secrets)
+    const issueWebServerCertificateSpy = spyOn(certificates2048, 'IssueWebServerCertificate').mockReturnValue({})
+    spyOn(certificates2048, 'GenerateRootCertificate').mockReturnValue({})
+    spyOn(forge.pki, 'certificateToPem').mockReturnValue('certificate')
+    spyOn(forge.pki, 'privateKeyToPem').mockReturnValue('private key')
+    const result: certificatesType = certificates2048.generateCertificates()
+    expect(result).toBeTruthy()
+    expect(issueWebServerCertificateSpy).toHaveBeenCalledWith(
+      expect.anything(),
+      false,
+      'test',
+      'US',
+      'TestOrg',
+      null,
+      false
+    )
+  })
 })
 
 describe('GenerateRootCertificate', () => {
