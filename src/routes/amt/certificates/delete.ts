@@ -9,19 +9,11 @@ import { ErrorResponse } from '../../../utils/amtHelper.js'
 import { MPSValidationError } from '../../../utils/MPSValidationError.js'
 import { MqttProvider } from '../../../utils/MqttProvider.js'
 
-interface DeleteCertificateRequest {
-  handle?: string
-}
-
 interface AMTPublicKeyCertificate {
   InstanceID: string
   ElementName?: string
   ReadOnlyCertificate?: boolean
   AssociatedProfiles?: string[]
-  X509Certificate?: string
-  TrustedRootCertificate?: boolean
-  Issuer?: string
-  Subject?: string
 }
 
 interface AMTCredentialContext {
@@ -50,7 +42,6 @@ interface AMTCertificatesResponse {
     AMT_8021XCredentialContext?: AMTCredentialContext[] | AMTCredentialContext
     AMT_8021XWiredCredentialContext?: AMTCredentialContext[] | AMTCredentialContext
   }
-  PublicPrivateKeyPairResponse?: any
 }
 
 export async function deleteAMTCertificate(req: Request, res: Response): Promise<void> {
