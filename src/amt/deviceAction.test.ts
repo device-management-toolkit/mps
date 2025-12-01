@@ -627,4 +627,145 @@ describe('Device Action Tests', () => {
       expect(result).toEqual(putKVMRedirectionSettingDataResponse.Envelope.Body)
     })
   })
+
+  describe('WiFi port validation and link preference', () => {
+    let getEthernetPortSettingsSpy: SpyInstance<any>
+
+    beforeEach(() => {
+      getEthernetPortSettingsSpy = spyOn(device, 'getEthernetPortSettings')
+    })
+
+    it('should find WiFi port automatically', async () => {
+      const mockEnumResponse = {
+        Body: {
+          PullResponse: {
+            Items: {
+              AMT_EthernetPortSettings: [
+                {
+                  InstanceID: 'Intel(r) AMT Ethernet Port Settings 0',
+                  PhysicalConnectionType: '0', // Integrated LAN
+                  ElementName: 'LAN Port'
+                },
+                {
+                  InstanceID: 'Intel(r) AMT Ethernet Port Settings 1',
+                  PhysicalConnectionType: '3', // Wireless LAN
+                  ElementName: 'WiFi Port'
+                }
+              ]
+            }
+          }
+        }
+      }
+      getEthernetPortSettingsSpy.mockResolvedValue(mockEnumResponse as any)
+
+      const result = await device.findWiFiPort()
+
+      expect(result).not.toBeNull()
+      expect(result?.instanceID).toBe('Intel(r) AMT Ethernet Port Settings 1')
+      expect(result?.settings.InstanceID).toBe('Intel(r) AMT Ethernet Port Settings 1')
+      expect(result?.settings.PhysicalConnectionType).toBe('3')
+      expect(result?.settings.ElementName).toBe('WiFi Port')
+    })
+
+    it('should return null when no WiFi port exists', async () => {
+      const mockEnumResponse = {
+        Body: {
+          PullResponse: {
+            Items: {
+              AMT_EthernetPortSettings: [
+                {
+                  InstanceID: 'Intel(r) AMT Ethernet Port Settings 0',
+                  PhysicalConnectionType: '0' // Only LAN
+                },
+                {
+                  InstanceID: 'Intel(r) AMT Ethernet Port Settings 1',
+                  PhysicalConnectionType: '1' // Only LAN
+                }
+              ]
+            }
+          }
+        }
+      }
+      getEthernetPortSettingsSpy.mockResolvedValue(mockEnumResponse as any)
+
+      const result = await device.findWiFiPort()
+
+      expect(result).toBeNull()
+    })
+
+    it('should auto-detect WiFi port when instanceID not provided', async () => {
+      const mockEnumResponse = {
+        Body: {
+          PullResponse: {
+            Items: {
+              AMT_EthernetPortSettings: [
+                {
+                  InstanceID: 'Intel(r) AMT Ethernet Port Settings 0',
+                  PhysicalConnectionType: '0'
+                },
+                {
+                  InstanceID: 'Intel(r) AMT Ethernet Port Settings 1',
+                  PhysicalConnectionType: '3' // WiFi
+                }
+              ]
+            }
+          }
+        }
+      }
+      getEthernetPortSettingsSpy.mockResolvedValue(mockEnumResponse as any)
+      getSpy.mockResolvedValue({ Envelope: { Body: { SetLinkPreference_OUTPUT: { ReturnValue: '0' } } } })
+
+      const result = await device.setEthernetLinkPreference(1, 300)
+
+      expect(getSpy).toHaveBeenCalled()
+    })
+
+    it('should return null when no WiFi port found', async () => {
+      const mockEnumResponse = {
+        Body: {
+          PullResponse: {
+            Items: {
+              AMT_EthernetPortSettings: {
+                InstanceID: 'Intel(r) AMT Ethernet Port Settings 0',
+                PhysicalConnectionType: '0' // Only LAN
+              }
+            }
+          }
+        }
+      }
+      getEthernetPortSettingsSpy.mockResolvedValue(mockEnumResponse as any)
+
+      const result = await device.setEthernetLinkPreference(1, 300)
+      expect(result).toEqual(-1)
+    })
+
+    it('should auto-detect WiFi port and call SetLinkPreference, returning 0 for success', async () => {
+      const mockEnumResponse = {
+        Body: {
+          PullResponse: {
+            Items: {
+              AMT_EthernetPortSettings: [
+                {
+                  InstanceID: 'Intel(r) AMT Ethernet Port Settings 0',
+                  PhysicalConnectionType: '0', // Integrated LAN
+                  ElementName: 'LAN Port'
+                },
+                {
+                  InstanceID: 'Intel(r) AMT Ethernet Port Settings 1',
+                  PhysicalConnectionType: '3', // Wireless LAN
+                  ElementName: 'WiFi Port'
+                }
+              ]
+            }
+          }
+        }
+      }
+      getEthernetPortSettingsSpy.mockResolvedValue(mockEnumResponse as any)
+      getSpy.mockResolvedValue({ Envelope: { Body: { SetLinkPreference_OUTPUT: { ReturnValue: 0 } } } })
+
+      const result = await device.setEthernetLinkPreference(1, 300)
+      expect(result).toBe(0)
+      expect(getSpy).toHaveBeenCalled()
+    })
+  })
 })

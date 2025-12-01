@@ -98,10 +98,11 @@ describe('web', () => {
     }
     readFileSyncSpy.mockImplementation(() => {})
     jsonParseSpy.mockReturnValue(webConfig)
+    const baseDir = process.cwd()
     existsSyncSpy.mockImplementation((p) => {
-      if (p === path.join(__dirname, webConfig.key)) {
+      if (p === path.join(baseDir, webConfig.key)) {
         return false
-      } else if (p === path.join(__dirname, webConfig.cert)) {
+      } else if (p === path.join(baseDir, webConfig.cert)) {
         return false
       } else {
         return true
@@ -133,10 +134,11 @@ describe('web', () => {
     }
     readFileSyncSpy.mockImplementation(() => {})
     jsonParseSpy.mockReturnValue(webConfig)
+    const baseDir = process.cwd()
     existsSyncSpy.mockImplementation((p) => {
-      if (p === path.join(__dirname, webConfig.key)) {
+      if (p === path.join(baseDir, webConfig.key)) {
         return true
-      } else if (p === path.join(__dirname, webConfig.cert)) {
+      } else if (p === path.join(baseDir, webConfig.cert)) {
         return true
       } else {
         return true
@@ -155,8 +157,9 @@ describe('web', () => {
       key: 'key',
       secureOptions: [constants.SSL_OP_NO_SSLv2, constants.SSL_OP_NO_SSLv3]
     }
+    const baseDir = process.cwd()
     readFileSyncSpy.mockImplementation((p, e) => {
-      if (p === path.join(__dirname, webConfig.key)) {
+      if (p === path.join(baseDir, webConfig.key)) {
         throw Error('fake read file error')
       }
     })

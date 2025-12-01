@@ -25,7 +25,13 @@ deviceRouter.get('/', odataValidator(), metadataQueryValidator(), validateMiddle
 deviceRouter.get('/stats', stats)
 deviceRouter.get('/tags', getDistinctTags)
 deviceRouter.get('/:guid', param('guid').isUUID('loose'), validateMiddleware, getDevice)
-deviceRouter.get('/redirectstatus/:guid', param('guid').isUUID('loose'), validateMiddleware, ciraMiddleware, getRedirStatus)
+deviceRouter.get(
+  '/redirectstatus/:guid',
+  param('guid').isUUID('loose'),
+  validateMiddleware,
+  ciraMiddleware,
+  getRedirStatus
+)
 deviceRouter.post('/', validator(), validateMiddleware, insertDevice)
 deviceRouter.patch('/', validator(), validateMiddleware, updateDevice)
 deviceRouter.delete('/refresh/:guid', validator(), validateMiddleware, refreshDevice)
