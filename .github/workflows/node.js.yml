@@ -44,7 +44,7 @@ jobs:
       - run: npm run compile --if-present
       - run: npm test
       - name: Test Report
-        uses: dorny/test-reporter@7b7927aa7da8b82e81e755810cb51f39941a2cc7 # v1
+        uses: dorny/test-reporter@fe45e9537387dac839af0d33ba56eed8e24189e8 # v1
         if: success() || failure() # run this step even if previous step failed
         continue-on-error: true
         with:
