@@ -1,3 +1,10 @@
+# [2.24.0](https://github.com/device-management-toolkit/mps/compare/v2.23.0...v2.24.0) (2025-12-03)
+
+
+### Features
+
+* add setLinkPreference API for MPS ([#2212](https://github.com/device-management-toolkit/mps/issues/2212)) ([9e2a7fb](https://github.com/device-management-toolkit/mps/commit/9e2a7fb93327422f7399b4c29b65c063d0567c3d))
+
 # [2.23.0](https://github.com/device-management-toolkit/mps/compare/v2.22.5...v2.23.0) (2025-11-20)
 
 
