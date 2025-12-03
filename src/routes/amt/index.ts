@@ -35,9 +35,10 @@ import { addAMTCertificate } from './certificates/add.js'
 import { certValidator } from './certificates/validator.js'
 import { bootSources } from './bootSources.js'
 import { validator } from './kvm/validator.js'
-import { get } from 'http'
 import { getScreenSettingData } from './kvm/get.js'
 import { setKVMRedirectionSettingData } from './kvm/set.js'
+import { setLinkPreference } from './setLinkPreference.js'
+import { linkPreferenceValidator } from './linkPreferenceValidator.js'
 
 const amtRouter: Router = Router()
 
@@ -67,5 +68,14 @@ amtRouter.post('/certificates/:guid', certValidator(), validateMiddleware, ciraM
 
 amtRouter.get('/kvm/displays/:guid', ciraMiddleware, getScreenSettingData)
 amtRouter.put('/kvm/displays/:guid', validator(), ciraMiddleware, setKVMRedirectionSettingData)
+
+// Link Preference (ME/HOST)
+amtRouter.post(
+  '/network/linkPreference/:guid',
+  linkPreferenceValidator(),
+  validateMiddleware,
+  ciraMiddleware,
+  setLinkPreference
+)
 
 export default amtRouter
