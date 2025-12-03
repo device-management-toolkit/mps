@@ -28,11 +28,11 @@ jobs:
 
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@95d9a5deda9de15063e7595e9719c11c38c90ae2 # v2.13.2
+        uses: step-security/harden-runner@df199fb7be9f65074067a9eb93f12bb4c5547cf2 # v2.13.3
         with:
           egress-policy: audit
 
-      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@2028fbc5c25fe9cf00d9f06a71cc4710d4507903 # v6.0.0
         with:
@@ -44,7 +44,7 @@ jobs:
       - run: npm run compile --if-present
       - run: npm test
       - name: Test Report
-        uses: dorny/test-reporter@7b7927aa7da8b82e81e755810cb51f39941a2cc7 # v1
+        uses: dorny/test-reporter@fe45e9537387dac839af0d33ba56eed8e24189e8 # v1
         if: success() || failure() # run this step even if previous step failed
         continue-on-error: true
         with:
