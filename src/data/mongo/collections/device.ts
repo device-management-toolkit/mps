@@ -55,8 +55,23 @@ export class MongoDeviceTable implements IDeviceTable {
   }
 
   async update(item: Device): Promise<WithId<Device>> {
+    if (!(item as any)._id) {
+      throw new Error('Device must have an _id for update operation')
+    }
+
+    const itemId = (item as any)._id
+    let objectId: ObjectId
+
+    if (ObjectId.isValid(itemId)) {
+      objectId = new ObjectId(itemId)
+    } else if (typeof itemId === 'number') {
+      objectId = new ObjectId(itemId.toString().padStart(24, '0'))
+    } else {
+      throw new Error(`Invalid _id format: ${itemId}`)
+    }
+
     const result = await this.collection.findOneAndUpdate(
-      { _id: new ObjectId((item as any)._id as number), tenantId: item.tenantId },
+      { _id: objectId, tenantId: item.tenantId },
       { $set: item },
       { returnDocument: 'after', includeResultMetadata: false }
     )
