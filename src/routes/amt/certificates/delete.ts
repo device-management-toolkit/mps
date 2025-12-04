@@ -8,13 +8,7 @@ import { logger, messages } from '../../../logging/index.js'
 import { ErrorResponse } from '../../../utils/amtHelper.js'
 import { MPSValidationError } from '../../../utils/MPSValidationError.js'
 import { MqttProvider } from '../../../utils/MqttProvider.js'
-
-interface AMTPublicKeyCertificate {
-  InstanceID: string
-  ElementName?: string
-  ReadOnlyCertificate?: boolean
-  AssociatedProfiles?: string[]
-}
+import { AMTCertificate, type Certificates } from '../../../models/models.js'
 
 interface AMTCredentialContext {
   ElementInContext?: {
@@ -30,17 +24,6 @@ interface AMTCredentialContext {
         Selector?: string
       }
     }
-  }
-}
-
-interface AMTCertificatesResponse {
-  PublicKeyCertificateResponse?: {
-    AMT_PublicKeyCertificate?: AMTPublicKeyCertificate[] | AMTPublicKeyCertificate
-  }
-  CIMCredentialContextResponse?: {
-    AMT_TLSCredentialContext?: AMTCredentialContext[] | AMTCredentialContext
-    AMT_8021XCredentialContext?: AMTCredentialContext[] | AMTCredentialContext
-    AMT_8021XWiredCredentialContext?: AMTCredentialContext[] | AMTCredentialContext
   }
 }
 
@@ -82,12 +65,12 @@ export async function deleteAMTCertificate(req: Request, res: Response): Promise
   }
 }
 
-async function validateCertificateForDeletion(handle: string, amtCertificates: AMTCertificatesResponse): Promise<void> {
+async function validateCertificateForDeletion(handle: string, amtCertificates: Certificates): Promise<void> {
   // Find the certificate by handle
   const certificates = amtCertificates.PublicKeyCertificateResponse?.AMT_PublicKeyCertificate || []
   const certificatesArray = Array.isArray(certificates) ? certificates : [certificates]
   
-  const targetCert = certificatesArray.find((cert: AMTPublicKeyCertificate) => 
+  const targetCert = certificatesArray.find((cert: AMTCertificate) => 
     cert.InstanceID === handle || cert.ElementName === handle
   )
 
@@ -124,14 +107,14 @@ function extractProfileID(profileSelector?: string): string {
   return profileSelector?.replace(/^Intel\(r\) AMT:IEEE 802\.1x Settings /, '') || 'Unknown Profile'
 }
 
-async function getCertificateReferences(handle: string, amtCertificates: AMTCertificatesResponse): Promise<string[]> {
+async function getCertificateReferences(handle: string, amtCertificates: Certificates): Promise<string[]> {
   const references: string[] = []
 
   // Check direct AssociatedProfiles on the certificate
   const certificates = amtCertificates.PublicKeyCertificateResponse?.AMT_PublicKeyCertificate || []
   const certificatesArray = Array.isArray(certificates) ? certificates : [certificates]
   
-  const targetCert = certificatesArray.find((cert: AMTPublicKeyCertificate) => 
+  const targetCert = certificatesArray.find((cert: AMTCertificate) => 
     cert.InstanceID === handle || cert.ElementName === handle
   )
 
