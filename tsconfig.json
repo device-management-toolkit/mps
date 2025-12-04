@@ -2,6 +2,7 @@
   "compilerOptions": {
     "strictNullChecks": false,
     "baseUrl": "./src",
+    "rootDir": "./src",
     "outDir": "./dist",
     "moduleResolution": "NodeNext",
     "module": "NodeNext",
