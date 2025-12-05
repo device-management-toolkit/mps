@@ -32,7 +32,8 @@ import { validator as userConsentValidator } from './userConsent/validator.js'
 import { deactivate } from './deactivate.js'
 import { getAMTCertificates } from './certificates/get.js'
 import { addAMTCertificate } from './certificates/add.js'
-import { certValidator } from './certificates/validator.js'
+import { deleteAMTCertificate } from './certificates/delete.js'
+import { certValidator, deleteCertValidator } from './certificates/validator.js'
 import { bootSources } from './bootSources.js'
 import { validator } from './kvm/validator.js'
 import { getScreenSettingData } from './kvm/get.js'
@@ -65,6 +66,7 @@ amtRouter.delete('/alarmOccurrences/:guid', validateMiddleware, ciraMiddleware, 
 
 amtRouter.get('/certificates/:guid', validateMiddleware, ciraMiddleware, getAMTCertificates)
 amtRouter.post('/certificates/:guid', certValidator(), validateMiddleware, ciraMiddleware, addAMTCertificate)
+amtRouter.delete('/certificates/:guid/:instanceId', deleteCertValidator(), validateMiddleware, ciraMiddleware, deleteAMTCertificate)
 
 amtRouter.get('/kvm/displays/:guid', ciraMiddleware, getScreenSettingData)
 amtRouter.put('/kvm/displays/:guid', validator(), ciraMiddleware, setKVMRedirectionSettingData)

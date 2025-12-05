@@ -26,6 +26,7 @@ export enum messages {
   AMT_FEATURES_GET_SUCCESS = 'AMT Features retrieved',
   AMT_CERTIFICATES_GET_SUCCESS = 'AMT Certificates retrieved',
   AMT_CERTIFICATES_ADD_SUCCESS = 'AMT Certificates added successfully',
+  AMT_CERTIFICATES_DELETE_SUCCESS = 'AMT Certificate deleted successfully',
   AMT_CERTIFICATES_GET_REQUEST_FAILED = 'AMT Certificates request failed',
   AMT_FEATURES_SET_REQUESTED = 'Set AMT Features requested',
   AMT_FEATURES_SET_SUCCESS = 'AMT Features updated',
