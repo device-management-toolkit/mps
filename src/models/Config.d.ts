@@ -50,6 +50,7 @@ export interface configType {
   cira_last_seen: boolean
   timeout_ms_default: string
   cira_window_size: number
+  mps_cert_key_size?: number
 }
 
 export interface certificatesType {

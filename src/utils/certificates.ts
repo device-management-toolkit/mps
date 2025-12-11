@@ -21,6 +21,7 @@ import {
 } from '../models/Config.js'
 import forge from 'node-forge'
 import { type ISecretManagerService } from '../interfaces/ISecretManagerService.js'
+import { DEFAULT_MPS_CERT_KEY_SIZE } from './constants.js'
 
 export class Certificates {
   constructor(
@@ -47,6 +48,10 @@ export class Certificates {
     const rootPrivateKey = forge.pki.privateKeyToPem(rootCertAndKey.key)
 
     logger.info(messages.GENERATING_MPS_CERTIFICATE)
+    
+    // Use configured key size (default 2048 for backward compatibility)
+    const mpsKeySize = this.config.mps_tls_config?.mps_cert_key_size === 3072
+        
     const mpsCertAndKey: certAndKeyType = this.IssueWebServerCertificate(
       rootCertAndKey,
       false,
@@ -54,7 +59,7 @@ export class Certificates {
       this.config.country,
       this.config.organization,
       null,
-      false
+      mpsKeySize
     )
     const mpsCertificate = forge.pki.certificateToPem(mpsCertAndKey.cert)
     const mpsPrivateKey = forge.pki.privateKeyToPem(mpsCertAndKey.key)
@@ -112,7 +117,8 @@ export class Certificates {
     organization: string,
     strong: boolean
   ): any => {
-    const keys = forge.pki.rsa.generateKeyPair(strong ? 3072 : 2048)
+    const keySize = strong ? 3072 : DEFAULT_MPS_CERT_KEY_SIZE
+    const keys = forge.pki.rsa.generateKeyPair(keySize)
     const cert = forge.pki.createCertificate()
     cert.publicKey = keys.publicKey
     cert.serialNumber = '' + Math.floor(Math.random() * 100000 + 1)
@@ -167,7 +173,8 @@ export class Certificates {
     extKeyUsage,
     strong: boolean
   ): any => {
-    const keys = forge.pki.rsa.generateKeyPair(strong ? 3072 : 2048)
+    const keySize = strong ? 3072 : DEFAULT_MPS_CERT_KEY_SIZE
+    const keys = forge.pki.rsa.generateKeyPair(keySize)
     const cert = forge.pki.createCertificate()
     cert.publicKey = keys.publicKey
     cert.serialNumber = '' + Math.floor(Math.random() * 100000 + 1)
