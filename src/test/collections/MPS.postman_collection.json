@@ -2256,6 +2256,241 @@
 					"response": []
 				},
 				{
+					"name": "Delete Certificate - missing instanceId",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 404\", function () {\r",
+									"    pm.response.to.have.status(404);\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Device should not be found\", function () {\r",
+									"    var jsonData = pm.response.json();\r",
+									"    pm.expect(jsonData.error).to.eq(\"Device not found/connected. Please connect again using CIRA.\")\r",
+									"    pm.expect(jsonData.errorDescription).to.eq(\"guid : 1\")\r",
+									"});\r",
+									"// Note: When device is connected, this should return 400 with validation error:\r",
+									"// 'At least one of instanceId or handle must be provided'\r",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{protocol}}://{{host}}/api/v1/amt/certificates/1/empty-instanceid",
+							"protocol": "{{protocol}}",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"amt",
+								"certificates",
+								"1",
+								"empty-instanceid"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Certificate - certificate not found",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 404\", function () {\r",
+									"    pm.response.to.have.status(404);\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Device should not be found\", function () {\r",
+									"    var jsonData = pm.response.json();\r",
+									"    pm.expect(jsonData.error).to.eq(\"Device not found/connected. Please connect again using CIRA.\")\r",
+									"    pm.expect(jsonData.errorDescription).to.eq(\"guid : 1\")\r",
+									"});\r",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{protocol}}://{{host}}/api/v1/amt/certificates/1/nonexistent-cert-handle",
+							"protocol": "{{protocol}}",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"amt",
+								"certificates",
+								"1",
+								"nonexistent-cert-handle"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Certificate - with valid instanceId",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 404\", function () {\r",
+									"    pm.response.to.have.status(404);\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Device should not be found\", function () {\r",
+									"    var jsonData = pm.response.json();\r",
+									"    pm.expect(jsonData.error).to.eq(\"Device not found/connected. Please connect again using CIRA.\")\r",
+									"    pm.expect(jsonData.errorDescription).to.eq(\"guid : 1\")\r",
+									"});\r",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{protocol}}://{{host}}/api/v1/amt/certificates/1/test-cert-instance",
+							"protocol": "{{protocol}}",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"amt",
+								"certificates",
+								"1",
+								"test-cert-instance"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Certificate - readonly certificate",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 404\", function () {\r",
+									"    pm.response.to.have.status(404);\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Device should not be found\", function () {\r",
+									"    var jsonData = pm.response.json();\r",
+									"    pm.expect(jsonData.error).to.eq(\"Device not found/connected. Please connect again using CIRA.\")\r",
+									"    pm.expect(jsonData.errorDescription).to.eq(\"guid : 1\")\r",
+									"});\r",
+									"// Note: When device is connected, this should return 400 with message:\r",
+									"// 'Cannot delete certificate: Certificate is read-only and cannot be removed'\r",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{protocol}}://{{host}}/api/v1/amt/certificates/1/readonly-cert-handle",
+							"protocol": "{{protocol}}",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"amt",
+								"certificates",
+								"1",
+								"readonly-cert-handle"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Certificate - certificate with profile associations",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 404\", function () {\r",
+									"    pm.response.to.have.status(404);\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Device should not be found\", function () {\r",
+									"    var jsonData = pm.response.json();\r",
+									"    pm.expect(jsonData.error).to.eq(\"Device not found/connected. Please connect again using CIRA.\")\r",
+									"    pm.expect(jsonData.errorDescription).to.eq(\"guid : 1\")\r",
+									"});\r",
+									"// Note: When device is connected with profile-associated cert, this should return 409 with message:\r",
+									"// 'Cannot delete certificate: Certificate is currently referenced by AMT profiles/configurations'\r",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{protocol}}://{{host}}/api/v1/amt/certificates/1/referenced-cert-handle",
+							"protocol": "{{protocol}}",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"amt",
+								"certificates",
+								"1",
+								"referenced-cert-handle"
+							]
+						}
+					},
+					"response": []
+				},
+				{
 					"name": "Get General Settings",
 					"event": [
 						{

@@ -710,6 +710,58 @@ paths:
                 $ref: '#/components/schemas/DisconnectErrorResponse'
         500:
           description: 'Internal server error'
+  /api/v1/amt/certificates/{guid}/{instanceId}:
+    delete:
+      summary: Delete device certificate
+      description: Delete a specific certificate from the specified AMT device. 
+      tags:
+        - AMT
+      parameters:
+        - name: guid
+          in: path
+          description: GUID of device
+          example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+          schema:
+            type: string
+        - name: instanceId
+          in: path
+          description: Instance ID of the certificate to delete (can be placeholder if using request body handle)
+          example: Intel(r) AMT Certificate
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: 'Certificate deleted successfully'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteCertificateResponse'
+        400:
+          description: 'Invalid request - certificate handle/instanceId required, certificate is read-only, or validation failed'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        404:
+          description: 'Device not found or certificate not found'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        409:
+          description: 'Cannot delete certificate - certificate has profile associations that must be removed first'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        500:
+          description: 'Internal server error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
   /api/v1/amt/kvm/displays/{guid}:
     get:
       summary: Get number of displays information from AMT
@@ -2452,6 +2504,20 @@ components:
           Interval: PT10M
         StartTime:
           DateTime: 2024-12-31T23:59:00Z
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error message or error code
+        errorDescription:
+          type: string
+          description: Detailed description of the error (optional)
+      required:
+        - error
+      example:
+        error: "Certificate with handle 'Intel(r) AMT Certificate' not found"
+        errorDescription: 'Certificate not found'
     DeleteAlarmErrorResponse:
       title: DeleteAlarmErrorResponse
       example:
@@ -3315,6 +3381,21 @@ components:
       required:
         - handle
       example:
+        handle: 'Intel(r) AMT Certificate: Handle: 2'
+    DeleteCertificateResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          description: Confirmation message for successful certificate deletion
+        handle:
+          type: string
+          description: Handle/Instance ID of the deleted certificate
+      required:
+        - message
+        - handle
+      example:
+        message: 'Certificate deleted successfully'
         handle: 'Intel(r) AMT Certificate: Handle: 2'
     GetDisplaysResponse:
       type: object
