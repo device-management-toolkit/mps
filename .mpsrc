@@ -34,6 +34,7 @@
     "rejectUnauthorized": false,
     "minVersion": "TLSv1",
     "ciphers": null,
+    "mps_cert_key_size": 2048,
     "secureOptions": [
       "SSL_OP_NO_SSLv2",
       "SSL_OP_NO_SSLv3"

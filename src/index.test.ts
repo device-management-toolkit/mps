@@ -135,6 +135,30 @@ describe('Index', () => {
       }).toThrow()
       expect(mockExit).toHaveBeenCalledWith(1)
     })
+
+    it('should accept valid mps_tls_config.mps_cert_key_size of 3072', () => {
+      config.mps_tls_config = { mps_cert_key_size: 3072 }
+      const result = indexFile.loadConfig(config)
+      expect(result.mps_tls_config.mps_cert_key_size).toEqual(3072)
+    })
+
+    it('should accept valid mps_tls_config.mps_cert_key_size of 2048', () => {
+      config.mps_tls_config = { mps_cert_key_size: 2048 }
+      const result = indexFile.loadConfig(config)
+      expect(result.mps_tls_config.mps_cert_key_size).toEqual(2048)
+    })
+
+    it('should use default 2048 for invalid mps_tls_config.mps_cert_key_size', () => {
+      config.mps_tls_config = { mps_cert_key_size: 4096 }
+      const result = indexFile.loadConfig(config)
+      expect(result.mps_tls_config.mps_cert_key_size).toEqual(2048)
+    })
+
+    it('should use default 2048 when mps_tls_config.mps_cert_key_size is not provided', () => {
+      config.mps_tls_config = {}
+      const result = indexFile.loadConfig(config)
+      expect(result.mps_tls_config.mps_cert_key_size).toEqual(2048)
+    })
   })
 
   describe('setupSignalHandling', () => {
