@@ -725,11 +725,8 @@ export class DeviceAction {
 
       const ports = Array.isArray(settings) ? settings : [settings]
 
-      // Find the first port with PhysicalConnectionType = 3 (Wireless LAN)
-      const wifiPort = ports.find((port: any) => {
-        const connectionType = parseInt(port.PhysicalConnectionType, 10)
-        return connectionType === 3
-      })
+      // Find the WiFi port by InstanceID (Intel(r) AMT Ethernet Port Settings 1)
+      const wifiPort = ports.find((port: any) => port.InstanceID === 'Intel(r) AMT Ethernet Port Settings 1')
 
       if (wifiPort == null) {
         logger.error('findWiFiPort: No WiFi port found')
@@ -757,7 +754,7 @@ export class DeviceAction {
     const wifiPortInfo = await this.findWiFiPort()
     if (wifiPortInfo == null) {
       const errorMsg =
-        'No WiFi port found on this device. SetLinkPreference requires a WiFi interface (PhysicalConnectionType=3).'
+        'No WiFi port found on this device. SetLinkPreference requires the WiFi InstanceID "Intel(r) AMT Ethernet Port Settings 1".'
       logger.error(`setEthernetLinkPreference: ${errorMsg}`)
       return null
     }
