@@ -1,3 +1,10 @@
+## [2.25.2](https://github.com/device-management-toolkit/mps/compare/v2.25.1...v2.25.2) (2025-12-22)
+
+
+### Bug Fixes
+
+* get WiFi eth by InstanceID instead of PhysicalConnectionType ([#2267](https://github.com/device-management-toolkit/mps/issues/2267)) ([0262a01](https://github.com/device-management-toolkit/mps/commit/0262a017e67832e6e79bd8d5e9d3152dd384ec21))
+
 ## [2.25.1](https://github.com/device-management-toolkit/mps/compare/v2.25.0...v2.25.1) (2025-12-17)
 
 
