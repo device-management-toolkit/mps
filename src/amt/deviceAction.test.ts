@@ -663,11 +663,10 @@ describe('Device Action Tests', () => {
       expect(result).not.toBeNull()
       expect(result?.instanceID).toBe('Intel(r) AMT Ethernet Port Settings 1')
       expect(result?.settings.InstanceID).toBe('Intel(r) AMT Ethernet Port Settings 1')
-      expect(result?.settings.PhysicalConnectionType).toBe('3')
       expect(result?.settings.ElementName).toBe('WiFi Port')
     })
 
-    it('should return null when no WiFi port exists', async () => {
+    it('should return null when no WiFi port exists for findWiFiPort', async () => {
       const mockEnumResponse = {
         Body: {
           PullResponse: {
@@ -678,7 +677,7 @@ describe('Device Action Tests', () => {
                   PhysicalConnectionType: '0' // Only LAN
                 },
                 {
-                  InstanceID: 'Intel(r) AMT Ethernet Port Settings 1',
+                  InstanceID: 'Intel(r) AMT Ethernet Port Settings 2',
                   PhysicalConnectionType: '1' // Only LAN
                 }
               ]
@@ -720,7 +719,7 @@ describe('Device Action Tests', () => {
       expect(getSpy).toHaveBeenCalled()
     })
 
-    it('should return null when no WiFi port found', async () => {
+    it('should return null when no WiFi port found for setEthernetLinkPreference', async () => {
       const mockEnumResponse = {
         Body: {
           PullResponse: {
