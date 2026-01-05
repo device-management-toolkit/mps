@@ -48,10 +48,10 @@ export class Certificates {
     const rootPrivateKey = forge.pki.privateKeyToPem(rootCertAndKey.key)
 
     logger.info(messages.GENERATING_MPS_CERTIFICATE)
-    
+
     // Use configured key size (default 2048 for backward compatibility)
     const mpsKeySize = this.config.mps_tls_config?.mps_cert_key_size === 3072
-        
+
     const mpsCertAndKey: certAndKeyType = this.IssueWebServerCertificate(
       rootCertAndKey,
       false,

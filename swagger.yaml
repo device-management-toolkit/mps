@@ -713,7 +713,7 @@ paths:
   /api/v1/amt/certificates/{guid}/{instanceId}:
     delete:
       summary: Delete device certificate
-      description: Delete a specific certificate from the specified AMT device. 
+      description: Delete a specific certificate from the specified AMT device.
       tags:
         - AMT
       parameters:

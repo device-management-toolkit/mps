@@ -69,9 +69,9 @@ async function validateCertificateForDeletion(handle: string, amtCertificates: C
   // Find the certificate by handle
   const certificates = amtCertificates.PublicKeyCertificateResponse?.AMT_PublicKeyCertificate || []
   const certificatesArray = Array.isArray(certificates) ? certificates : [certificates]
-  
-  const targetCert = certificatesArray.find((cert: AMTCertificate) => 
-    cert.InstanceID === handle || cert.ElementName === handle
+
+  const targetCert = certificatesArray.find(
+    (cert: AMTCertificate) => cert.InstanceID === handle || cert.ElementName === handle
   )
 
   if (!targetCert) {
@@ -88,7 +88,7 @@ async function validateCertificateForDeletion(handle: string, amtCertificates: C
 
   // Check for profile associations
   const references = await getCertificateReferences(handle, amtCertificates)
-  
+
   if (references.length > 0) {
     const referenceList = references.join(', ')
     throw new MPSValidationError(
@@ -113,9 +113,9 @@ async function getCertificateReferences(handle: string, amtCertificates: Certifi
   // Check direct AssociatedProfiles on the certificate
   const certificates = amtCertificates.PublicKeyCertificateResponse?.AMT_PublicKeyCertificate || []
   const certificatesArray = Array.isArray(certificates) ? certificates : [certificates]
-  
-  const targetCert = certificatesArray.find((cert: AMTCertificate) => 
-    cert.InstanceID === handle || cert.ElementName === handle
+
+  const targetCert = certificatesArray.find(
+    (cert: AMTCertificate) => cert.InstanceID === handle || cert.ElementName === handle
   )
 
   if (targetCert?.AssociatedProfiles?.length > 0) {
@@ -124,12 +124,12 @@ async function getCertificateReferences(handle: string, amtCertificates: Certifi
 
   // Check credential contexts for references
   const contextResponse = amtCertificates.CIMCredentialContextResponse
-  
+
   if (contextResponse) {
     // Check TLS contexts
     const tlsContexts = contextResponse.AMT_TLSCredentialContext || []
     const tlsArray = Array.isArray(tlsContexts) ? tlsContexts : [tlsContexts]
-    
+
     for (const context of tlsArray) {
       const certificateHandle = context.ElementInContext?.ReferenceParameters?.SelectorSet?.Selector
       if (certificateHandle === handle) {
@@ -142,7 +142,7 @@ async function getCertificateReferences(handle: string, amtCertificates: Certifi
     // Check 802.1X Wireless contexts
     const wirelessContexts = contextResponse.AMT_8021XCredentialContext || []
     const wirelessArray = Array.isArray(wirelessContexts) ? wirelessContexts : [wirelessContexts]
-    
+
     for (const context of wirelessArray) {
       const certificateHandle = context.ElementInContext?.ReferenceParameters?.SelectorSet?.Selector
       if (certificateHandle === handle) {
@@ -155,7 +155,7 @@ async function getCertificateReferences(handle: string, amtCertificates: Certifi
     // Check 802.1X Wired contexts
     const wiredContexts = contextResponse.AMT_8021XWiredCredentialContext || []
     const wiredArray = Array.isArray(wiredContexts) ? wiredContexts : [wiredContexts]
-    
+
     for (const context of wiredArray) {
       const certificateHandle = context.ElementInContext?.ReferenceParameters?.SelectorSet?.Selector
       if (certificateHandle === handle) {

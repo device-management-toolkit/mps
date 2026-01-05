@@ -36,7 +36,7 @@ describe('deleteAMTCertificate', () => {
     }
 
     req = {
-      params: { 
+      params: {
         guid: 'mock-guid',
         instanceId: 'Intel(r) AMT Certificate: Handle: 1'
       },
@@ -166,7 +166,9 @@ describe('deleteAMTCertificate', () => {
       await deleteAMTCertificate(req, resSpy)
 
       expect(resSpy.status).toHaveBeenCalledWith(404)
-      expect(resSpy.json).toHaveBeenCalledWith(ErrorResponse(404, "Certificate with handle 'Intel(r) AMT Certificate: Handle: 1' not found"))
+      expect(resSpy.json).toHaveBeenCalledWith(
+        ErrorResponse(404, "Certificate with handle 'Intel(r) AMT Certificate: Handle: 1' not found")
+      )
     })
 
     it('should return 400 when certificate is read-only', async () => {
@@ -195,7 +197,12 @@ describe('deleteAMTCertificate', () => {
       await deleteAMTCertificate(req, resSpy)
 
       expect(resSpy.status).toHaveBeenCalledWith(400)
-      expect(resSpy.json).toHaveBeenCalledWith(ErrorResponse(400, "Cannot delete certificate 'Intel(r) AMT Certificate: Handle: 1': Certificate is read-only and cannot be removed"))
+      expect(resSpy.json).toHaveBeenCalledWith(
+        ErrorResponse(
+          400,
+          "Cannot delete certificate 'Intel(r) AMT Certificate: Handle: 1': Certificate is read-only and cannot be removed"
+        )
+      )
     })
 
     it('should return 409 when certificate has associated profiles', async () => {
@@ -224,7 +231,12 @@ describe('deleteAMTCertificate', () => {
       await deleteAMTCertificate(req, resSpy)
 
       expect(resSpy.status).toHaveBeenCalledWith(409)
-      expect(resSpy.json).toHaveBeenCalledWith(ErrorResponse(409, "Cannot delete certificate 'Intel(r) AMT Certificate: Handle: 1': Certificate is currently referenced by the following AMT profiles/configurations: TLS - profile1, Wireless - wifi-profile. Remove these references before deleting the certificate."))
+      expect(resSpy.json).toHaveBeenCalledWith(
+        ErrorResponse(
+          409,
+          "Cannot delete certificate 'Intel(r) AMT Certificate: Handle: 1': Certificate is currently referenced by the following AMT profiles/configurations: TLS - profile1, Wireless - wifi-profile. Remove these references before deleting the certificate."
+        )
+      )
     })
 
     it('should return 409 when certificate is referenced by TLS credential context', async () => {
@@ -272,7 +284,12 @@ describe('deleteAMTCertificate', () => {
       await deleteAMTCertificate(req, resSpy)
 
       expect(resSpy.status).toHaveBeenCalledWith(409)
-      expect(resSpy.json).toHaveBeenCalledWith(ErrorResponse(409, "Cannot delete certificate 'Intel(r) AMT Certificate: Handle: 1': Certificate is currently referenced by the following AMT profiles/configurations: TLS - tls-profile. Remove these references before deleting the certificate."))
+      expect(resSpy.json).toHaveBeenCalledWith(
+        ErrorResponse(
+          409,
+          "Cannot delete certificate 'Intel(r) AMT Certificate: Handle: 1': Certificate is currently referenced by the following AMT profiles/configurations: TLS - tls-profile. Remove these references before deleting the certificate."
+        )
+      )
     })
 
     it('should return 409 when certificate is referenced by wireless credential context', async () => {
@@ -320,7 +337,12 @@ describe('deleteAMTCertificate', () => {
       await deleteAMTCertificate(req, resSpy)
 
       expect(resSpy.status).toHaveBeenCalledWith(409)
-      expect(resSpy.json).toHaveBeenCalledWith(ErrorResponse(409, "Cannot delete certificate 'Intel(r) AMT Certificate: Handle: 1': Certificate is currently referenced by the following AMT profiles/configurations: Wireless - wireless-profile. Remove these references before deleting the certificate."))
+      expect(resSpy.json).toHaveBeenCalledWith(
+        ErrorResponse(
+          409,
+          "Cannot delete certificate 'Intel(r) AMT Certificate: Handle: 1': Certificate is currently referenced by the following AMT profiles/configurations: Wireless - wireless-profile. Remove these references before deleting the certificate."
+        )
+      )
     })
 
     it('should return 500 when getCertificates fails', async () => {
@@ -371,11 +393,7 @@ describe('deleteAMTCertificate', () => {
 
       expect(resSpy.status).toHaveBeenCalledWith(500)
       expect(resSpy.json).toHaveBeenCalledWith(ErrorResponse(500, messages.AMT_CERTIFICATES_EXCEPTION))
-      expect(publishEventSpy).toHaveBeenCalledWith(
-        'fail',
-        ['AMT_DeleteCertificate'],
-        expect.any(String)
-      )
+      expect(publishEventSpy).toHaveBeenCalledWith('fail', ['AMT_DeleteCertificate'], expect.any(String))
     })
   })
 
@@ -493,7 +511,12 @@ describe('deleteAMTCertificate', () => {
       await deleteAMTCertificate(req, resSpy)
 
       expect(resSpy.status).toHaveBeenCalledWith(409)
-      expect(resSpy.json).toHaveBeenCalledWith(ErrorResponse(409, "Cannot delete certificate 'Intel(r) AMT Certificate: Handle: 1': Certificate is currently referenced by the following AMT profiles/configurations: Wired - wired-profile. Remove these references before deleting the certificate."))
+      expect(resSpy.json).toHaveBeenCalledWith(
+        ErrorResponse(
+          409,
+          "Cannot delete certificate 'Intel(r) AMT Certificate: Handle: 1': Certificate is currently referenced by the following AMT profiles/configurations: Wired - wired-profile. Remove these references before deleting the certificate."
+        )
+      )
     })
   })
 })
