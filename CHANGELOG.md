@@ -1,3 +1,10 @@
+## [2.25.3](https://github.com/device-management-toolkit/mps/compare/v2.25.2...v2.25.3) (2026-01-05)
+
+
+### Bug Fixes
+
+* Return default value for OSPowerSavingState when device is powered off ([#2277](https://github.com/device-management-toolkit/mps/issues/2277)) ([f7a0adf](https://github.com/device-management-toolkit/mps/commit/f7a0adf26ab90a100a4fd87732be3fd372c6bd2d))
+
 ## [2.25.2](https://github.com/device-management-toolkit/mps/compare/v2.25.1...v2.25.2) (2025-12-22)
 
 
