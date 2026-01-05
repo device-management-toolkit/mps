@@ -21,7 +21,13 @@ import { WebServer } from './server/webserver.js'
 import { MPSServer } from './server/mpsserver.js'
 import { backOff } from 'exponential-backoff'
 import { ConsulService } from './consul/consul.js'
-import { DEFAULT_CIRA_WINDOW, MIN_CIRA_WINDOW, MAX_CIRA_WINDOW, DEFAULT_MPS_CERT_KEY_SIZE, ALLOWED_MPS_CERT_KEY_SIZES } from './utils/constants.js'
+import {
+  DEFAULT_CIRA_WINDOW,
+  MIN_CIRA_WINDOW,
+  MAX_CIRA_WINDOW,
+  DEFAULT_MPS_CERT_KEY_SIZE,
+  ALLOWED_MPS_CERT_KEY_SIZES
+} from './utils/constants.js'
 
 export async function main(): Promise<void> {
   try {
@@ -136,7 +142,9 @@ export function loadConfig(config: any): configType {
   if (config.mps_tls_config.mps_cert_key_size != null) {
     const certKeySize = Number(config.mps_tls_config.mps_cert_key_size)
     if (!ALLOWED_MPS_CERT_KEY_SIZES.includes(certKeySize)) {
-      logger.warn(`Invalid mps_tls_config.mps_cert_key_size "${config.mps_tls_config.mps_cert_key_size}", using default ${DEFAULT_MPS_CERT_KEY_SIZE}. Allowed values: ${ALLOWED_MPS_CERT_KEY_SIZES.join(', ')}`)
+      logger.warn(
+        `Invalid mps_tls_config.mps_cert_key_size "${config.mps_tls_config.mps_cert_key_size}", using default ${DEFAULT_MPS_CERT_KEY_SIZE}. Allowed values: ${ALLOWED_MPS_CERT_KEY_SIZES.join(', ')}`
+      )
       config.mps_tls_config.mps_cert_key_size = DEFAULT_MPS_CERT_KEY_SIZE
     } else {
       config.mps_tls_config.mps_cert_key_size = certKeySize

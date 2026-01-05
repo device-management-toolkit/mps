@@ -566,18 +566,18 @@ export class DeviceAction {
 
   async removeCertificate(handle: string): Promise<boolean> {
     logger.silly(`removeCertificate: ${messages.DELETE}`)
-    
+
     try {
       // Create selector for the certificate to delete
-      const selector: Selector = { 
+      const selector: Selector = {
         name: 'InstanceID',
-        value: handle 
+        value: handle
       }
-      
+
       // Use AMT PublicKeyCertificate to remove the certificate
       const xmlRequestBody = this.amt.PublicKeyCertificate.Delete(selector)
       const result = await this.ciraHandler.Delete(this.ciraSocket, xmlRequestBody)
-      
+
       if (result == null) {
         logger.error(`removeCertificate failed. Reason: ${messages.DELETE_RESPONSE_NULL}`)
         return false

@@ -66,7 +66,13 @@ amtRouter.delete('/alarmOccurrences/:guid', validateMiddleware, ciraMiddleware, 
 
 amtRouter.get('/certificates/:guid', validateMiddleware, ciraMiddleware, getAMTCertificates)
 amtRouter.post('/certificates/:guid', certValidator(), validateMiddleware, ciraMiddleware, addAMTCertificate)
-amtRouter.delete('/certificates/:guid/:instanceId', deleteCertValidator(), validateMiddleware, ciraMiddleware, deleteAMTCertificate)
+amtRouter.delete(
+  '/certificates/:guid/:instanceId',
+  deleteCertValidator(),
+  validateMiddleware,
+  ciraMiddleware,
+  deleteAMTCertificate
+)
 
 amtRouter.get('/kvm/displays/:guid', ciraMiddleware, getScreenSettingData)
 amtRouter.put('/kvm/displays/:guid', validator(), ciraMiddleware, setKVMRedirectionSettingData)

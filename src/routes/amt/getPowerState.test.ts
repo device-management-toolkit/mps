@@ -59,6 +59,42 @@ describe('power state', () => {
     expect(resSpy.status).toHaveBeenCalledWith(200)
     expect(resSpy.send).toHaveBeenCalledWith({ powerstate: '4', OSPowerSavingState: '3' })
   })
+  it('should get power state with OSPowerSavingState as 0 when getOSPowerSavingState throws an error', async () => {
+    osPowerStateGetSpy.mockRejectedValueOnce(new Error('OS power saving state error'))
+    powerStateSpy.mockResolvedValueOnce(serviceAvailableToElement.Envelope.Body)
+    await powerState(req, resSpy)
+    expect(resSpy.status).toHaveBeenCalledWith(200)
+    expect(resSpy.send).toHaveBeenCalledWith({ powerstate: '4', OSPowerSavingState: 0 })
+  })
+  it('should get power state with OSPowerSavingState as 0 when getOSPowerSavingState returns null', async () => {
+    osPowerStateGetSpy.mockResolvedValueOnce(null)
+    powerStateSpy.mockResolvedValueOnce(serviceAvailableToElement.Envelope.Body)
+    await powerState(req, resSpy)
+    expect(resSpy.status).toHaveBeenCalledWith(200)
+    expect(resSpy.send).toHaveBeenCalledWith({ powerstate: '4', OSPowerSavingState: 0 })
+  })
+  it('should get power state with OSPowerSavingState as 0 when OSPowerSavingState is missing in response', async () => {
+    osPowerStateGetSpy.mockResolvedValueOnce({
+      Body: {
+        IPS_PowerManagementService: {
+          CreationClassName: 'IPS_PowerManagementService',
+          ElementName: 'Intel(r) AMT Power Management Service'
+          // OSPowerSavingState is missing
+        }
+      }
+    })
+    powerStateSpy.mockResolvedValueOnce(serviceAvailableToElement.Envelope.Body)
+    await powerState(req, resSpy)
+    expect(resSpy.status).toHaveBeenCalledWith(200)
+    expect(resSpy.send).toHaveBeenCalledWith({ powerstate: '4', OSPowerSavingState: 0 })
+  })
+  it('should get power state with OSPowerSavingState as 0 when getOSPowerSavingState times out', async () => {
+    osPowerStateGetSpy.mockRejectedValueOnce(new TimeoutError(TIMEOUT_MESSAGE))
+    powerStateSpy.mockResolvedValueOnce(serviceAvailableToElement.Envelope.Body)
+    await powerState(req, resSpy)
+    expect(resSpy.status).toHaveBeenCalledWith(200)
+    expect(resSpy.send).toHaveBeenCalledWith({ powerstate: '4', OSPowerSavingState: 0 })
+  })
   it('should get an error with status code 400, when get power state is null', async () => {
     powerStateSpy.mockResolvedValueOnce(null)
     await powerState(req, resSpy)

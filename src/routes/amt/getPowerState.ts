@@ -12,29 +12,28 @@ import { operationWithTimeout, TIMEOUT_MS_DEFAULT, TimeoutError } from '../../ut
 export async function powerState(req: Request, res: Response): Promise<void> {
   try {
     const guid: string = req.params.guid
+    let osPowerSavingState = 0
     MqttProvider.publishEvent('request', ['AMT_PowerState'], messages.POWER_STATE_GET_REQUESTED, guid)
 
-    let osresponse
     try {
       logger.info(messages.OS_POWER_SAVING_STATE_GET_REQUESTED)
-      osresponse = await operationWithTimeout(req.deviceAction.getOSPowerSavingState(), TIMEOUT_MS_DEFAULT)
-      if (!osresponse?.Body?.IPS_PowerManagementService?.OSPowerSavingState) {
+      const osresponse = await operationWithTimeout(req.deviceAction.getOSPowerSavingState(), TIMEOUT_MS_DEFAULT)
+      const osPowerSavingStateValue = osresponse?.Body?.IPS_PowerManagementService?.OSPowerSavingState
+      if (osPowerSavingStateValue != null) {
+        osPowerSavingState = osPowerSavingStateValue
+      } else {
         logger.error(messages.OS_POWER_SAVING_STATE_GET_FAILED)
       }
     } catch (osError) {
       logger.error(`${messages.OS_POWER_SAVING_STATE_EXCEPTION} : ${osError}`)
-      osresponse = null
     }
 
     const response = await operationWithTimeout(req.deviceAction.getPowerState(), TIMEOUT_MS_DEFAULT)
 
-    if (
-      response?.PullResponse?.Items?.CIM_AssociatedPowerManagementService?.PowerState &&
-      osresponse?.Body?.IPS_PowerManagementService?.OSPowerSavingState
-    ) {
+    if (response?.PullResponse?.Items?.CIM_AssociatedPowerManagementService?.PowerState) {
       res.status(200).send({
         powerstate: response.PullResponse.Items.CIM_AssociatedPowerManagementService.PowerState,
-        OSPowerSavingState: osresponse.Body?.IPS_PowerManagementService?.OSPowerSavingState
+        OSPowerSavingState: osPowerSavingState
       })
     } else {
       MqttProvider.publishEvent('fail', ['AMT_PowerState'], messages.POWER_STATE_REQUEST_FAILED, guid)
