@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  **********************************************************************/
 
-import { ObjectId, type Db, type Collection, type WithId, type OptionalId } from 'mongodb'
+import { type Db, type Collection, type WithId, type OptionalId } from 'mongodb'
 import { type Device } from '../../../models/models.js'
 import { type IDeviceTable } from '../../../interfaces/IDeviceTable.js'
 import { DefaultSkip, DefaultTop } from '../../../utils/constants.js'
@@ -56,7 +56,7 @@ export class MongoDeviceTable implements IDeviceTable {
 
   async update(item: Device): Promise<WithId<Device>> {
     const result = await this.collection.findOneAndUpdate(
-      { _id: new ObjectId((item as any)._id as number), tenantId: item.tenantId },
+      { guid: item.guid, tenantId: item.tenantId },
       { $set: item },
       { returnDocument: 'after', includeResultMetadata: false }
     )
