@@ -50,6 +50,20 @@ export async function bootOptions(req: Request, res: Response): Promise<void> {
     const payload = req.body // payload.action
     const device = req.deviceAction
 
+    // Check EnforceSecureBoot requirement in CCM mode
+    if (payload.bootDetails?.enforceSecureBoot === false) {
+      const setupAndConfigService = await device.getSetupAndConfigurationService()
+      const provisioningMode = setupAndConfigService?.Body?.AMT_SetupAndConfigurationService?.ProvisioningMode
+      const CCM_MODE: AMT.Types.SetupAndConfigurationService.ProvisioningMode = 4
+      const isCCM = Number(provisioningMode) === CCM_MODE
+      if (isCCM) {
+        logger.error(`${messages.BOOT_SETTING_EXCEPTION} : ${messages.BOOT_SETTING_ENFORCE_SECURE_BOOT_CCM}`)
+        MqttProvider.publishEvent('fail', ['AMT_BootSettingData'], messages.BOOT_SETTING_ENFORCE_SECURE_BOOT_CCM)
+        res.status(400).json(ErrorResponse(400, messages.BOOT_SETTING_ENFORCE_SECURE_BOOT_CCM))
+        return
+      }
+    }
+
     // Use new async getBootSource
     const guid = req.params?.guid || ''
     const bootSource = await getBootSource(guid, payload, device)

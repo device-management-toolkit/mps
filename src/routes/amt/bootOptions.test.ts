@@ -17,6 +17,7 @@ import {
   validateHTTPBootParams
 } from './bootOptions.js'
 import { type SpyInstance, spyOn } from 'jest-mock'
+import { messages } from '../../logging/index.js'
 
 describe('Boot Options', () => {
   let resSpy: any
@@ -26,6 +27,7 @@ describe('Boot Options', () => {
   let forceBootModeSpy: SpyInstance<any>
   let changeBootOrderSpy: SpyInstance<any>
   let sendPowerActionSpy: SpyInstance<any>
+  let getSetupAndConfigurationServiceSpy: SpyInstance<any>
   let bootSettingData: AMT.Models.BootSettingData | any
   beforeEach(() => {
     const handler = new CIRAHandler(new HttpHandler(), 'admin', 'P@ssw0rd')
@@ -63,6 +65,10 @@ describe('Boot Options', () => {
       SecureErase: 'false'
     }
 
+    getSetupAndConfigurationServiceSpy = spyOn(device, 'getSetupAndConfigurationService')
+    getSetupAndConfigurationServiceSpy.mockResolvedValue({
+      Body: { AMT_SetupAndConfigurationService: { ProvisioningMode: 1 } } // Default to ACM mode
+    })
     getBootOptionsSpy = spyOn(device, 'getBootOptions')
     getBootOptionsSpy.mockResolvedValue({ AMT_BootSettingData: bootSettingData })
     setBootConfigurationSpy = spyOn(device, 'setBootConfiguration')
@@ -274,5 +280,110 @@ describe('Boot Options', () => {
     expect(result.buffer).toBeInstanceOf(Uint8Array)
     expect(result.paramCount).toBe(2) // URL, SyncRootCA only
     expect(result.buffer.length).toBeGreaterThan(0)
+  })
+
+  // Tests for CCM mode EnforceSecureBoot validation
+  it('should return 400 error when EnforceSecureBoot is false in CCM mode', async () => {
+    getSetupAndConfigurationServiceSpy.mockResolvedValue({
+      Body: { AMT_SetupAndConfigurationService: { ProvisioningMode: 4 } } // CCM mode
+    })
+    req.body = {
+      action: 105,
+      useSOL: false,
+      bootDetails: {
+        url: 'https://example.com/boot.img',
+        enforceSecureBoot: false
+      }
+    }
+
+    await bootOptions(req, resSpy)
+
+    expect(getSetupAndConfigurationServiceSpy).toHaveBeenCalled()
+    expect(resSpy.status).toHaveBeenCalledWith(400)
+    expect(resSpy.json).toHaveBeenCalledWith({
+      error: 'Incorrect URI or Bad Request',
+      errorDescription: messages.BOOT_SETTING_ENFORCE_SECURE_BOOT_CCM
+    })
+  })
+
+  it('should return 400 error when EnforceSecureBoot is false in CCM mode (string ProvisioningMode)', async () => {
+    getSetupAndConfigurationServiceSpy.mockResolvedValue({
+      Body: { AMT_SetupAndConfigurationService: { ProvisioningMode: '4' } } // CCM mode as string
+    })
+    req.body = {
+      action: 105,
+      useSOL: false,
+      bootDetails: {
+        url: 'https://example.com/boot.img',
+        enforceSecureBoot: false
+      }
+    }
+
+    await bootOptions(req, resSpy)
+
+    expect(getSetupAndConfigurationServiceSpy).toHaveBeenCalled()
+    expect(resSpy.status).toHaveBeenCalledWith(400)
+    expect(resSpy.json).toHaveBeenCalledWith({
+      error: 'Incorrect URI or Bad Request',
+      errorDescription: messages.BOOT_SETTING_ENFORCE_SECURE_BOOT_CCM
+    })
+  })
+
+  it('should succeed when EnforceSecureBoot is true in CCM mode', async () => {
+    getSetupAndConfigurationServiceSpy.mockResolvedValue({
+      Body: { AMT_SetupAndConfigurationService: { ProvisioningMode: 4 } } // CCM mode
+    })
+    req.body = {
+      action: 105,
+      useSOL: false,
+      bootDetails: {
+        url: 'https://example.com/boot.img',
+        enforceSecureBoot: true
+      }
+    }
+
+    await bootOptions(req, resSpy)
+
+    expect(getSetupAndConfigurationServiceSpy).not.toHaveBeenCalled()
+    expect(resSpy.status).toHaveBeenCalledWith(200)
+  })
+
+  it('should succeed when EnforceSecureBoot is false in ACM mode', async () => {
+    getSetupAndConfigurationServiceSpy.mockResolvedValue({
+      Body: { AMT_SetupAndConfigurationService: { ProvisioningMode: 1 } } // ACM mode
+    })
+    req.body = {
+      action: 105,
+      useSOL: false,
+      bootDetails: {
+        url: 'https://example.com/boot.img',
+        enforceSecureBoot: false
+      }
+    }
+
+    await bootOptions(req, resSpy)
+
+    expect(getSetupAndConfigurationServiceSpy).toHaveBeenCalled()
+    expect(resSpy.status).toHaveBeenCalledWith(200)
+  })
+
+  it('should return 400 error when enforceSecureBoot is explicitly false in CCM mode', async () => {
+    getSetupAndConfigurationServiceSpy.mockResolvedValue({
+      Body: { AMT_SetupAndConfigurationService: { ProvisioningMode: 4 } } // CCM mode
+    })
+    req.body = {
+      action: 400,
+      useSOL: false,
+      bootDetails: { enforceSecureBoot: false }
+    }
+
+    await bootOptions(req, resSpy)
+
+    expect(getSetupAndConfigurationServiceSpy).toHaveBeenCalled()
+    expect(resSpy.status).toHaveBeenCalledWith(400)
+    expect(resSpy.json).toHaveBeenCalledWith({
+      error: 'Incorrect URI or Bad Request',
+      errorDescription: messages.BOOT_SETTING_ENFORCE_SECURE_BOOT_CCM
+    })
   })
 })
