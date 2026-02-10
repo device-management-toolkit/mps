@@ -34,6 +34,7 @@ export enum messages {
   AUDIT_LOG_EXCEPTION = 'Exception during AMT AuditLog request',
   AUTH_DISABLED = 'Authentication disabled on MPS',
   BOOT_SETTING_EXCEPTION = 'Exception during Boot Setting request',
+  BOOT_SETTING_ENFORCE_SECURE_BOOT_CCM = 'EnforceSecureBoot cannot be turned off in CCM',
   CHANNEL_CLOSE_NO_CHANNEL_ID = 'MPS Error in CHANNEL_CLOSE: Unable to find channelId',
   CHANNEL_OPEN_FAILURE_NO_CHANNEL_ID = 'MPS Error in CHANNEL_OPEN_FAILURE: Unable to find channelId',
   COMPLETE = 'Complete',
