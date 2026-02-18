@@ -1,3 +1,10 @@
+# [2.26.0](https://github.com/device-management-toolkit/mps/compare/v2.25.4...v2.26.0) (2026-02-18)
+
+
+### Features
+
+* **api:** Add CCM validation for EnforceSecureBoot in boot options ([#2323](https://github.com/device-management-toolkit/mps/issues/2323)) ([5f4193c](https://github.com/device-management-toolkit/mps/commit/5f4193c0e25e2d1cc10619e77b6bd0086302599d))
+
 ## [2.25.4](https://github.com/device-management-toolkit/mps/compare/v2.25.3...v2.25.4) (2026-01-08)
 
 ## [2.25.3](https://github.com/device-management-toolkit/mps/compare/v2.25.2...v2.25.3) (2026-01-05)
