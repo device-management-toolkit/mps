@@ -46,7 +46,7 @@ describe('request user consent code', () => {
     expect(resSpy.status).toHaveBeenCalledWith(200)
     expect(resSpy.json).toHaveBeenCalledWith(result)
   })
-  it('Should give an error when return value is not 0', async () => {
+  it('should return 409 when return value is NOT_READY', async () => {
     const result = {
       Header: {
         To: 'http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous',
@@ -62,11 +62,54 @@ describe('request user consent code', () => {
         }
       }
     }
-    const response = { Header: result.Header, Body: result.Body.StartOptIn_OUTPUT }
+    requestUserConsetCodeSpy.mockResolvedValueOnce(result)
+    await request(req, resSpy)
+    expect(resSpy.status).toHaveBeenCalledWith(409)
+    expect(resSpy.json).toHaveBeenCalledWith(expect.objectContaining({
+      error: 'Conflict',
+      message: expect.any(String),
+      details: expect.any(Object),
+      amtResponse: expect.objectContaining({
+        Header: result.Header,
+        Body: expect.objectContaining({
+          ReturnValue: '2',
+          ReturnValueStr: 'NOT_READY'
+        })
+      })
+    }))
+  })
+  
+  it('should return 400 for other non-zero return values', async () => {
+    const result = {
+      Header: {
+        To: 'http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous',
+        RelatesTo: '0',
+        Action: 'http://intel.com/wbem/wscim/1/ips-schema/1/IPS_OptInService/StartOptInResponse',
+        MessageID: 'uuid:00000000-8086-8086-8086-00000000008D',
+        ResourceURI: 'http://intel.com/wbem/wscim/1/ips-schema/1/IPS_OptInService'
+      },
+      Body: {
+        StartOptIn_OUTPUT: {
+          ReturnValue: '1',
+          ReturnValueStr: 'INTERNAL_ERROR'
+        }
+      }
+    }
     requestUserConsetCodeSpy.mockResolvedValueOnce(result)
     await request(req, resSpy)
     expect(resSpy.status).toHaveBeenCalledWith(400)
-    expect(resSpy.json).toHaveBeenCalledWith(response)
+    expect(resSpy.json).toHaveBeenCalledWith(expect.objectContaining({
+      error: 'Bad Request',
+      message: expect.stringContaining('INTERNAL_ERROR'),
+      details: expect.any(Object),
+      amtResponse: expect.objectContaining({
+        Header: result.Header,
+        Body: expect.objectContaining({
+          ReturnValue: '1',
+          ReturnValueStr: 'INTERNAL_ERROR'
+        })
+      })
+    }))
   })
   it('should get an error with status code 400, when failed to request user consent code', async () => {
     requestUserConsetCodeSpy.mockResolvedValueOnce(null)
