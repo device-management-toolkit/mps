@@ -83,6 +83,13 @@ export class WsRedirect {
   handleClose(params: queryParams, event: WebSocket.CloseEvent): void {
     logger.debug(`${messages.REDIRECT_CLOSING_WEB_SOCKET} to ${params.host}: ${params.port}.`)
     if (this.websocketFromDevice) {
+      const device = devices[params.host]
+      if (device == null) {
+        logger.warn(`[${params.host}] Device not found in devices map while closing redirect session - mode: ${params.mode}, wasClean: ${event.wasClean}, channelState: ${this.websocketFromDevice.state}`)
+        this.websocketFromDevice.CloseChannel()
+        return
+      }
+
       switch (params.mode) {
         case 'kvm':
           devices[params.host].kvmConnect = false // Indicate no current KVM session on the device

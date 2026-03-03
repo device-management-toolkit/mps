@@ -1,3 +1,10 @@
+## [2.26.1](https://github.com/device-management-toolkit/mps/compare/v2.26.0...v2.26.1) (2026-03-02)
+
+
+### Bug Fixes
+
+* prevent redirect session crash during device validation ([#2359](https://github.com/device-management-toolkit/mps/issues/2359)) ([3aa2c0c](https://github.com/device-management-toolkit/mps/commit/3aa2c0cfc8ada76405eb14ff4fbcf39cf57475b6))
+
 # [2.26.0](https://github.com/device-management-toolkit/mps/compare/v2.25.4...v2.26.0) (2026-02-18)
 
 
