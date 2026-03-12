@@ -7,7 +7,7 @@ import { getRedirStatus } from './getRedirStatus.js'
 import { type Request, type Response } from 'express'
 import { devices } from '../../server/mpsserver.js'
 import { jest } from '@jest/globals'
-import { type SpyInstance, spyOn } from 'jest-mock'
+import { type Spied, spyOn } from 'jest-mock'
 
 jest.mock('../../logging', () => ({
   logger: {
@@ -26,7 +26,7 @@ describe('getRedirStatus', () => {
   let req
   let res
   let testDevices
-  let getByIdSpy: SpyInstance<any>
+  let getByIdSpy: Spied<any>
 
   beforeEach(() => {
     testDevices = devices

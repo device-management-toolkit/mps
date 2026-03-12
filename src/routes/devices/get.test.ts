@@ -7,14 +7,14 @@ import { randomUUID } from 'node:crypto'
 import { getDevice } from './get.js'
 import { type Device } from '../../models/models.js'
 import { jest } from '@jest/globals'
-import { type SpyInstance, spyOn } from 'jest-mock'
+import { type Spied, spyOn } from 'jest-mock'
 
 let req
 let res
-let statusSpy: SpyInstance<any>
-let jsonSpy: SpyInstance<any>
-let endSpy: SpyInstance<any>
-let getByIdSpy: SpyInstance<any>
+let statusSpy: Spied<any>
+let jsonSpy: Spied<any>
+let endSpy: Spied<any>
+let getByIdSpy: Spied<any>
 let mockDevice: Device
 
 beforeEach(() => {

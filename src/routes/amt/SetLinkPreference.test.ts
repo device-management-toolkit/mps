@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  **********************************************************************/
 
-import { type SpyInstance, spyOn } from 'jest-mock'
+import { type Spied, spyOn } from 'jest-mock'
 import { CIRAHandler } from '../../amt/CIRAHandler.js'
 import { DeviceAction } from '../../amt/DeviceAction.js'
 import { HttpHandler } from '../../amt/HttpHandler.js'
@@ -16,8 +16,8 @@ import { setLinkPreference } from './setLinkPreference.js'
 describe('Link Preference', () => {
   let req
   let resSpy
-  let mqttSpy: SpyInstance<any>
-  let setEthernetLinkPreferenceSpy: SpyInstance<any>
+  let mqttSpy: Spied<any>
+  let setEthernetLinkPreferenceSpy: Spied<any>
   let device: DeviceAction
 
   beforeEach(() => {

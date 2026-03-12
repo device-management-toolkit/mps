@@ -7,13 +7,13 @@ import { logger, messages } from '../../logging/index.js'
 import { devices } from '../../server/mpsserver.js'
 import { refreshDevice } from './refresh.js'
 import { jest } from '@jest/globals'
-import { type SpyInstance, spyOn } from 'jest-mock'
+import { type Spied, spyOn } from 'jest-mock'
 
 describe('refresh tests', () => {
   let res: Express.Response
-  let statusSpy: SpyInstance<any>
-  let jsonSpy: SpyInstance<any>
-  let getCredsSpy: SpyInstance<any>
+  let statusSpy: Spied<any>
+  let jsonSpy: Spied<any>
+  let getCredsSpy: Spied<any>
   let req
   beforeEach(() => {
     res = {

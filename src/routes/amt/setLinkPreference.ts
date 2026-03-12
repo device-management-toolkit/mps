@@ -8,7 +8,7 @@ import { logger, messages } from '../../logging/index.js'
 import { ErrorResponse } from '../../utils/amtHelper.js'
 import { MqttProvider } from '../../utils/MqttProvider.js'
 import { type DeviceAction } from '../../amt/DeviceAction.js'
-import { AMTStatusCodes } from '#src/utils/constants.js'
+import { AMTStatusCodes } from '../../utils/constants.js'
 
 export async function setLinkPreference(req: Request, res: Response): Promise<void> {
   try {
