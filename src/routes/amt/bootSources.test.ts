@@ -5,7 +5,7 @@
 
 import { bootSources } from './bootSources.js'
 import { DeviceAction } from '../../amt/DeviceAction.js'
-import { type SpyInstance, spyOn } from 'jest-mock'
+import { type Spied, spyOn } from 'jest-mock'
 import { createSpyObj } from '../../test/helper/jest.js'
 import { CIRAHandler } from '../../amt/CIRAHandler.js'
 import { HttpHandler } from '../../amt/HttpHandler.js'
@@ -13,7 +13,7 @@ import { HttpHandler } from '../../amt/HttpHandler.js'
 describe('bootSources', () => {
   let req: any
   let resSpy: any
-  let getBootSourceSettingSpy: SpyInstance<any>
+  let getBootSourceSettingSpy: Spied<any>
   beforeEach(() => {
     const handler = new CIRAHandler(new HttpHandler(), 'admin', 'P@ssw0rd')
     const device = new DeviceAction(handler, null)

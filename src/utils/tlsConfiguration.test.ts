@@ -10,13 +10,13 @@ import { logger } from '../logging/index.js'
 import { type mpsConfigType, type webConfigType } from '../models/Config.js'
 import { constants } from 'node:crypto'
 import { jest } from '@jest/globals'
-import { type SpyInstance, spyOn } from 'jest-mock'
+import { type Spied, spyOn } from 'jest-mock'
 
-let existsSyncSpy: SpyInstance<any>
-let readFileSyncSpy: SpyInstance<any>
-let jsonParseSpy: SpyInstance<any>
-let errorSpy: SpyInstance<any>
-let exitSpy: SpyInstance<any>
+let existsSyncSpy: Spied<any>
+let readFileSyncSpy: Spied<any>
+let jsonParseSpy: Spied<any>
+let errorSpy: Spied<any>
+let exitSpy: Spied<any>
 
 beforeEach(() => {
   errorSpy = spyOn(logger, 'error')

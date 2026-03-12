@@ -16,18 +16,18 @@ import {
   determineBootDevice,
   validateHTTPBootParams
 } from './bootOptions.js'
-import { type SpyInstance, spyOn } from 'jest-mock'
+import { type Spied, spyOn } from 'jest-mock'
 import { messages } from '../../logging/index.js'
 
 describe('Boot Options', () => {
   let resSpy: any
   let req: any
-  let getBootOptionsSpy: SpyInstance<any>
-  let setBootConfigurationSpy: SpyInstance<any>
-  let forceBootModeSpy: SpyInstance<any>
-  let changeBootOrderSpy: SpyInstance<any>
-  let sendPowerActionSpy: SpyInstance<any>
-  let getSetupAndConfigurationServiceSpy: SpyInstance<any>
+  let getBootOptionsSpy: Spied<any>
+  let setBootConfigurationSpy: Spied<any>
+  let forceBootModeSpy: Spied<any>
+  let changeBootOrderSpy: Spied<any>
+  let sendPowerActionSpy: Spied<any>
+  let getSetupAndConfigurationServiceSpy: Spied<any>
   let bootSettingData: AMT.Models.BootSettingData | any
   beforeEach(() => {
     const handler = new CIRAHandler(new HttpHandler(), 'admin', 'P@ssw0rd')

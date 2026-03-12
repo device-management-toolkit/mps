@@ -13,7 +13,7 @@ import { Environment } from '../utils/Environment.js'
 import { logger } from '../logging/index.js'
 import APFProcessor from '../amt/APFProcessor.js'
 import { jest } from '@jest/globals'
-import { type SpyInstance, spyOn } from 'jest-mock'
+import { type Spied, spyOn } from 'jest-mock'
 
 let certs: certificatesType
 let db: IDB
@@ -22,13 +22,13 @@ let secrets: ISecretManagerService
 let mps: MPSServer
 
 describe('MPS Server', function () {
-  let deviceSpy: SpyInstance<any>
-  let deviceUpdateSpy: SpyInstance<any>
-  let processCommandSpy: SpyInstance<any>
-  let getSecretSpy: SpyInstance<any>
-  let getCredsSpy: SpyInstance<any>
-  let sendUserAuthSpy: SpyInstance<any>
-  let sendUserAuthFailSpy: SpyInstance<any>
+  let deviceSpy: Spied<any>
+  let deviceUpdateSpy: Spied<any>
+  let processCommandSpy: Spied<any>
+  let getSecretSpy: Spied<any>
+  let getCredsSpy: Spied<any>
+  let sendUserAuthSpy: Spied<any>
+  let sendUserAuthFailSpy: Spied<any>
   let socket
   let testDevice: Device
   beforeEach(async function () {

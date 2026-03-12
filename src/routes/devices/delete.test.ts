@@ -6,12 +6,12 @@
 import { logger } from '../../logging/index.js'
 import { deleteDevice } from './delete.js'
 import { jest } from '@jest/globals'
-import { type SpyInstance, spyOn } from 'jest-mock'
+import { type Spied, spyOn } from 'jest-mock'
 
 let res: Express.Response
-let statusSpy: SpyInstance<any>
-let jsonSpy: SpyInstance<any>
-let endSpy: SpyInstance<any>
+let statusSpy: Spied<any>
+let jsonSpy: Spied<any>
+let endSpy: Spied<any>
 
 beforeEach(() => {
   res = {

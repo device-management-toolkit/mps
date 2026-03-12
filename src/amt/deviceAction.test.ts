@@ -6,7 +6,7 @@
 import { type AMT, type CIM } from '@device-management-toolkit/wsman-messages'
 import { type Selector } from '@device-management-toolkit/wsman-messages/WSMan.js'
 import { type Models } from '@device-management-toolkit/wsman-messages/ips/models.js'
-import { type SpyInstance, spyOn } from 'jest-mock'
+import { type Spied, spyOn } from 'jest-mock'
 import { type CIRASocket } from '../models/models.js'
 import {
   addAlarmClockOccurrenceResponse,
@@ -45,11 +45,11 @@ import { DeviceAction } from './DeviceAction.js'
 import { HttpHandler } from './HttpHandler.js'
 
 describe('Device Action Tests', () => {
-  let enumerateSpy: SpyInstance<any>
-  let pullSpy: SpyInstance<any>
-  let getSpy: SpyInstance<any>
-  let sendSpy: SpyInstance<any>
-  let deleteSpy: SpyInstance<any>
+  let enumerateSpy: Spied<any>
+  let pullSpy: Spied<any>
+  let getSpy: Spied<any>
+  let sendSpy: Spied<any>
+  let deleteSpy: Spied<any>
   let device: DeviceAction
   beforeEach(() => {
     const socket: CIRASocket = null
@@ -629,7 +629,7 @@ describe('Device Action Tests', () => {
   })
 
   describe('WiFi port validation and link preference', () => {
-    let getEthernetPortSettingsSpy: SpyInstance<any>
+    let getEthernetPortSettingsSpy: Spied<any>
 
     beforeEach(() => {
       getEthernetPortSettingsSpy = spyOn(device, 'getEthernetPortSettings')
