@@ -501,6 +501,99 @@
           "response": []
         },
         {
+          "name": "Create Device with invalid dnsSuffix query injection",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 400\", function () {\r",
+                  "    pm.response.to.have.status(400);\r",
+                  "});\r",
+                  "pm.test(\"Expect dnsSuffix validation error\",function(){\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.errors[0].path).to.be.equal(\"dnsSuffix\");\r",
+                  "    pm.expect(jsonData.errors[0].msg).to.be.equal(\"dnsSuffix must be a valid DNS suffix\");\r",
+                  "})"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"guid\": \"143e4567-e89b-12d3-a456-426614174009\",\r\n    \"friendlyName\": \"friendlyName\",\r\n    \"hostname\": \"hostname\",\r\n    \"tags\": [],\r\n    \"mpsusername\": \"admin\",\r\n    \"dnsSuffix\": \"None?injected_query_string=123\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{protocol}}://{{host}}/api/v1/devices",
+              "protocol": "{{protocol}}",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "devices"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Device with non-string dnsSuffix",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 400\", function () {\r",
+                  "    pm.response.to.have.status(400);\r",
+                  "});\r",
+                  "pm.test(\"Expect dnsSuffix type validation error\",function(){\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.errors[0].path).to.be.equal(\"dnsSuffix\");\r",
+                  "})"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"guid\": \"143e4567-e89b-12d3-a456-426614174010\",\r\n    \"friendlyName\": \"friendlyName\",\r\n    \"hostname\": \"hostname\",\r\n    \"tags\": [],\r\n    \"mpsusername\": \"admin\",\r\n    \"dnsSuffix\": {}\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{protocol}}://{{host}}/api/v1/devices",
+              "protocol": "{{protocol}}",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "devices"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
           "name": "Device by GUID",
           "event": [
             {
@@ -756,6 +849,100 @@
           "response": []
         },
         {
+          "name": "Update Device with invalid dnsSuffix query injection",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 400\", function () {\r",
+                  "    pm.response.to.have.status(400);\r",
+                  "});\r",
+                  "pm.test(\"Expect dnsSuffix validation error\",function(){\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.errors[0].path).to.be.equal(\"dnsSuffix\");\r",
+                  "    pm.expect(jsonData.errors[0].msg).to.be.equal(\"dnsSuffix must be a valid DNS suffix\");\r",
+                  "})"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n        \"guid\": \"143e4567-e89b-12d3-a456-426614174000\",\r\n        \"hostname\": \"hostname\",\r\n        \"dnsSuffix\": \"None?injected_query_string=123\",\r\n        \"tags\": [\"acm\"]\r\n    }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{protocol}}://{{host}}/api/v1/devices",
+              "protocol": "{{protocol}}",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "devices"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Device with invalid dnsSuffix length",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 400\", function () {\r",
+                  "    pm.response.to.have.status(400);\r",
+                  "});\r",
+                  "pm.test(\"Expect dnsSuffix length validation error\",function(){\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.errors[0].path).to.be.equal(\"dnsSuffix\");\r",
+                  "    pm.expect(jsonData.errors[0].msg).to.be.equal(\"dnsSuffix must be less than 256 characters\");\r",
+                  "})"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n        \"guid\": \"143e4567-e89b-12d3-a456-426614174000\",\r\n        \"hostname\": \"hostname\",\r\n        \"dnsSuffix\": \"zaZswmJkhAIkIw7f8zFjSlvbv78Ua61Vlgz2JToGRZYo2nXIlKG7ck8ZjoHjudSe95WVwQVDdMuLA7mVRIek7okrHGaaElLXfFzX7zp2buylQGpzQueCmMmi3usHQPXqAwGJNexRcUQyBqTDqbv5PM5bLlylv3S0esWclfYoAahFXvtcgjmJw8r1fGIOzGWjGKWkzbP1vYObDctXhJdg7fk6tnfEdnnUkKo9953I5NjT0amWVIhqo8nwQPIO14gb44wyQAgpsJkT8xJNXNGSb63RmMbynIpfXpIbIWWuhLtrnyQyOTYJ9FHO8R4jARTZqtzyfyNToMUjajQ4ytMtcpLCvyiVxQJ3XiBaUo8nFEZK2tglcRQUWhdOauKOM68ttbhBNogQPFimq05c64Xo7YicxJb7PGEgUTbYv5vnmuekDIIibj3iQIL6pRGwymg5NkXlPKXz7SBhqiGXUNArXPPIXKqxts3SMBEgDKvF94e6XYXmiNZga64qZs0aLnNbOgBexjuDONG0ziQw5yav7DZwLemgyuIOoqbhx3lzaKAuyqzlS54waVCHOYGAickj6JbtzZzHqueWETJfqtWv7XQGQvg1C7TJAQpvtY6gbvQBV8PPiKMmbQ9Om1tvYX52aoKo0TU6R7CiG6MtgihSuA8uOvxABhNIg89rvWFJVUqEY21XObwRpdKV9TBbQ3GIftKXuZKImRiA216m4Dk368wn5S5T9TY5A5z7HNavratpgp1nR9aSilt42fWfw92gJAP1I53kdmFR0TOLOyPZ1SPeuCtmxZq6aASUaheJfyrgxBJveuRaGb1mHfHX4W3aXd19SLTf1foqQyxFU00rdfhUfUaQpNVOebx4CqDYmh4ABtp1XpS4z8fZ0prqiYRWNqfqWbHtruKkj0UwpK5WBNwRGbP2Ejsl0TsshB8U6e54Yh18TFv2LufbRsitC0DhZPH3zydRM6azBzcYcNtAZmFqLHPfNPe80XWF4jU8dO8iI3qnSX6OdYrIS8IiFIUlId9bHkrypqtE7mkc4WZjBPGTm3KLKBakDfKlQzOqhPZnc1UVXz6YU64JdKEbtYM5UlSc1s8cUg1YFInwjyiNEwv768wfk1vj7nIzixWH1agANzrY0OiTLTTIxZ56snlQ7oBHzIwK8V7AjmoVnI5Ao38eZ8swlnVBtw49tqqW4lguZ06AccYxkrg4AFmGp61SITfw2Xtxia6lXlCHlriaw0nAyFncu8JCsSjMEeFuaBmgQIyR2wG3qBEwIW2zrVRqBpGmeqfsut5Vq4DaDfr7G9BuopVK1D13ePev\",\r\n        \"tags\": [\"acm\"]\r\n    }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{protocol}}://{{host}}/api/v1/devices",
+              "protocol": "{{protocol}}",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "devices"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
           "name": "Update Device not found",
           "event": [
             {
@@ -834,6 +1021,194 @@
             "body": {
               "mode": "raw",
               "raw": "{\r\n        \"guid\": \"143e4567-e89b-12d3-a456-426614174000\",\r\n        \"hostname\": \"hostname\",\r\n        \"dnsSuffix\": \"os.suffix.com\",\r\n        \"tags\": [\"acm\"]\r\n    }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{protocol}}://{{host}}/api/v1/devices",
+              "protocol": "{{protocol}}",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "devices"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Device with empty dnsSuffix",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {\r",
+                  "    pm.response.to.have.status(200);\r",
+                  "});\r",
+                  "pm.test(\"Expect empty dnsSuffix is accepted\",function(){\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.guid).to.be.equal(\"143e4567-e89b-12d3-a456-426614174000\");\r",
+                  "    pm.expect(jsonData.dnsSuffix).to.be.equal(\"\");\r",
+                  "})"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n        \"guid\": \"143e4567-e89b-12d3-a456-426614174000\",\r\n        \"hostname\": \"hostname\",\r\n        \"dnsSuffix\": \"\",\r\n        \"tags\": [\"acm\"]\r\n    }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{protocol}}://{{host}}/api/v1/devices",
+              "protocol": "{{protocol}}",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "devices"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Device with null dnsSuffix",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {\r",
+                  "    pm.response.to.have.status(200);\r",
+                  "});\r",
+                  "pm.test(\"Expect null dnsSuffix is accepted\",function(){\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.guid).to.be.equal(\"143e4567-e89b-12d3-a456-426614174000\");\r",
+                  "    pm.expect(jsonData.dnsSuffix).to.be.equal(null);\r",
+                  "})"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n        \"guid\": \"143e4567-e89b-12d3-a456-426614174000\",\r\n        \"hostname\": \"hostname\",\r\n        \"dnsSuffix\": null,\r\n        \"tags\": [\"acm\"]\r\n    }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{protocol}}://{{host}}/api/v1/devices",
+              "protocol": "{{protocol}}",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "devices"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Device with trailing-dot dnsSuffix",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {\r",
+                  "    pm.response.to.have.status(200);\r",
+                  "});\r",
+                  "pm.test(\"Expect trailing-dot dnsSuffix is accepted\",function(){\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.guid).to.be.equal(\"143e4567-e89b-12d3-a456-426614174000\");\r",
+                  "    pm.expect(jsonData.dnsSuffix).to.be.equal(\"os.suffix.com.\");\r",
+                  "})"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n        \"guid\": \"143e4567-e89b-12d3-a456-426614174000\",\r\n        \"hostname\": \"hostname\",\r\n        \"dnsSuffix\": \"os.suffix.com.\",\r\n        \"tags\": [\"acm\"]\r\n    }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{protocol}}://{{host}}/api/v1/devices",
+              "protocol": "{{protocol}}",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "devices"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Device with single-label dnsSuffix",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {\r",
+                  "    pm.response.to.have.status(200);\r",
+                  "});\r",
+                  "pm.test(\"Expect single-label dnsSuffix is accepted\",function(){\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.guid).to.be.equal(\"143e4567-e89b-12d3-a456-426614174000\");\r",
+                  "    pm.expect(jsonData.dnsSuffix).to.be.equal(\"localdomain\");\r",
+                  "})"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n        \"guid\": \"143e4567-e89b-12d3-a456-426614174000\",\r\n        \"hostname\": \"hostname\",\r\n        \"dnsSuffix\": \"localdomain\",\r\n        \"tags\": [\"acm\"]\r\n    }",
               "options": {
                 "raw": {
                   "language": "json"

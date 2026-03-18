@@ -13,6 +13,16 @@ export const validator = (): any => [
     .isString()
     .isLength({ max: 255 })
     .withMessage('Hostname must be less than 256 characters'),
+  check('dnsSuffix')
+    .optional({ nullable: true })
+    .isString()
+    .bail()
+    .isLength({ max: 255 })
+    .withMessage('dnsSuffix must be less than 256 characters')
+    .bail()
+    .if((value) => value !== '')
+    .isFQDN({ require_tld: false, allow_trailing_dot: true })
+    .withMessage('dnsSuffix must be a valid DNS suffix'),
   check('mpsusername').optional({ nullable: true }).isString(),
   check('connect').optional({ nullable: true }).isISO8601().toDate(),
   check('disconnect').optional({ nullable: true }).isISO8601().toDate(),
