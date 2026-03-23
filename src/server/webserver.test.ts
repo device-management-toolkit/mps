@@ -307,9 +307,8 @@ describe('webserver tests', () => {
         secrets: null,
         certs: null
       }
-      let res: Express.Response
       const useapiv1Spy = spyOn(web, 'useAPIv1')
-      await web.useAPIv1(req as any, res as any, jest.fn())
+      await web.useAPIv1(req as any, {} as any, jest.fn())
       expect(useapiv1Spy).toHaveBeenCalledTimes(1)
     })
   })
@@ -321,9 +320,8 @@ describe('webserver tests', () => {
         secrets: null,
         certs: null
       }
-      let res: Express.Response
       const appUseJsonParserSpy = spyOn(web, 'appUseJsonParser')
-      web.appUseJsonParser(null, req as any, res as any, jest.fn())
+      web.appUseJsonParser(null, req as any, {} as any, jest.fn())
       expect(appUseJsonParserSpy).toHaveBeenCalledTimes(1)
     })
     it('test appUseJsonParser with error', () => {

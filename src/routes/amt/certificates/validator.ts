@@ -43,10 +43,10 @@ const expirationValidator: CustomValidator = (value, { req }) => {
       if (certString.includes('-----BEGIN CERTIFICATE-----')) {
         cert = new crypto.X509Certificate(certString)
       } else {
-        throw new Error('Invalid certificate format (not valid DER or PEM)')
+        throw new Error('Invalid certificate format (not valid DER or PEM)', { cause: err })
       }
     } catch (err) {
-      throw new Error('Invalid certificate format (not valid DER or PEM)')
+      throw new Error('Invalid certificate format (not valid DER or PEM)', { cause: err })
     }
   }
 
@@ -63,6 +63,6 @@ const expirationValidator: CustomValidator = (value, { req }) => {
     if (err instanceof Error && err.message === 'Certificate has expired') {
       throw err
     }
-    throw new Error('Failed to validate certificate expiration')
+    throw new Error('Failed to validate certificate expiration', { cause: err })
   }
 }

@@ -57,11 +57,10 @@ export class RedirectInterceptor {
   processAmtData(data): string {
     this.amt.acc += data // Add data to accumulator
     data = ''
-    let datalen = 0
-    do {
+    for (let datalen = -1; datalen !== data.length; ) {
       datalen = data.length
       data += this.processAmtDataEx()
-    } while (datalen !== data.length) // Process as much data as possible
+    } // Process as much data as possible
     return data
   }
 
@@ -129,11 +128,10 @@ export class RedirectInterceptor {
   processBrowserData(data): string {
     this.ws.acc += data // Add data to accumulator
     data = ''
-    let datalen = 0
-    do {
+    for (let datalen = -1; datalen !== data.length; ) {
       datalen = data.length
       data += this.processBrowserDataEx()
-    } while (datalen !== data.length) // Process as much data as possible
+    } // Process as much data as possible
     return data
   }
 
