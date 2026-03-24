@@ -674,19 +674,18 @@ describe('device tests', () => {
 
   test('should get true when device connection status update', async () => {
     querySpy.mockResolvedValueOnce({ rows: [], command: '', fields: null, rowCount: 1, oid: 0 })
-    const result = await deviceTable.clearInstanceStatus('localhost', '4')
+    const result = await deviceTable.clearInstanceStatus('localhost')
     expect(result).toBe(true)
     expect(querySpy).toHaveBeenCalledTimes(1)
     expect(querySpy).toHaveBeenCalledWith(
       `
-      UPDATE devices 
-      SET mpsinstance=$2, connectionstatus=$3 
-      WHERE mpsinstance=$1 and tenantId = $4`,
+      UPDATE devices
+      SET mpsinstance=$2, connectionstatus=$3
+      WHERE mpsinstance=$1`,
       [
         'localhost',
         null,
-        false,
-        '4'
+        false
       ]
     )
   })
@@ -699,14 +698,13 @@ describe('device tests', () => {
     expect(querySpy).toHaveBeenCalledTimes(1)
     expect(querySpy).toHaveBeenCalledWith(
       `
-      UPDATE devices 
-      SET mpsinstance=$2, connectionstatus=$3 
-      WHERE mpsinstance=$1 and tenantId = $4`,
+      UPDATE devices
+      SET mpsinstance=$2, connectionstatus=$3
+      WHERE mpsinstance=$1`,
       [
         'localhost',
         null,
-        false,
-        ''
+        false
       ]
     )
     expect(result).toBe(false)

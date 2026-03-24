@@ -18,5 +18,5 @@ export interface IDeviceTable extends ITable<Device> {
   ) => Promise<Device[]>
   getByFriendlyName: (hostname: string, tenantId?: string) => Promise<Device[]>
   getByHostname: (hostname: string, tenantId?: string) => Promise<Device[]>
-  clearInstanceStatus: (mpsInstance: string, tenantId?: string) => Promise<boolean>
+  clearInstanceStatus: (mpsInstance: string) => Promise<boolean>
 }

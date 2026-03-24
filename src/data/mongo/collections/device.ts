@@ -96,9 +96,9 @@ export class MongoDeviceTable implements IDeviceTable {
     return this.collection.find({ hostname, tenantId }).toArray() as unknown as WithId<Device>[]
   }
 
-  async clearInstanceStatus(mpsInstance: string, tenantId = ''): Promise<boolean> {
+  async clearInstanceStatus(mpsInstance: string): Promise<boolean> {
     const result = await this.collection.updateMany(
-      { mpsInstance, tenantId },
+      { mpsInstance },
       { $set: { mpsInstance: null, connectionStatus: false } }
     )
     return result.modifiedCount && result.modifiedCount > 0

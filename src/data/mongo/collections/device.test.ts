@@ -160,11 +160,11 @@ describe('MongoDeviceTable', () => {
   it('should clear instance status', async () => {
     collection.updateMany.mockResolvedValue({ modifiedCount: 5 } as any)
 
-    const result = await mongoDeviceTable.clearInstanceStatus('someMpsInstance', 'someTenantId')
+    const result = await mongoDeviceTable.clearInstanceStatus('someMpsInstance')
 
     expect(result).toBe(true)
     expect(collection.updateMany).toHaveBeenCalledWith(
-      { mpsInstance: 'someMpsInstance', tenantId: 'someTenantId' },
+      { mpsInstance: 'someMpsInstance' },
       { $set: { mpsInstance: null, connectionStatus: false } }
     )
   })

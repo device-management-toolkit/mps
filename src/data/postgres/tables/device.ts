@@ -310,20 +310,19 @@ export class DeviceTable implements IDeviceTable {
   /**
    * @description Clear the mpsInstance for associated devices before process exit
    * @param {string} mpsInstance
-   * @returns {void}
+   * @returns {Promise<boolean>} Return true on success, false otherwise
    */
-  async clearInstanceStatus(mpsInstance: string, tenantId = ''): Promise<boolean> {
+  async clearInstanceStatus(mpsInstance: string): Promise<boolean> {
     try {
       const results = await this.db.query(
         `
-      UPDATE devices 
-      SET mpsinstance=$2, connectionstatus=$3 
-      WHERE mpsinstance=$1 and tenantId = $4`,
+      UPDATE devices
+      SET mpsinstance=$2, connectionstatus=$3
+      WHERE mpsinstance=$1`,
         [
           mpsInstance,
           null,
-          false,
-          tenantId
+          false
         ]
       )
       logger.debug('Clean DB instance before exit', results)
