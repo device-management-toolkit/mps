@@ -1,3 +1,10 @@
+## [2.26.3](https://github.com/device-management-toolkit/mps/compare/v2.26.2...v2.26.3) (2026-03-24)
+
+
+### Bug Fixes
+
+* remove tenantId filter from clearInstanceStatus ([#2404](https://github.com/device-management-toolkit/mps/issues/2404)) ([5084072](https://github.com/device-management-toolkit/mps/commit/508407208fc788d13e564e1649f1c574edfce9cc))
+
 ## [2.26.2](https://github.com/device-management-toolkit/mps/compare/v2.26.1...v2.26.2) (2026-03-11)
 
 ## [2.26.1](https://github.com/device-management-toolkit/mps/compare/v2.26.0...v2.26.1) (2026-03-02)
