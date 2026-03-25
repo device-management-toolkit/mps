@@ -92,6 +92,15 @@ export async function setAMTFeatures(req: Request, res: Response): Promise<void>
       await req.deviceAction.BootServiceStateChange(requestedState)
     }
 
+    // Configure Remote Platform Erase (RPE)
+    if (payload.enablePlatformErase !== undefined) {
+      const bootCaps = await req.deviceAction.getBootCapabilities()
+      const platformEraseCaps = bootCaps.Body?.AMT_BootCapabilities?.PlatformErase ?? 0
+      if (platformEraseCaps !== 0) {
+        await req.deviceAction.setRPEEnabled(!!payload.enablePlatformErase)
+      }
+    }
+
     MqttProvider.publishEvent('success', ['AMT_SetFeatures'], messages.AMT_FEATURES_SET_SUCCESS, guid)
     res.status(200).json({ status: messages.AMT_FEATURES_SET_SUCCESS }).end()
   } catch (error) {

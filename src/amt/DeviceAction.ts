@@ -199,6 +199,32 @@ export class DeviceAction {
     return result.Envelope
   }
 
+  async getBootCapabilities(): Promise<Common.Models.Envelope<AMT.Models.BootCapabilities>> {
+    logger.silly(`getBootCapabilities ${messages.REQUEST}`)
+    const xmlRequestBody = this.amt.BootCapabilities.Get()
+    const result = await this.ciraHandler.Get<AMT.Models.BootCapabilities>(this.ciraSocket, xmlRequestBody)
+    logger.silly(`getBootCapabilities ${messages.COMPLETE}`)
+    return result.Envelope
+  }
+
+  async setRPEEnabled(enabled: boolean): Promise<void> {
+    logger.silly(`setRPEEnabled ${messages.REQUEST}`)
+    const bootOptions = await this.getBootOptions()
+    const current = bootOptions.AMT_BootSettingData
+    current.PlatformErase = enabled
+    await this.setBootConfiguration(current)
+    logger.silly(`setRPEEnabled ${messages.COMPLETE}`)
+  }
+
+  async sendRemoteErase(eraseMask: number): Promise<void> {
+    logger.silly(`sendRemoteErase ${messages.REQUEST}`)
+    const bootOptions = await this.getBootOptions()
+    const current = bootOptions.AMT_BootSettingData
+    current.PlatformErase = eraseMask !== 0
+    await this.setBootConfiguration(current)
+    logger.silly(`sendRemoteErase ${messages.COMPLETE}`)
+  }
+
   async requestUserConsentCode(): Promise<Common.Models.Envelope<IPS.Models.StartOptIn_OUTPUT>> {
     logger.silly(`requestUserConsentCode ${messages.REQUEST}`)
     const xmlRequestBody = this.ips.OptInService.StartOptIn()

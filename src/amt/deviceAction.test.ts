@@ -389,6 +389,34 @@ describe('Device Action Tests', () => {
       expect(result).toEqual(bootCapabilities.Envelope)
     })
   })
+  describe('boot capabilities and RPE', () => {
+    it('should get boot capabilities', async () => {
+      getSpy.mockResolvedValueOnce(bootCapabilities)
+      const result = await device.getBootCapabilities()
+      expect(result).toEqual(bootCapabilities.Envelope)
+    })
+    it('should set RPE enabled', async () => {
+      getSpy.mockResolvedValueOnce({ Envelope: { Body: { AMT_BootSettingData: { ElementName: 'test', PlatformErase: false } } } })
+      sendSpy.mockResolvedValueOnce({ Envelope: { Body: {} } })
+      await device.setRPEEnabled(true)
+      expect(getSpy).toHaveBeenCalled()
+      expect(sendSpy).toHaveBeenCalled()
+    })
+    it('should send remote erase with non-zero mask', async () => {
+      getSpy.mockResolvedValueOnce({ Envelope: { Body: { AMT_BootSettingData: { ElementName: 'test', PlatformErase: false } } } })
+      sendSpy.mockResolvedValueOnce({ Envelope: { Body: {} } })
+      await device.sendRemoteErase(3)
+      expect(getSpy).toHaveBeenCalled()
+      expect(sendSpy).toHaveBeenCalled()
+    })
+    it('should send remote erase with zero mask sets PlatformErase to false', async () => {
+      getSpy.mockResolvedValueOnce({ Envelope: { Body: { AMT_BootSettingData: { ElementName: 'test', PlatformErase: true } } } })
+      sendSpy.mockResolvedValueOnce({ Envelope: { Body: {} } })
+      await device.sendRemoteErase(0)
+      expect(getSpy).toHaveBeenCalled()
+      expect(sendSpy).toHaveBeenCalled()
+    })
+  })
   describe('alarm occurrences', () => {
     it('should return null when enumerate call to getAlarmClockOccurrences fails', async () => {
       enumerateSpy.mockResolvedValueOnce(null)

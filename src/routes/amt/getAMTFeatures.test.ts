@@ -141,7 +141,8 @@ describe('get amt features', () => {
             ForcedProgressEvents: true,
             IDER: true,
             InstanceID: 'Intel(r) AMT:BootCapabilities 0',
-            SOL: true
+            SOL: true,
+            PlatformErase: 3
           }
         }
       },
@@ -156,7 +157,8 @@ describe('get amt features', () => {
           IDERBootDevice: 0,
           InstanceID: 'Intel(r) AMT:BootSettingData 0',
           UseIDER: false,
-          UseSOL: false
+          UseSOL: false,
+          PlatformErase: true
         }
       }
     })
@@ -175,7 +177,9 @@ describe('get amt features', () => {
       httpsBootSupported: true,
       winREBootSupported: true,
       localPBABootSupported: false,
-      remoteErase: false
+      remoteEraseEnabled: true,
+      remoteEraseSupported: true,
+      platformEraseCaps: 3
     })
     expect(mqttSpy).toHaveBeenCalledTimes(2)
   })
@@ -271,7 +275,9 @@ describe('get amt features', () => {
       httpsBootSupported: false,
       winREBootSupported: false,
       localPBABootSupported: false,
-      remoteErase: false
+      remoteEraseEnabled: false,
+      remoteEraseSupported: false,
+      platformEraseCaps: 0
     })
   })
 })
