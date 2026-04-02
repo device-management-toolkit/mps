@@ -45,13 +45,13 @@
     "cors": "^2.8.6",
     "exponential-backoff": "^3.1.3",
     "express": "^4.22.0",
-    "express-validator": "^7.3.1",
-    "got": "^14.6.6",
+    "express-validator": "^7.3.2",
+    "got": "^15.0.0",
     "http-z": "^7.0.0",
     "jws": "^4.0.1",
     "mongodb": "^7.1.1",
     "mqtt": "^5.15.1",
-    "node-forge": "^1.3.2",
+    "node-forge": "^1.4.0",
     "pg": "^8.20.0",
     "rc": "^1.2.8",
     "winston": "^3.19.0",
@@ -78,10 +78,10 @@
     "jest-transform-stub": "^2.0.0",
     "prettier-config-standard": "^7.0.0",
     "prettier-plugin-multiline-arrays": "^4.1.5",
-    "ts-jest": "^29.4.6",
+    "ts-jest": "^29.4.9",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.3",
-    "typescript-eslint": "8.57.2"
+    "typescript-eslint": "8.58.0"
   },
   "optionalDependencies": {
     "fsevents": "^2.3.3"
