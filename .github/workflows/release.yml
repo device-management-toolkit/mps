@@ -40,14 +40,14 @@ jobs:
       - run: npm run build-ext --if-present
       - run: rsync -a package.json README.md ./dist/
       - name: Docker Login vprodemo
-        uses: docker/login-action@b45d80f862d83dbcd57f89517bcf500b2ab88fb2 # v4.0.0
+        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
         with:
           registry: vprodemo.azurecr.io
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
           logout: true
       - name: Docker Login DockerHub
-        uses: docker/login-action@b45d80f862d83dbcd57f89517bcf500b2ab88fb2 # v4.0.0
+        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
         with:
           registry: docker.io
           username: ${{ secrets.INTC_DOCKER_USERNAME }}
