@@ -80,16 +80,30 @@ export async function setAMTFeatures(req: Request, res: Response): Promise<void>
       await setUserConsent(req.deviceAction, optServiceResponse, payload.guid as string)
     }
 
-    // Configure OCR settings
-    if (payload.ocr !== undefined) {
-      let requestedState = 0
-      if (payload.ocr) {
-        requestedState = 32769
-      } else {
-        requestedState = 32768
+    // Configure Remote Platform Erase (RPE) — PUT must run BEFORE BootServiceStateChange
+    let rpeDesired: boolean | undefined
+    if (payload.platformEraseEnabled !== undefined) {
+      const bootCaps = await req.deviceAction.getBootCapabilities()
+      const platformEraseCaps = bootCaps.Body?.AMT_BootCapabilities?.PlatformErase ?? 0
+      if (platformEraseCaps !== 0) {
+        rpeDesired = !!payload.platformEraseEnabled
+        await req.deviceAction.setRPEEnabled(rpeDesired)
       }
+    }
 
+    // Configure boot service state — combines OCR and RPE
+    // 32768 = both off, 32769 = OCR only, 32770 = RPE only, 32771 = both
+    if (payload.ocr !== undefined) {
+      const ocrOn = !!payload.ocr
+      const rpeOn = rpeDesired ?? false
+      let requestedState = 32768
+      if (ocrOn && rpeOn) requestedState = 32771
+      else if (ocrOn) requestedState = 32769
+      else if (rpeOn) requestedState = 32770
       await req.deviceAction.BootServiceStateChange(requestedState)
+    } else if (rpeDesired !== undefined) {
+      // OCR not in request — set RPE-only state (32770 enabled, 32768 disabled)
+      await req.deviceAction.BootServiceStateChange(rpeDesired ? 32770 : 32768)
     }
 
     MqttProvider.publishEvent('success', ['AMT_SetFeatures'], messages.AMT_FEATURES_SET_SUCCESS, guid)
