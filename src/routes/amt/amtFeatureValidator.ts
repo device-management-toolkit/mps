@@ -17,5 +17,5 @@ export const amtFeaturesValidator = (): any => [
   check('enableIDER').isBoolean().toBoolean(),
   check('enableKVM').isBoolean().toBoolean(),
   check('ocr').optional().isBoolean().toBoolean(),
-  check('enablePlatformErase').optional().isBoolean().toBoolean()
+  check('platformEraseEnabled').optional().isBoolean().toBoolean()
 ]

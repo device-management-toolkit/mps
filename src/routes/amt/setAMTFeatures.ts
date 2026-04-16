@@ -93,11 +93,11 @@ export async function setAMTFeatures(req: Request, res: Response): Promise<void>
     }
 
     // Configure Remote Platform Erase (RPE)
-    if (payload.enablePlatformErase !== undefined) {
+    if (payload.platformEraseEnabled !== undefined) {
       const bootCaps = await req.deviceAction.getBootCapabilities()
       const platformEraseCaps = bootCaps.Body?.AMT_BootCapabilities?.PlatformErase ?? 0
       if (platformEraseCaps !== 0) {
-        await req.deviceAction.setRPEEnabled(!!payload.enablePlatformErase)
+        await req.deviceAction.setRPEEnabled(!!payload.platformEraseEnabled)
       }
     }
 
