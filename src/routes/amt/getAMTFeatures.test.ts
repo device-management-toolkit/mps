@@ -177,9 +177,9 @@ describe('get amt features', () => {
       httpsBootSupported: true,
       winREBootSupported: true,
       localPBABootSupported: false,
-      remoteEraseEnabled: true,
-      remoteEraseSupported: true,
-      platformEraseCaps: 3
+      rpeEnabled: true,
+      rpeSupported: true,
+      rpeCaps: 3
     })
     expect(mqttSpy).toHaveBeenCalledTimes(2)
   })
@@ -275,9 +275,9 @@ describe('get amt features', () => {
       httpsBootSupported: false,
       winREBootSupported: false,
       localPBABootSupported: false,
-      remoteEraseEnabled: false,
-      remoteEraseSupported: false,
-      platformEraseCaps: 0
+      rpeEnabled: false,
+      rpeSupported: false,
+      rpeCaps: 0
     })
   })
 })
