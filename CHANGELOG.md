@@ -1,3 +1,10 @@
+## [2.26.5](https://github.com/device-management-toolkit/mps/compare/v2.26.4...v2.26.5) (2026-04-21)
+
+
+### Bug Fixes
+
+* added input validator for dnsSuffix ([#2393](https://github.com/device-management-toolkit/mps/issues/2393)) ([355bb85](https://github.com/device-management-toolkit/mps/commit/355bb8540577db7c87c85dfcc88f6119fb5470fd))
+
 ## [2.26.4](https://github.com/device-management-toolkit/mps/compare/v2.26.3...v2.26.4) (2026-04-10)
 
 ## [2.26.3](https://github.com/device-management-toolkit/mps/compare/v2.26.2...v2.26.3) (2026-03-24)
