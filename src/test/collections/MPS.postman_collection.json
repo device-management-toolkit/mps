@@ -3166,7 +3166,7 @@
             "header": [],
             "body": {
               "mode": "raw",
-              "raw": "{\r\n    \"userConsent\": \"none\",\r\n    \"enableSOL\": \"false\",\r\n    \"enableIDER\": \"false\",\r\n    \"enableKVM\": \"false\"\r\n}",
+              "raw": "{\r\n    \"userConsent\": \"none\",\r\n    \"enableSOL\": \"false\",\r\n    \"enableIDER\": \"false\",\r\n    \"enableKVM\": \"false\",\r\n    \"platformEraseEnabled\": false\r\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -3184,6 +3184,125 @@
                 "v1",
                 "amt",
                 "features",
+                "1"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Boot Capabilities",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 404\", function () {\r\n    pm.response.to.have.status(404);\r\n});\r\n\r\npm.test(\"Device should not be found\", function () {\r\n    var jsonData = pm.response.json();\r\n    pm.expect(jsonData.error).to.eq(\"Device not found/connected. Please connect again using CIRA.\")\r\n    pm.expect(jsonData.errorDescription).to.eq(\"guid : 1\")\r\n});\r\n"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{protocol}}://{{host}}/api/v1/amt/boot/capabilities/1",
+              "protocol": "{{protocol}}",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "amt",
+                "boot",
+                "capabilities",
+                "1"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Set RPE Enabled",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 404\", function () {\r\n    pm.response.to.have.status(404);\r\n});\r\n\r\npm.test(\"Device should not be found\", function () {\r\n    var jsonData = pm.response.json();\r\n    pm.expect(jsonData.error).to.eq(\"Device not found/connected. Please connect again using CIRA.\")\r\n    pm.expect(jsonData.errorDescription).to.eq(\"guid : 1\")\r\n});\r\n"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"enabled\": true\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{protocol}}://{{host}}/api/v1/amt/boot/rpe/1",
+              "protocol": "{{protocol}}",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "amt",
+                "boot",
+                "rpe",
+                "1"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Send Remote Erase",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 404\", function () {\r\n    pm.response.to.have.status(404);\r\n});\r\n\r\npm.test(\"Device should not be found\", function () {\r\n    var jsonData = pm.response.json();\r\n    pm.expect(jsonData.error).to.eq(\"Device not found/connected. Please connect again using CIRA.\")\r\n    pm.expect(jsonData.errorDescription).to.eq(\"guid : 1\")\r\n});\r\n"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"eraseMask\": 0\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{protocol}}://{{host}}/api/v1/amt/remoteErase/1",
+              "protocol": "{{protocol}}",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "amt",
+                "remoteErase",
                 "1"
               ]
             }
