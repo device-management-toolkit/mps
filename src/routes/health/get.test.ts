@@ -3,19 +3,18 @@
  * SPDX-License-Identifier: Apache-2.0
  **********************************************************************/
 
+import { vi, type MockInstance } from 'vitest'
 import { getHealthCheck, getDBHealth, getSecretStoreHealth } from './get.js'
 import { Environment } from '../../utils/Environment.js'
-import { createSpyObj } from '../../test/helper/jest.js'
+import { createSpyObj } from '../../test/helper/vitest.js'
 import { MqttProvider } from '../../utils/MqttProvider.js'
 import { ErrorResponse } from '../../utils/amtHelper.js'
 import { messages } from '../../logging/index.js'
-import { type Spied, spyOn } from 'jest-mock'
-
 describe('Checks health of dependent services', () => {
   describe('getHealthCheck tests', () => {
     let resSpy
     let req
-    let mqttSpy: Spied<any>
+    let mqttSpy: MockInstance
     beforeEach(() => {
       resSpy = createSpyObj('Response', [
         'status',
@@ -32,7 +31,7 @@ describe('Checks health of dependent services', () => {
       resSpy.status.mockReturnThis()
       resSpy.json.mockReturnThis()
       resSpy.send.mockReturnThis()
-      mqttSpy = spyOn(MqttProvider, 'publishEvent')
+      mqttSpy = vi.spyOn(MqttProvider, 'publishEvent')
     })
     it('should handle health check failed', async () => {
       await getHealthCheck(null, resSpy)

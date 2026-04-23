@@ -3,8 +3,9 @@
  * SPDX-License-Identifier: Apache-2.0
  **********************************************************************/
 
+import { vi } from 'vitest'
 import { getAlarmOccurrences, parseInterval } from './getAlarmOccurrences.js'
-import { createSpyObj } from '../../test/helper/jest.js'
+import { createSpyObj } from '../../test/helper/vitest.js'
 import {
   alarmClockOccurrences,
   alarmClockNoOccurrences,
@@ -14,9 +15,6 @@ import { DeviceAction } from '../../amt/DeviceAction.js'
 import { CIRAHandler } from '../../amt/CIRAHandler.js'
 import { HttpHandler } from '../../amt/HttpHandler.js'
 import { messages } from '../../logging/index.js'
-import { jest } from '@jest/globals'
-import { spyOn } from 'jest-mock'
-
 describe('Alarm Clock Occurrences', () => {
   let resSpy
   let req
@@ -35,11 +33,11 @@ describe('Alarm Clock Occurrences', () => {
     resSpy.status.mockReturnThis()
     resSpy.json.mockReturnThis()
     resSpy.send.mockReturnThis()
-    AlarmClockOccurrenceSpy = spyOn(device, 'getAlarmClockOccurrences')
+    AlarmClockOccurrenceSpy = vi.spyOn(device, 'getAlarmClockOccurrences')
   })
 
   afterEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
   })
 
   it('should get a single alarm clock occurrence', async () => {

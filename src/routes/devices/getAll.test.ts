@@ -3,22 +3,20 @@
  * SPDX-License-Identifier: Apache-2.0
  **********************************************************************/
 
+import { vi, type MockInstance } from 'vitest'
 import { randomUUID } from 'node:crypto'
 import { getAllDevices } from './getAll.js'
 import { type Device } from '../../models/models.js'
 import { type DataWithCount } from '../../models/Config.js'
-import { jest } from '@jest/globals'
-import { type Spied, spyOn } from 'jest-mock'
-
 let req
 let res
-let statusSpy: Spied<any>
-let jsonSpy: Spied<any>
-let endSpy: Spied<any>
+let statusSpy: MockInstance
+let jsonSpy: MockInstance
+let endSpy: MockInstance
 let mockDevice: Device
 let allDevices: Device[]
-let getSpy: Spied<any>
-let getCountSpy: Spied<any>
+let getSpy: MockInstance
+let getCountSpy: MockInstance
 
 beforeEach(() => {
   mockDevice = {
@@ -62,24 +60,24 @@ beforeEach(() => {
     },
     db: {
       devices: {
-        get: jest.fn().mockReturnValue(allDevices),
-        getByFriendlyName: jest.fn().mockReturnValue(allDevices),
-        getByHostname: jest.fn().mockReturnValue(allDevices),
-        getByTags: jest.fn().mockReturnValue(allDevices),
-        getCount: jest.fn().mockReturnValue(allDevices.length)
+        get: vi.fn().mockReturnValue(allDevices),
+        getByFriendlyName: vi.fn().mockReturnValue(allDevices),
+        getByHostname: vi.fn().mockReturnValue(allDevices),
+        getByTags: vi.fn().mockReturnValue(allDevices),
+        getCount: vi.fn().mockReturnValue(allDevices.length)
       }
     }
   }
-  getSpy = spyOn(req.db.devices, 'get')
-  getCountSpy = spyOn(req.db.devices, 'getCount')
+  getSpy = vi.spyOn(req.db.devices, 'get')
+  getCountSpy = vi.spyOn(req.db.devices, 'getCount')
   res = {
     status: () => res,
     json: () => res,
     end: () => res
   }
-  statusSpy = spyOn(res, 'status')
-  endSpy = spyOn(res, 'end')
-  jsonSpy = spyOn(res, 'json')
+  statusSpy = vi.spyOn(res, 'status')
+  endSpy = vi.spyOn(res, 'end')
+  jsonSpy = vi.spyOn(res, 'json')
 })
 
 async function run200WithCount(expected: DataWithCount): Promise<void> {
@@ -139,14 +137,14 @@ describe('getAll', () => {
   it('should get by hostname', async () => {
     req.query.hostname = mockDevice.hostname
     const expected = [mockDevice]
-    const spy = spyOn(req.db.devices, 'getByHostname').mockResolvedValue(expected)
+    const spy = vi.spyOn(req.db.devices, 'getByHostname').mockResolvedValue(expected)
     await run200WithoutCount(expected)
     expect(spy).toHaveBeenCalledWith(mockDevice.hostname, req.tenantId)
   })
   it('should get by friendlyName', async () => {
     req.query.friendlyName = mockDevice.friendlyName = 'friendlyName'
     const expected = [mockDevice]
-    const spy = spyOn(req.db.devices, 'getByFriendlyName').mockResolvedValue(expected)
+    const spy = vi.spyOn(req.db.devices, 'getByFriendlyName').mockResolvedValue(expected)
     await run200WithoutCount(expected)
     expect(spy).toHaveBeenCalledWith(mockDevice.friendlyName, req.tenantId)
   })
@@ -160,7 +158,7 @@ describe('getAll', () => {
     req.query.tags = tags.join(',')
     req.query.method = method
     const expected = [mockDevice]
-    const spy = spyOn(req.db.devices, 'getByTags').mockResolvedValue(expected)
+    const spy = vi.spyOn(req.db.devices, 'getByTags').mockResolvedValue(expected)
     await run200WithoutCount(expected)
     expect(spy).toHaveBeenCalledWith(tags, method, req.query.$top, req.query.$skip, req.tenantId)
   })
@@ -186,7 +184,7 @@ describe('getAll', () => {
     } as any
 
     it('should set status to 200 and get result if device exists in DB', async () => {
-      req.db.devices.getByHostname = jest.fn().mockReturnValue([{}])
+      req.db.devices.getByHostname = vi.fn().mockReturnValue([{}])
       await getAllDevices(req, res)
       expect(req.db.devices.getByHostname).toHaveBeenCalledWith(req.query.hostname, req.tenantId)
       expect(statusSpy).toHaveBeenCalledWith(200)
@@ -195,7 +193,7 @@ describe('getAll', () => {
     })
 
     it('should set status to 404 if device does not exist in DB', async () => {
-      req.db.devices.getByHostname = jest.fn().mockReturnValue([])
+      req.db.devices.getByHostname = vi.fn().mockReturnValue([])
       await getAllDevices(req, res)
       expect(req.db.devices.getByHostname).toHaveBeenCalledWith(req.query.hostname, req.tenantId)
       expect(statusSpy).toHaveBeenCalledWith(200)
@@ -204,7 +202,7 @@ describe('getAll', () => {
     })
 
     it('should set status to 500 if error occurs while getting device from DB', async () => {
-      req.db.devices.getByHostname = jest.fn().mockImplementation(() => {
+      req.db.devices.getByHostname = vi.fn().mockImplementation(() => {
         throw new TypeError('fake error')
       })
       await getAllDevices(req, res)

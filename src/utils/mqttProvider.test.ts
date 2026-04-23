@@ -3,13 +3,11 @@
  * SPDX-License-Identifier: Apache-2.0
  **********************************************************************/
 
+import { vi } from 'vitest'
 import { MqttProvider } from './MqttProvider.js'
 import { Environment } from './Environment.js'
 import { config } from '../test/helper/config.js'
-import { jest } from '@jest/globals'
-import { spyOn } from 'jest-mock'
-
-jest.unstable_mockModule('mqtt', () => ({ ...(jest.requireActual('mqtt') as object) }))
+vi.mock('mqtt', async () => ({ ...((await vi.importActual('mqtt')) as object) }))
 describe('MQTT Turned ON Tests', () => {
   beforeEach(() => {
     config.mqtt_address = 'mqtt://127.0.0.1:8883'
@@ -29,7 +27,7 @@ describe('MQTT Turned ON Tests', () => {
   })
 
   // it('Checks Connection', () => {
-  //   spyOn(mqtt1, 'connect').mockImplementation(() => ({
+  //   vi.spyOn(mqtt1, 'connect').mockImplementation(() => ({
   //     connected: true
   //   } as any))
   //   expect(MqttProvider.instance.client).toBeUndefined()
@@ -39,10 +37,12 @@ describe('MQTT Turned ON Tests', () => {
 
   it('Should send an event message when turned on', async () => {
     MqttProvider.instance.client = { publish: (_topic, _message, _opts, callback) => ({}) as any } as any
-    const spy = spyOn(MqttProvider.instance.client, 'publish').mockImplementation((topic, message, opts, callback) => {
-      callback(null)
-      return {} as any
-    })
+    const spy = vi
+      .spyOn(MqttProvider.instance.client, 'publish')
+      .mockImplementation((topic, message, opts, callback) => {
+        callback(null)
+        return {} as any
+      })
     MqttProvider.instance.turnedOn = true
     try {
       MqttProvider.publishEvent('success', ['testMethod'], 'Test Message')
@@ -54,10 +54,12 @@ describe('MQTT Turned ON Tests', () => {
 
   it('Should throw error when event message publish fails', async () => {
     MqttProvider.instance.client = { publish: (topic, message, opts, callback) => ({}) as any } as any
-    const spy = spyOn(MqttProvider.instance.client, 'publish').mockImplementation((topic, message, opts, callback) => {
-      callback(new Error())
-      return {} as any
-    })
+    const spy = vi
+      .spyOn(MqttProvider.instance.client, 'publish')
+      .mockImplementation((topic, message, opts, callback) => {
+        callback(new Error())
+        return {} as any
+      })
     MqttProvider.instance.turnedOn = true
     try {
       MqttProvider.publishEvent('success', ['testMethod'], 'Test Message')
@@ -74,7 +76,7 @@ describe('MQTT Turned ON Tests', () => {
     MqttProvider.instance.client = {
       end: () => ({}) as any
     } as any
-    const spy = spyOn(MqttProvider.instance.client, 'end').mockImplementation(
+    const spy = vi.spyOn(MqttProvider.instance.client, 'end').mockImplementation(
       () =>
         ({
           connected: false
@@ -97,9 +99,9 @@ describe('MQTT Turned OFF Tests', () => {
     MqttProvider.instance.client = {
       publish: (topic, message, callback) => ({}) as any
     } as any
-    const spy = spyOn(MqttProvider.instance.client, 'publish').mockImplementation(
-      (topic, message, callback) => ({}) as any
-    )
+    const spy = vi
+      .spyOn(MqttProvider.instance.client, 'publish')
+      .mockImplementation((topic, message, callback) => ({}) as any)
     MqttProvider.instance.turnedOn = false
     MqttProvider.publishEvent('success', ['testMethod'], 'Test Message')
     expect(spy).not.toHaveBeenCalled()

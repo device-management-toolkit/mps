@@ -3,21 +3,19 @@
  * SPDX-License-Identifier: Apache-2.0
  **********************************************************************/
 
+import { vi } from 'vitest'
 import { logger } from './logging/logger.js'
 import VaultSecretManagerService from './secrets/vault/index.js'
 import { Environment } from './utils/Environment.js'
 import { type IDB } from './interfaces/IDb.js'
 import { type ISecretManagerService } from './interfaces/ISecretManagerService.js'
-import { spyOn } from 'jest-mock'
-import { jest } from '@jest/globals'
-
-const backOffSpy = jest.fn()
-const processServiceConfigsSpy = jest.fn().mockReturnValue(Promise.resolve())
-const waitForServiceManagerSpy = jest.fn().mockReturnValue(Promise.resolve(true))
-jest.unstable_mockModule('exponential-backoff', () => ({
+const backOffSpy = vi.fn()
+const processServiceConfigsSpy = vi.fn().mockReturnValue(Promise.resolve())
+const waitForServiceManagerSpy = vi.fn().mockReturnValue(Promise.resolve(true))
+vi.mock('exponential-backoff', () => ({
   backOff: backOffSpy
 }))
-jest.unstable_mockModule('./consul/serviceManager.js', () => ({
+vi.mock('./consul/serviceManager.js', () => ({
   processServiceConfigs: processServiceConfigsSpy,
   waitForServiceManager: waitForServiceManagerSpy
 }))
@@ -26,9 +24,9 @@ const indexFile = await import('./index.js')
 describe('Index', () => {
   describe('loadConfig', () => {
     afterEach(() => {
-      jest.clearAllMocks()
-      jest.restoreAllMocks()
-      jest.resetAllMocks()
+      vi.clearAllMocks()
+      vi.restoreAllMocks()
+      vi.resetAllMocks()
     })
     let config
 
@@ -92,11 +90,11 @@ describe('Index', () => {
       Environment.Config = config
     })
     it('Should exit setupServiceManager', async () => {
-      // const waitSpy = spyOn(svcMngr, 'waitForServiceManager')
+      // const waitSpy = vi.spyOn(svcMngr, 'waitForServiceManager')
       waitForServiceManagerSpy.mockImplementation(() => {
         throw new Error('Test error')
       })
-      const mockExit = spyOn(process, 'exit').mockImplementation((code) => code as never)
+      const mockExit = vi.spyOn(process, 'exit').mockImplementation((code) => code as never)
       await indexFile.setupServiceManager(config)
       expect(mockExit).toHaveBeenCalledWith(0)
       expect(waitForServiceManagerSpy).toHaveBeenCalled()
@@ -114,7 +112,7 @@ describe('Index', () => {
 
     it('Should fail with no jwt secret', () => {
       config.jwt_secret = ''
-      const mockExit = spyOn(process, 'exit').mockImplementation((number) => {
+      const mockExit = vi.spyOn(process, 'exit').mockImplementation((number) => {
         throw new Error('process.exit: ' + number)
       })
       expect(() => {
@@ -127,7 +125,7 @@ describe('Index', () => {
       config.web_admin_user = 'admin'
       config.web_admin_password = ''
       config.jwt_secret = 'secret'
-      const mockExit = spyOn(process, 'exit').mockImplementation((number) => {
+      const mockExit = vi.spyOn(process, 'exit').mockImplementation((number) => {
         throw new Error('process.exit: ' + number)
       })
       expect(() => {
@@ -166,7 +164,7 @@ describe('Index', () => {
     let config
 
     beforeEach(() => {
-      jest.clearAllMocks()
+      vi.clearAllMocks()
       config = {
         common_name: 'localhost',
         port: 4433,
@@ -220,10 +218,10 @@ describe('Index', () => {
       }
       Environment.Config = config
       secretManagerService = new VaultSecretManagerService(logger)
-      spyOn(secretManagerService.gotClient, 'get').mockImplementation(
+      vi.spyOn(secretManagerService.gotClient, 'get').mockImplementation(
         () =>
           ({
-            json: jest.fn(() => null)
+            json: vi.fn(() => null)
           }) as any
       )
     })
@@ -236,7 +234,7 @@ describe('Index', () => {
   it('should wait for db', async () => {
     let shouldBeOk = false
     const dbMock: IDB = {
-      query: jest.fn(() => {
+      query: vi.fn(() => {
         if (shouldBeOk) return null
         shouldBeOk = true
         throw new Error('error')
@@ -249,7 +247,7 @@ describe('Index', () => {
   it('should wait for secret provider', async () => {
     let shouldBeOk = false
     const secretMock: ISecretManagerService = {
-      health: jest.fn(() => {
+      health: vi.fn(() => {
         if (shouldBeOk) return null
         shouldBeOk = true
         throw new Error('error')

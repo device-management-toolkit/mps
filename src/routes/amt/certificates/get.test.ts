@@ -3,16 +3,13 @@
  * SPDX-License-Identifier: Apache-2.0
  **********************************************************************/
 
-import { createSpyObj } from '../../../test/helper/jest.js'
+import { vi } from 'vitest'
+import { createSpyObj } from '../../../test/helper/vitest.js'
 import { getAMTCertificates } from './get.js'
 import { HttpHandler } from '../../../amt/HttpHandler.js'
 import { CIRAHandler } from '../../../amt/CIRAHandler.js'
 import { DeviceAction } from '../../../amt/DeviceAction.js'
 import { messages } from '../../../logging/index.js'
-import { spyOn } from 'jest-mock'
-// Add this import for jest functions
-import { jest } from '@jest/globals'
-
 describe('getAMTCertificates', () => {
   let resSpy
   let req
@@ -105,11 +102,11 @@ describe('getAMTCertificates', () => {
     resSpy.json.mockReturnThis()
     resSpy.end.mockReturnThis()
 
-    getCertificatesSpy = spyOn(device, 'getCertificates')
+    getCertificatesSpy = vi.spyOn(device, 'getCertificates')
   })
 
   afterEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
   })
 
   it('should successfully get AMT certificates', async () => {

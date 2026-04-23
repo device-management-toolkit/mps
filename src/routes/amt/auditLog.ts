@@ -248,7 +248,11 @@ export enum InitiatorType {
   KvmDefaultPort = 3
 }
 
-export function getInitiatorInfo(decodedEventRecord: string): [initiatorType: number, initiator: string, ptr: number] {
+export function getInitiatorInfo(decodedEventRecord: string): [
+  initiatorType: number,
+  initiator: string,
+  ptr: number
+] {
   let initiator: string
   let userlen: number
   let ptr: number

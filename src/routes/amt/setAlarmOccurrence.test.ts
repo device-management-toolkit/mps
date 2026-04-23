@@ -3,8 +3,9 @@
  * SPDX-License-Identifier: Apache-2.0
  **********************************************************************/
 
+import { vi } from 'vitest'
 import { setAlarmOccurrence } from './setAlarmOccurrence.js'
-import { createSpyObj } from '../../test/helper/jest.js'
+import { createSpyObj } from '../../test/helper/vitest.js'
 import {
   addAlarmClockOccurrenceResponse,
   addAlarmClockOccurrenceQuotaLimitResponse,
@@ -14,14 +15,11 @@ import { DeviceAction } from '../../amt/DeviceAction.js'
 import { CIRAHandler } from '../../amt/CIRAHandler.js'
 import { HttpHandler } from '../../amt/HttpHandler.js'
 import { messages } from '../../logging/index.js'
-import { jest } from '@jest/globals'
-import { spyOn } from 'jest-mock'
-
 describe('ADD Alarm Clock Occurrence', () => {
   let resSpy
   let req
   let badReq
-  // const setSpy = spyOn(setAlarm, 'setAlarm')
+  // const setSpy = vi.spyOn(setAlarm, 'setAlarm')
   let AlarmClockOccurrenceSpy
 
   beforeEach(() => {
@@ -48,11 +46,11 @@ describe('ADD Alarm Clock Occurrence', () => {
     resSpy.status.mockReturnThis()
     resSpy.json.mockReturnThis()
     resSpy.send.mockReturnThis()
-    AlarmClockOccurrenceSpy = spyOn(device, 'addAlarmClockOccurrence')
+    AlarmClockOccurrenceSpy = vi.spyOn(device, 'addAlarmClockOccurrence')
   })
 
   afterEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
   })
 
   it('should handle error 400', async () => {

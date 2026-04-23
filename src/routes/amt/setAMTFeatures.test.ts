@@ -3,27 +3,26 @@
  * SPDX-License-Identifier: Apache-2.0
  **********************************************************************/
 
+import { vi, type MockInstance } from 'vitest'
 import { MqttProvider } from '../../utils/MqttProvider.js'
-import { createSpyObj } from '../../test/helper/jest.js'
+import { createSpyObj } from '../../test/helper/vitest.js'
 import { setAMTFeatures } from './setAMTFeatures.js'
 import { AMT_REDIRECTION_SERVICE_ENABLE_STATE } from '@device-management-toolkit/wsman-messages/models/common.js'
 import { DeviceAction } from '../../amt/DeviceAction.js'
 import { CIRAHandler } from '../../amt/CIRAHandler.js'
 import { HttpHandler } from '../../amt/HttpHandler.js'
-import { type Spied, spyOn } from 'jest-mock'
-
 describe('set amt features', () => {
   let resSpy
   let req
-  let redirectionSpy: Spied<any>
-  let optInServiceSpy: Spied<any>
-  let kvmRedirectionSpy: Spied<any>
-  let setRedirectionServiceSpy: Spied<any>
-  let setKvmRedirectionSapSpy: Spied<any>
-  let putRedirectionServiceSpy: Spied<any>
-  let putIpsOptInServiceSpy: Spied<any>
-  let bootServiceStateChangeSpy: Spied<any>
-  let mqttSpy: Spied<any>
+  let redirectionSpy: MockInstance
+  let optInServiceSpy: MockInstance
+  let kvmRedirectionSpy: MockInstance
+  let setRedirectionServiceSpy: MockInstance
+  let setKvmRedirectionSapSpy: MockInstance
+  let putRedirectionServiceSpy: MockInstance
+  let putIpsOptInServiceSpy: MockInstance
+  let bootServiceStateChangeSpy: MockInstance
+  let mqttSpy: MockInstance
 
   beforeEach(() => {
     const handler = new CIRAHandler(new HttpHandler(), 'admin', 'P@ssw0rd')
@@ -51,16 +50,16 @@ describe('set amt features', () => {
     resSpy.json.mockReturnThis()
     resSpy.send.mockReturnThis()
 
-    redirectionSpy = spyOn(device, 'getRedirectionService')
-    optInServiceSpy = spyOn(device, 'getIpsOptInService')
-    kvmRedirectionSpy = spyOn(device, 'getKvmRedirectionSap')
-    setRedirectionServiceSpy = spyOn(device, 'setRedirectionService')
-    setKvmRedirectionSapSpy = spyOn(device, 'setKvmRedirectionSap')
-    putRedirectionServiceSpy = spyOn(device, 'putRedirectionService')
-    putIpsOptInServiceSpy = spyOn(device, 'putIpsOptInService')
-    bootServiceStateChangeSpy = spyOn(device, 'BootServiceStateChange')
+    redirectionSpy = vi.spyOn(device, 'getRedirectionService')
+    optInServiceSpy = vi.spyOn(device, 'getIpsOptInService')
+    kvmRedirectionSpy = vi.spyOn(device, 'getKvmRedirectionSap')
+    setRedirectionServiceSpy = vi.spyOn(device, 'setRedirectionService')
+    setKvmRedirectionSapSpy = vi.spyOn(device, 'setKvmRedirectionSap')
+    putRedirectionServiceSpy = vi.spyOn(device, 'putRedirectionService')
+    putIpsOptInServiceSpy = vi.spyOn(device, 'putIpsOptInService')
+    bootServiceStateChangeSpy = vi.spyOn(device, 'BootServiceStateChange')
 
-    mqttSpy = spyOn(MqttProvider, 'publishEvent')
+    mqttSpy = vi.spyOn(MqttProvider, 'publishEvent')
 
     redirectionSpy.mockResolvedValue({
       AMT_RedirectionService: { EnabledState: AMT_REDIRECTION_SERVICE_ENABLE_STATE.Enabled, ListenerEnabled: 'true' }

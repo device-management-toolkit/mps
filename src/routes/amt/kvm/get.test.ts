@@ -2,10 +2,9 @@
  * Copyright (c) Intel Corporation 2025
  * SPDX-License-Identifier: Apache-2.0
  **********************************************************************/
+import { vi } from 'vitest'
 import { getScreenSettingData } from './get.js'
 import { mapScreenSettingDataToKVMScreenSettings } from './kvmScreenSettingsMapper.js'
-import { jest } from '@jest/globals'
-
 let req
 let res
 let statusSpy
@@ -16,8 +15,8 @@ beforeEach(() => {
   req = {
     params: { guid: 'test-guid' },
     deviceAction: {
-      getScreenSettingData: jest.fn(),
-      getKVMRedirectionSettingData: jest.fn()
+      getScreenSettingData: vi.fn(),
+      getKVMRedirectionSettingData: vi.fn()
     }
   }
   res = {
@@ -31,9 +30,9 @@ beforeEach(() => {
       return this
     }
   }
-  statusSpy = jest.spyOn(res, 'status')
-  jsonSpy = jest.spyOn(res, 'json')
-  endSpy = jest.spyOn(res, 'end')
+  statusSpy = vi.spyOn(res, 'status')
+  jsonSpy = vi.spyOn(res, 'json')
+  endSpy = vi.spyOn(res, 'end')
 })
 
 describe('getScreenSettingData', () => {

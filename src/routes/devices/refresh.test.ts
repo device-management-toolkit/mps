@@ -3,17 +3,15 @@
  * SPDX-License-Identifier: Apache-2.0
  **********************************************************************/
 
+import { vi, type MockInstance } from 'vitest'
 import { logger, messages } from '../../logging/index.js'
 import { devices } from '../../server/mpsserver.js'
 import { refreshDevice } from './refresh.js'
-import { jest } from '@jest/globals'
-import { type Spied, spyOn } from 'jest-mock'
-
 describe('refresh tests', () => {
   let res: Express.Response
-  let statusSpy: Spied<any>
-  let jsonSpy: Spied<any>
-  let getCredsSpy: Spied<any>
+  let statusSpy: MockInstance
+  let jsonSpy: MockInstance
+  let getCredsSpy: MockInstance
   let req
   beforeEach(() => {
     res = {
@@ -22,8 +20,8 @@ describe('refresh tests', () => {
       end: () => res
     }
 
-    statusSpy = spyOn(res as any, 'status')
-    jsonSpy = spyOn(res as any, 'json')
+    statusSpy = vi.spyOn(res as any, 'status')
+    jsonSpy = vi.spyOn(res as any, 'json')
 
     req = {
       params: {
@@ -39,19 +37,19 @@ describe('refresh tests', () => {
         deleteSecretAtPath: async (path: string) => {}
       }
     } as any
-    getCredsSpy = spyOn(req.secrets, 'getAMTCredentials')
+    getCredsSpy = vi.spyOn(req.secrets, 'getAMTCredentials')
   })
 
   afterEach(() => {
-    jest.clearAllMocks()
-    jest.resetModules()
+    vi.clearAllMocks()
+    vi.resetModules()
   })
 
   it('should refresh device if it is connected', async () => {
     const guid = req.params.guid
     devices[guid] = {
       ciraSocket: {
-        destroy: jest.fn()
+        destroy: vi.fn()
       },
       httpHandler: { digestChallenge: 'dumy' },
       tenantId: { tenantId: '' },
@@ -78,14 +76,14 @@ describe('refresh tests', () => {
     const guid = req.params.guid
     devices[guid] = {
       ciraSocket: {
-        destroy: jest.fn()
+        destroy: vi.fn()
       },
       httpHandler: { digestChallenge: 'dumy' },
       tenantId: { tenantId: '' },
       kvmConnect: { kvmConnect: false },
       limiter: { limiter: 'dummy' }
     } as any
-    const loggerSpy = spyOn(logger, 'error')
+    const loggerSpy = vi.spyOn(logger, 'error')
     await refreshDevice(req, res as any)
     expect(statusSpy).toHaveBeenCalledWith(500)
     expect(loggerSpy).toHaveBeenCalled()

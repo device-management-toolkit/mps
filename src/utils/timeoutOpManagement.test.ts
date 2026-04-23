@@ -16,23 +16,27 @@ describe('getTimeoutMsDefault', () => {
 })
 
 describe('operationWithTimeout', () => {
-  // Simulate an asynchronous operation that might take time
+  // Each test gets its own promise so the resolved state of the first does
+  // not leak into the second. The original jest suite shared a single
+  // `myPromise` across both tests, which passed under jest only because the
+  // un-awaited assertion in the second test let the (already-resolved) value
+  // flow through before the timeout tripped.
+  const makePromise = (): Promise<string> =>
+    new Promise<string>((resolve) => {
+      setTimeout(() => {
+        resolve('Operation completed')
+      }, 2000)
+    })
 
-  const myPromise = new Promise<string>((resolve) => {
-    setTimeout(() => {
-      resolve('Operation completed')
-    }, 2000)
-  })
-
-  it('Operation finishes before the default timeout', () => {
+  it('Operation finishes before the default timeout', async () => {
     const mytimeout = tomgmt.getTimeoutMsDefault()
 
-    expect(tomgmt.operationWithTimeout(myPromise, mytimeout)).resolves.toBe('Operation completed')
+    await expect(tomgmt.operationWithTimeout(makePromise(), mytimeout)).resolves.toBe('Operation completed')
   })
 
-  it('Operation finishes after the default timeout', () => {
+  it('Operation finishes after the default timeout', async () => {
     const mytimeout = 1000 // 1 second
 
-    expect(tomgmt.operationWithTimeout(myPromise, mytimeout)).resolves.toBeInstanceOf(tomgmt.TimeoutError)
+    await expect(tomgmt.operationWithTimeout(makePromise(), mytimeout)).rejects.toBeInstanceOf(tomgmt.TimeoutError)
   })
 })

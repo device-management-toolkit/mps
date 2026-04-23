@@ -3,17 +3,17 @@
  * SPDX-License-Identifier: Apache-2.0
  **********************************************************************/
 
+import { vi, type MockInstance } from 'vitest'
 import { bootSources } from './bootSources.js'
 import { DeviceAction } from '../../amt/DeviceAction.js'
-import { type Spied, spyOn } from 'jest-mock'
-import { createSpyObj } from '../../test/helper/jest.js'
+import { createSpyObj } from '../../test/helper/vitest.js'
 import { CIRAHandler } from '../../amt/CIRAHandler.js'
 import { HttpHandler } from '../../amt/HttpHandler.js'
 
 describe('bootSources', () => {
   let req: any
   let resSpy: any
-  let getBootSourceSettingSpy: Spied<any>
+  let getBootSourceSettingSpy: MockInstance
   beforeEach(() => {
     const handler = new CIRAHandler(new HttpHandler(), 'admin', 'P@ssw0rd')
     const device = new DeviceAction(handler, null)
@@ -30,7 +30,7 @@ describe('bootSources', () => {
     resSpy.status.mockReturnThis()
     resSpy.json.mockReturnThis()
     resSpy.send.mockReturnThis()
-    getBootSourceSettingSpy = spyOn(device, 'getBootSourceSetting')
+    getBootSourceSettingSpy = vi.spyOn(device, 'getBootSourceSetting')
   })
 
   it('should return mapped boot sources array', async () => {

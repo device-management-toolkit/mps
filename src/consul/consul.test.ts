@@ -3,36 +3,39 @@
  * SPDX-License-Identifier: Apache-2.0
  **********************************************************************/
 
+import { vi } from 'vitest'
 import type Consul from 'consul'
 import { ConsulService } from './consul.js'
 import { config } from './../test/helper/config.js'
-import { jest } from '@jest/globals'
-import { spyOn } from 'jest-mock'
 const consulService: ConsulService = new ConsulService('localhost', 8500)
 let componentName: string
 let serviceName: string
 
 describe('consul', () => {
   beforeEach(() => {
-    jest.clearAllMocks()
-    jest.restoreAllMocks()
-    jest.resetAllMocks()
-    jest.resetModules()
+    vi.clearAllMocks()
+    vi.restoreAllMocks()
+    vi.resetAllMocks()
+    vi.resetModules()
 
     componentName = 'RPS'
     serviceName = 'consul'
 
     consulService.consul.kv = {
-      set: jest.fn(),
-      get: jest.fn()
+      set: vi.fn(),
+      get: vi.fn()
+    } as any
+    consulService.consul.health = {
+      service: vi.fn().mockResolvedValue([])
     } as any
   })
 
   describe('ConsulService', () => {
     it('get Consul health', async () => {
-      const spyHealth = spyOn(consulService, 'health')
+      const spyHealth = vi.spyOn(consulService, 'health')
       await consulService.health(serviceName)
       expect(spyHealth).toHaveBeenCalledWith('consul')
+      expect(consulService.consul.health.service).toHaveBeenCalledWith({ service: 'consul', passing: true })
     })
     it('seed Consul success', async () => {
       const result = await consulService.seed(componentName, config)
@@ -43,7 +46,7 @@ describe('consul', () => {
       )
     })
     it('seed Consul failure', async () => {
-      spyOn(consulService.consul.kv, 'set').mockRejectedValue(new Error())
+      vi.spyOn(consulService.consul.kv, 'set').mockRejectedValue(new Error())
       let result
       try {
         result = await consulService.seed(componentName, config)
