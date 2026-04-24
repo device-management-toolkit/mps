@@ -3,29 +3,34 @@
  * SPDX-License-Identifier: Apache-2.0
  **********************************************************************/
 
-import Consul from 'consul'
+import got, { type Got, HTTPError } from 'got'
 import { logger } from './../logging/index.js'
 import { type configType } from './../models/Config.js'
 import type { IServiceManager } from './../interfaces/IServiceManager.js'
 import { Environment } from './../utils/Environment.js'
 
+export interface ConsulKVEntry {
+  Key: string
+  Value: string | null
+}
+
 export class ConsulService implements IServiceManager {
-  consul: Consul
+  gotClient: Got
   constructor(host: string, port: number) {
-    this.consul = new Consul({
-      host,
-      port,
-      secure: false // set to true if your Consul server uses https
+    this.gotClient = got.extend({
+      prefixUrl: `http://${host}:${port}/v1/`
     })
   }
 
   async health(serviceName: string): Promise<any> {
-    return this.consul.health.service({ service: serviceName, passing: true })
+    return await this.gotClient.get(`health/service/${serviceName}`, { searchParams: { passing: true } }).json()
   }
 
   async seed(prefix: string, config: configType): Promise<boolean> {
     try {
-      await this.consul.kv.set(`${prefix}/config`, JSON.stringify(config, null, 2))
+      await this.gotClient.put(`kv/${prefix}/config`, {
+        body: JSON.stringify(config, null, 2)
+      })
       logger.info('Wrote configuration settings to Consul.')
       return true
     } catch (e) {
@@ -33,8 +38,21 @@ export class ConsulService implements IServiceManager {
     }
   }
 
-  async get(prefix: string): Promise<any> {
-    return this.consul.kv.get({ key: prefix + '/', recurse: true })
+  async get(prefix: string): Promise<ConsulKVEntry[] | null> {
+    try {
+      const entries: ConsulKVEntry[] = await this.gotClient
+        .get(`kv/${prefix}/`, { searchParams: { recurse: true } })
+        .json()
+      return entries.map((entry) => ({
+        ...entry,
+        Value: entry.Value != null ? Buffer.from(entry.Value, 'base64').toString('utf8') : entry.Value
+      }))
+    } catch (e) {
+      if (e instanceof HTTPError && e.response.statusCode === 404) {
+        return null
+      }
+      throw e
+    }
   }
 
   process(consulValues: object): string {
