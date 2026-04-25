@@ -190,13 +190,104 @@ export class DeviceAction {
     return getResponse.Envelope
   }
 
-  async getPowerCapabilities(): Promise<Common.Models.Envelope<AMT.Models.BootCapabilities>> {
-    logger.silly(`getPowerCapabilities ${messages.REQUEST}`)
+  async getBootCapabilities(): Promise<Common.Models.Envelope<AMT.Models.BootCapabilities>> {
+    logger.silly(`getBootCapabilities ${messages.REQUEST}`)
     const xmlRequestBody = this.amt.BootCapabilities.Get()
     const result = await this.ciraHandler.Get<AMT.Models.BootCapabilities>(this.ciraSocket, xmlRequestBody)
-    logger.info(JSON.stringify(result))
-    logger.silly(`getPowerCapabilities ${messages.COMPLETE}`)
+    logger.silly(`getBootCapabilities ${messages.COMPLETE}`)
     return result.Envelope
+  }
+
+  async setRPEEnabled(enabled: boolean): Promise<void> {
+    logger.silly(`setRPEEnabled ${messages.REQUEST}`)
+    const bootOptions = await this.getBootOptions()
+    const current = bootOptions.AMT_BootSettingData
+    current.PlatformErase = enabled
+    await this.setBootConfiguration(current)
+    logger.silly(`setRPEEnabled ${messages.COMPLETE}`)
+  }
+
+  async sendRemoteErase(eraseMask: number): Promise<void> {
+    logger.silly(`sendRemoteErase ${messages.REQUEST}`)
+
+    // CSME sentinel bit: 0x10000 maps to ConfigurationDataReset, not a hardware erase target
+    const CSME_BIT = 0x10000
+    const csmeRequested = (eraseMask & CSME_BIT) !== 0
+    const hwMask = eraseMask & ~CSME_BIT // strip the CSME bit for hardware TLV
+
+    // Step 1: GET current boot settings and verify RPEEnabled
+    const bootOptions = await this.getBootOptions()
+    const current = bootOptions.AMT_BootSettingData
+    if (!current.RPEEnabled) {
+      throw new Error('RPE is not enabled on this device')
+    }
+
+    // Step 1a: Clear boot source override (CSME path only)
+    if (csmeRequested) {
+      await this.changeBootOrder()
+    }
+
+    // Step 1b: Switch firmware to RPE mode BEFORE the PUT
+    // Required when boot service is in OCR mode (32769); must precede PUT
+    const xmlRpeMode = this.cim.BootService.RequestStateChange(32770)
+    const rscResult = await this.ciraHandler.Send(this.ciraSocket, xmlRpeMode)
+    if (rscResult?.Envelope?.Body?.RequestStateChange_OUTPUT?.ReturnValue !== 0) {
+      logger.error(`sendRemoteErase RequestStateChange(32770) failed: ${JSON.stringify(rscResult?.Envelope?.Body)}`)
+    }
+
+    // Step 2: Build minimal PUT body — only writable fields, no read-only fields.
+    // Read-only fields (BIOSLastStatus, BootguardStatus, RPEEnabled, SecureBootControlEnabled,
+    // UEFIHTTPSBootEnabled, UEFILocalPBABootEnabled, WinREBootEnabled, OptionsCleared)
+    // cause InvalidRepresentation if included. Use 'Uefi' (not 'UEFI') to match AMT XML element names.
+    const putBody: any = {
+      ElementName: current.ElementName,
+      InstanceID: current.InstanceID,
+      OwningEntity: current.OwningEntity,
+      BIOSPause: current.BIOSPause,
+      BIOSSetup: current.BIOSSetup,
+      BootMediaIndex: current.BootMediaIndex,
+      ConfigurationDataReset: csmeRequested,
+      EnforceSecureBoot: current.EnforceSecureBoot,
+      FirmwareVerbosity: current.FirmwareVerbosity,
+      ForcedProgressEvents: current.ForcedProgressEvents,
+      IDERBootDevice: current.IDERBootDevice,
+      LockKeyboard: current.LockKeyboard,
+      LockPowerButton: current.LockPowerButton,
+      LockResetButton: current.LockResetButton,
+      LockSleepButton: current.LockSleepButton,
+      PlatformErase: hwMask !== 0,
+      RSEPassword: current.RSEPassword,
+      ReflashBIOS: current.ReflashBIOS,
+      SecureErase: current.SecureErase,
+      UseIDER: current.UseIDER,
+      UseSOL: current.UseSOL,
+      UseSafeMode: current.UseSafeMode,
+      UserPasswordBypass: current.UserPasswordBypass,
+    }
+
+    if (hwMask !== 0) {
+      const buf = Buffer.alloc(12)
+      buf.writeUInt16LE(0x8086, 0)   // Intel vendor prefix
+      buf.writeUInt16LE(1, 2)        // ParameterTypeID = 1
+      buf.writeUInt32LE(4, 4)        // value length = 4 bytes
+      buf.writeUInt32LE(hwMask, 8)   // device bitmask
+      putBody.UefiBootParametersArray = buf.toString('base64')
+      putBody.UefiBootNumberOfParams = 1
+    }
+
+    const xmlPut = this.amt.BootSettingData.Put(putBody as AMT.Models.BootSettingData)
+    const putResult = await this.ciraHandler.Send(this.ciraSocket, xmlPut)
+    if (putResult?.Envelope?.Body?.Fault) {
+      throw new Error(`BootSettingData PUT failed: ${JSON.stringify(putResult.Envelope.Body.Fault)}`)
+    }
+
+    // Step 4: Activate boot configuration
+    await this.forceBootMode(1)
+
+    // Step 5: Power Cycle Off Hard — S5→S0 required; warm reset keeps ME power rails active
+    await this.sendPowerAction(5)
+
+    logger.silly(`sendRemoteErase ${messages.COMPLETE}`)
   }
 
   async requestUserConsentCode(): Promise<Common.Models.Envelope<IPS.Models.StartOptIn_OUTPUT>> {
@@ -631,7 +722,7 @@ export class DeviceAction {
   async getOCRData(): Promise<OCRData> {
     const bootService = await this.getBootService()
     const bootSourceSettings = await this.getBootSourceSetting()
-    const capabilities = await this.getPowerCapabilities()
+    const capabilities = await this.getBootCapabilities()
     const bootData = await this.getBootSettingData()
 
     return {

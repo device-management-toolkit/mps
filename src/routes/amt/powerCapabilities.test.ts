@@ -68,7 +68,7 @@ describe('Power Capabilities', () => {
       'Reset to PXE': 400,
       'Power on to PXE': 401
     }
-    spyOn(device, 'getPowerCapabilities').mockResolvedValue(powerCaps)
+    spyOn(device, 'getBootCapabilities').mockResolvedValue(powerCaps)
     swIdentitySpy.mockResolvedValue(softwareIdentityResponse.Envelope.Body)
     setupAndConfigSpy.mockResolvedValue(setupAndConfigurationServiceResponse.Envelope)
     await powerCapabilities(req as any, resSpy)
@@ -96,7 +96,7 @@ describe('Power Capabilities', () => {
     }
     versionResponse.CIM_SoftwareIdentity.responses = [
       { InstanceID: 'AMT', IsEntity: 'true', VersionString: '9.0.0' }]
-    spyOn(device, 'getPowerCapabilities').mockResolvedValue(powerCaps)
+    spyOn(device, 'getBootCapabilities').mockResolvedValue(powerCaps)
     swIdentitySpy.mockResolvedValue(softwareIdentityResponse.Envelope.Body)
     setupAndConfigSpy.mockResolvedValue(setupAndConfigurationServiceResponse.Envelope)
     await powerCapabilities(req as any, resSpy)
@@ -130,7 +130,7 @@ describe('Power Capabilities', () => {
     powerCaps.Body.AMT_BootCapabilities.BIOSSetup = true
     powerCaps.Body.AMT_BootCapabilities.SecureErase = true
     powerCaps.Body.AMT_BootCapabilities.ForceDiagnosticBoot = true
-    spyOn(device, 'getPowerCapabilities').mockResolvedValue(powerCaps)
+    spyOn(device, 'getBootCapabilities').mockResolvedValue(powerCaps)
     swIdentitySpy.mockResolvedValue(softwareIdentityResponse.Envelope.Body)
     setupAndConfigSpy.mockResolvedValue(setupAndConfigurationServiceResponse.Envelope)
     await powerCapabilities(req as any, resSpy)
@@ -140,7 +140,7 @@ describe('Power Capabilities', () => {
     expect(mqttSpy).toHaveBeenCalled()
   })
   it('Should handle error', async () => {
-    spyOn(device, 'getPowerCapabilities').mockResolvedValue(null)
+    spyOn(device, 'getBootCapabilities').mockResolvedValue(null)
     swIdentitySpy.mockResolvedValue(softwareIdentityResponse.Envelope.Body)
     setupAndConfigSpy.mockResolvedValue(setupAndConfigurationServiceResponse.Envelope)
     await powerCapabilities(req as any, resSpy)
