@@ -79,7 +79,7 @@
     "prettier-plugin-multiline-arrays": "^4.1.6",
     "ts-jest": "^29.4.9",
     "ts-node": "^10.9.2",
-    "typescript": "^5.8.3",
+    "typescript": "^6.0.3",
     "typescript-eslint": "8.59.0"
   },
   "optionalDependencies": {
