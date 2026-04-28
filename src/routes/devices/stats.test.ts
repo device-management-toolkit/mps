@@ -3,13 +3,11 @@
  * SPDX-License-Identifier: Apache-2.0
  **********************************************************************/
 
+import { vi, type MockInstance } from 'vitest'
 import { stats } from './stats.js'
-import { jest } from '@jest/globals'
-import { type Spied, spyOn } from 'jest-mock'
-
 let res: Express.Response
-let jsonSpy: Spied<any>
-let resSpy: Spied<any>
+let jsonSpy: MockInstance
+let resSpy: MockInstance
 
 beforeEach(() => {
   res = {
@@ -17,13 +15,13 @@ beforeEach(() => {
     json: () => res,
     end: () => res
   }
-  jsonSpy = spyOn(res as any, 'json')
-  resSpy = spyOn(res as any, 'status')
+  jsonSpy = vi.spyOn(res as any, 'json')
+  resSpy = vi.spyOn(res as any, 'status')
 })
 
 afterEach(() => {
-  jest.clearAllMocks()
-  jest.resetModules()
+  vi.clearAllMocks()
+  vi.resetModules()
 })
 
 describe('stats', () => {
@@ -33,8 +31,8 @@ describe('stats', () => {
     const req = {
       db: {
         devices: {
-          getConnectedDevices: jest.fn().mockReturnValue(connectedCount),
-          getCount: jest.fn().mockReturnValue(allCount)
+          getConnectedDevices: vi.fn().mockReturnValue(connectedCount),
+          getCount: vi.fn().mockReturnValue(allCount)
         }
       }
     }
@@ -53,8 +51,8 @@ describe('stats', () => {
     const req = {
       db: {
         devices: {
-          getConnectedDevices: jest.fn<any>().mockRejectedValue(new Error()),
-          getCount: jest.fn<any>().mockRejectedValue(new Error())
+          getConnectedDevices: vi.fn<any>().mockRejectedValue(new Error()),
+          getCount: vi.fn<any>().mockRejectedValue(new Error())
         }
       }
     }
@@ -66,8 +64,8 @@ describe('stats', () => {
     const req = {
       db: {
         devices: {
-          getConnectedDevices: jest.fn().mockReturnValue(0),
-          getCount: jest.fn().mockReturnValue(0)
+          getConnectedDevices: vi.fn().mockReturnValue(0),
+          getCount: vi.fn().mockReturnValue(0)
         }
       }
     }

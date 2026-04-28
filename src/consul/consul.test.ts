@@ -3,10 +3,9 @@
  * SPDX-License-Identifier: Apache-2.0
  **********************************************************************/
 
+import { vi } from 'vitest'
 import { ConsulService } from './consul.js'
 import { config } from './../test/helper/config.js'
-import { jest } from '@jest/globals'
-import { spyOn } from 'jest-mock'
 import { HTTPError } from 'got'
 
 const consulService: ConsulService = new ConsulService('localhost', 8500)
@@ -15,10 +14,10 @@ let serviceName: string
 
 describe('consul', () => {
   beforeEach(() => {
-    jest.clearAllMocks()
-    jest.restoreAllMocks()
-    jest.resetAllMocks()
-    jest.resetModules()
+    vi.clearAllMocks()
+    vi.restoreAllMocks()
+    vi.resetAllMocks()
+    vi.resetModules()
 
     componentName = 'RPS'
     serviceName = 'consul'
@@ -26,10 +25,10 @@ describe('consul', () => {
 
   describe('ConsulService', () => {
     it('get Consul health', async () => {
-      const getSpy = spyOn(consulService.gotClient, 'get').mockImplementation(
+      const getSpy = vi.spyOn(consulService.gotClient, 'get').mockImplementation(
         () =>
           ({
-            json: jest.fn(async () => await Promise.resolve([]))
+            json: vi.fn(async () => await Promise.resolve([]))
           }) as any
       )
       await consulService.health(serviceName)
@@ -37,7 +36,7 @@ describe('consul', () => {
     })
 
     it('seed Consul success', async () => {
-      const putSpy = spyOn(consulService.gotClient, 'put').mockResolvedValue({} as any)
+      const putSpy = vi.spyOn(consulService.gotClient, 'put').mockResolvedValue({} as any)
       const result = await consulService.seed(componentName, config)
       expect(result).toBe(true)
       expect(putSpy).toHaveBeenCalledWith(`kv/${componentName}/config`, {
@@ -46,17 +45,17 @@ describe('consul', () => {
     })
 
     it('seed Consul failure', async () => {
-      spyOn(consulService.gotClient, 'put').mockRejectedValue(new Error('boom'))
+      vi.spyOn(consulService.gotClient, 'put').mockRejectedValue(new Error('boom'))
       const result = await consulService.seed(componentName, config)
       expect(result).toBe(false)
     })
 
     it('get from Consul success', async () => {
       const encoded = Buffer.from('{"web_port": 8081}').toString('base64')
-      const getSpy = spyOn(consulService.gotClient, 'get').mockImplementation(
+      const getSpy = vi.spyOn(consulService.gotClient, 'get').mockImplementation(
         () =>
           ({
-            json: jest.fn(async () => await Promise.resolve([{ Key: `${componentName}/config`, Value: encoded }]))
+            json: vi.fn(async () => await Promise.resolve([{ Key: `${componentName}/config`, Value: encoded }]))
           }) as any
       )
       const result = await consulService.get(componentName)
@@ -67,10 +66,10 @@ describe('consul', () => {
     it('get from Consul returns null on 404', async () => {
       const error = Object.create(HTTPError.prototype) as HTTPError
       ;(error as any).response = { statusCode: 404 }
-      spyOn(consulService.gotClient, 'get').mockImplementation(
+      vi.spyOn(consulService.gotClient, 'get').mockImplementation(
         () =>
           ({
-            json: jest.fn(async () => await Promise.reject(error))
+            json: vi.fn(async () => await Promise.reject(error))
           }) as any
       )
       const result = await consulService.get(componentName)
@@ -80,10 +79,10 @@ describe('consul', () => {
     it('get from Consul rethrows non-404 errors', async () => {
       const error = Object.create(HTTPError.prototype) as HTTPError
       ;(error as any).response = { statusCode: 500 }
-      spyOn(consulService.gotClient, 'get').mockImplementation(
+      vi.spyOn(consulService.gotClient, 'get').mockImplementation(
         () =>
           ({
-            json: jest.fn(async () => await Promise.reject(error))
+            json: vi.fn(async () => await Promise.reject(error))
           }) as any
       )
       await expect(consulService.get(componentName)).rejects.toBe(error)

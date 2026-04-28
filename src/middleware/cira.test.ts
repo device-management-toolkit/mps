@@ -3,12 +3,11 @@
  * SPDX-License-Identifier: Apache-2.0
  **********************************************************************/
 
-import { createSpyObj } from '../test/helper/jest.js'
+import { vi } from 'vitest'
+import { createSpyObj } from '../test/helper/vitest.js'
 import { ErrorResponse } from '../utils/amtHelper.js'
 import ciraMiddleware from './cira.js'
 import { devices } from '../server/mpsserver.js'
-import { jest } from '@jest/globals'
-
 describe('CIRA Middleware', () => {
   let req, next, resSpy
 
@@ -18,7 +17,7 @@ describe('CIRA Middleware', () => {
       tenantId: null,
       deviceAction: null
     }
-    next = jest.fn()
+    next = vi.fn()
     resSpy = createSpyObj('Response', [
       'status',
       'json',

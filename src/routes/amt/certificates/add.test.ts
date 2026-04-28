@@ -3,25 +3,28 @@
  * SPDX-License-Identifier: Apache-2.0
  **********************************************************************/
 
+import { vi, type Mock } from 'vitest'
 import { type Request, type Response } from 'express'
 import { addAMTCertificate } from './add.js'
 import { MPSValidationError } from '../../../utils/MPSValidationError.js'
-import { createSpyObj } from '../../../test/helper/jest.js'
-import { spyOn } from 'jest-mock'
-import { jest } from '@jest/globals'
+import { createSpyObj } from '../../../test/helper/vitest.js'
 import { HttpHandler } from '../../../amt/HttpHandler.js'
 import { CIRAHandler } from '../../../amt/CIRAHandler.js'
 import { DeviceAction } from '../../../amt/DeviceAction.js'
 import crypto from 'node:crypto'
 
-// Mock external dependencies
-jest.mock('../../../utils/MPSValidationError')
+// Note: MPSValidationError is intentionally not mocked — the route relies on
+// `instanceof MPSValidationError` checks and the real class preserves the
+// `message` property used in assertions below. Under Vitest's stricter
+// automock semantics, auto-mocking this class stripped those properties and
+// caused 8 tests to fail (vs. Jest's auto-mock behavior).
 
 describe('addAMTCertificate', () => {
   let mockRequest: Partial<Request>
   let mockResponse
   let addCertificateSpy
-  let mockX509Certificate: jest.Mock
+  let mockX509Certificate: Mock
+  const originalX509Certificate = crypto.X509Certificate
 
   beforeEach(() => {
     const handler = new CIRAHandler(new HttpHandler(), 'admin', 'P@ssw0rd')
@@ -43,7 +46,7 @@ AAAAAA==
       deviceAction: device
     }
 
-    addCertificateSpy = spyOn(device, 'addCertificate').mockResolvedValue('mockHandle')
+    addCertificateSpy = vi.spyOn(device, 'addCertificate').mockResolvedValue('mockHandle')
 
     mockResponse = createSpyObj('Response', [
       'status',
@@ -55,13 +58,14 @@ AAAAAA==
     mockResponse.end.mockReturnThis()
 
     // Mock X509Certificate constructor
-    mockX509Certificate = jest.fn()
+    mockX509Certificate = vi.fn()
     ;(crypto as any).X509Certificate = mockX509Certificate
   })
 
   afterEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
     mockX509Certificate.mockReset()
+    ;(crypto as any).X509Certificate = originalX509Certificate
   })
 
   it('should successfully add an AMT certificate and return 200', async () => {
@@ -70,7 +74,7 @@ AAAAAA==
 
     const mockCertInstance = {
       validTo: futureDate.toISOString(),
-      toString: jest.fn().mockReturnValue(`-----BEGIN CERTIFICATE-----
+      toString: vi.fn().mockReturnValue(`-----BEGIN CERTIFICATE-----
 MIIBszCCARwCCQCyWpX+k/vW0TANBgkqhkiG9w0BAQsFADASMRAwDgYDVQQDDAd0
 ZXN0Y2VydDAeFw0yNDA3MjIyMjAwMDBaFw0yNTA3MjIyMjAwMDBaMBMxETAPBgNV
 BAMMCGxvY2FsaG9zdDCBnzANBgkqhkiG9w0BAQEFAAOBjQAwgYkCgYEAw/z/v/gA
@@ -78,7 +82,9 @@ AAAAAA==
 -----END CERTIFICATE-----`)
     }
 
-    mockX509Certificate.mockImplementation(() => mockCertInstance)
+    mockX509Certificate.mockImplementation(function () {
+      return mockCertInstance as any
+    })
     addCertificateSpy.mockResolvedValue('mockHandle')
 
     await addAMTCertificate(mockRequest as Request, mockResponse as Response)
@@ -99,10 +105,12 @@ AAAAAA==
 
     const mockCertInstance = {
       validTo: futureDate.toISOString(),
-      toString: jest.fn().mockReturnValue('mock-pem-cert')
+      toString: vi.fn().mockReturnValue('mock-pem-cert')
     }
 
-    mockX509Certificate.mockImplementation(() => mockCertInstance)
+    mockX509Certificate.mockImplementation(function () {
+      return mockCertInstance as any
+    })
 
     await addAMTCertificate(mockRequest as Request, mockResponse as Response)
 
@@ -116,7 +124,7 @@ AAAAAA==
     mockRequest.body.cert = Buffer.from('not a valid cert format').toString('base64')
 
     // Mock X509Certificate constructor to throw for invalid format
-    mockX509Certificate.mockImplementation(() => {
+    mockX509Certificate.mockImplementation(function () {
       throw new Error('Invalid certificate format')
     })
 
@@ -137,10 +145,12 @@ AAAAAA==
 
     const mockCertInstance = {
       validTo: pastDate.toISOString(),
-      toString: jest.fn().mockReturnValue('mock-pem-cert')
+      toString: vi.fn().mockReturnValue('mock-pem-cert')
     }
 
-    mockX509Certificate.mockImplementation(() => mockCertInstance)
+    mockX509Certificate.mockImplementation(function () {
+      return mockCertInstance as any
+    })
 
     await addAMTCertificate(mockRequest as Request, mockResponse as Response)
 
@@ -155,7 +165,7 @@ AAAAAA==
     addCertificateSpy.mockResolvedValue('mockHandle')
 
     // Mock X509Certificate to throw an error during validation
-    mockX509Certificate.mockImplementation(() => {
+    mockX509Certificate.mockImplementation(function () {
       throw new Error('Certificate validation error')
     })
 
@@ -182,10 +192,12 @@ AAAAAA==
 
     const mockCertInstance = {
       validTo: futureDate.toISOString(),
-      toString: jest.fn().mockReturnValue(pemCert)
+      toString: vi.fn().mockReturnValue(pemCert)
     }
 
-    mockX509Certificate.mockImplementation(() => mockCertInstance as any)
+    mockX509Certificate.mockImplementation(function () {
+      return mockCertInstance as any
+    })
     addCertificateSpy.mockResolvedValue('mockHandle')
 
     await addAMTCertificate(mockRequest as Request, mockResponse as Response)
@@ -211,10 +223,12 @@ mockPemData
 
     const mockCertInstance = {
       validTo: futureDate.toISOString(),
-      toString: jest.fn().mockReturnValue(convertedPem)
+      toString: vi.fn().mockReturnValue(convertedPem)
     }
 
-    mockX509Certificate.mockImplementation(() => mockCertInstance as any)
+    mockX509Certificate.mockImplementation(function () {
+      return mockCertInstance as any
+    })
     addCertificateSpy.mockResolvedValue('mockHandle')
 
     await addAMTCertificate(mockRequest as Request, mockResponse as Response)
@@ -234,10 +248,12 @@ mockPemData
 
     const mockCertInstance = {
       validTo: futureDate.toISOString(),
-      toString: jest.fn().mockReturnValue('mock-pem-cert')
+      toString: vi.fn().mockReturnValue('mock-pem-cert')
     }
 
-    mockX509Certificate.mockImplementation(() => mockCertInstance as any)
+    mockX509Certificate.mockImplementation(function () {
+      return mockCertInstance as any
+    })
     addCertificateSpy.mockResolvedValue(null) // Simulate failure
 
     await addAMTCertificate(mockRequest as Request, mockResponse as Response)

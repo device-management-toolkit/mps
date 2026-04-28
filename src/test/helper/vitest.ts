@@ -3,13 +3,12 @@
  * SPDX-License-Identifier: Apache-2.0
  **********************************************************************/
 
-import { jest } from '@jest/globals'
-
-export const createSpyObj = (baseName, methodNames): Record<string, jest.Mock<any>> => {
+import { vi, type Mock } from 'vitest'
+export const createSpyObj = (baseName, methodNames): Record<string, Mock<any>> => {
   const obj: any = {}
 
   for (const methodName of methodNames) {
-    obj[methodName] = jest.fn()
+    obj[methodName] = vi.fn()
   }
 
   return obj

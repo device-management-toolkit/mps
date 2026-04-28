@@ -3,24 +3,23 @@
  * SPDX-License-Identifier: Apache-2.0
  **********************************************************************/
 
+import { vi, type MockInstance } from 'vitest'
 import { CIRAHandler } from '../../amt/CIRAHandler.js'
 import { DeviceAction } from '../../amt/DeviceAction.js'
 import { HttpHandler } from '../../amt/HttpHandler.js'
 import { messages } from '../../logging/index.js'
-import { createSpyObj } from '../../test/helper/jest.js'
+import { createSpyObj } from '../../test/helper/vitest.js'
 import { ErrorResponse } from '../../utils/amtHelper.js'
 import { MqttProvider } from '../../utils/MqttProvider.js'
 import { getAMTFeatures } from './getAMTFeatures.js'
-import { type Spied, spyOn } from 'jest-mock'
-
 describe('get amt features', () => {
   let resSpy
   let req
-  let redirectionSpy: Spied<any>
-  let optInServiceSpy: Spied<any>
-  let kvmRedirectionSpy: Spied<any>
-  let ocrDataSpy: Spied<any>
-  let mqttSpy: Spied<any>
+  let redirectionSpy: MockInstance
+  let optInServiceSpy: MockInstance
+  let kvmRedirectionSpy: MockInstance
+  let ocrDataSpy: MockInstance
+  let mqttSpy: MockInstance
 
   beforeEach(() => {
     const handler = new CIRAHandler(new HttpHandler(), 'admin', 'P@ssw0rd')
@@ -39,11 +38,11 @@ describe('get amt features', () => {
     resSpy.json.mockReturnThis()
     resSpy.send.mockReturnThis()
 
-    redirectionSpy = spyOn(device, 'getRedirectionService')
-    optInServiceSpy = spyOn(device, 'getIpsOptInService')
-    kvmRedirectionSpy = spyOn(device, 'getKvmRedirectionSap')
-    ocrDataSpy = spyOn(device, 'getOCRData')
-    mqttSpy = spyOn(MqttProvider, 'publishEvent')
+    redirectionSpy = vi.spyOn(device, 'getRedirectionService')
+    optInServiceSpy = vi.spyOn(device, 'getIpsOptInService')
+    kvmRedirectionSpy = vi.spyOn(device, 'getKvmRedirectionSap')
+    ocrDataSpy = vi.spyOn(device, 'getOCRData')
+    mqttSpy = vi.spyOn(MqttProvider, 'publishEvent')
   })
 
   it('should get feature', async () => {

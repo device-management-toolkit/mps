@@ -3,16 +3,14 @@
  * SPDX-License-Identifier: Apache-2.0
  **********************************************************************/
 
+import { vi } from 'vitest'
 import { deleteAlarmOccurrence } from './deleteAlarmOccurrence.js'
-import { createSpyObj } from '../../test/helper/jest.js'
+import { createSpyObj } from '../../test/helper/vitest.js'
 import { deleteAlarmClockOccurrence, deleteAlarmClockOccurrenceNotFound } from '../../test/helper/wsmanResponses.js'
 import { DeviceAction } from '../../amt/DeviceAction.js'
 import { CIRAHandler } from '../../amt/CIRAHandler.js'
 import { HttpHandler } from '../../amt/HttpHandler.js'
 import { messages } from '../../logging/index.js'
-import { jest } from '@jest/globals'
-import { spyOn } from 'jest-mock'
-
 describe('Delete Alarm Clock Occurrence', () => {
   let resSpy
   let req
@@ -37,11 +35,11 @@ describe('Delete Alarm Clock Occurrence', () => {
     resSpy.status.mockReturnThis()
     resSpy.json.mockReturnThis()
     resSpy.send.mockReturnThis()
-    AlarmClockOccurrenceSpy = spyOn(device, 'deleteAlarmClockOccurrence')
+    AlarmClockOccurrenceSpy = vi.spyOn(device, 'deleteAlarmClockOccurrence')
   })
 
   afterEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
   })
 
   it('should delete an alarm clock occurrence', async () => {

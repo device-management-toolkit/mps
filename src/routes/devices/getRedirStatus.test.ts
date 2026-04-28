@@ -3,22 +3,20 @@
  * SPDX-License-Identifier: Apache-2.0
  **********************************************************************/
 
+import { vi, type MockInstance } from 'vitest'
 import { getRedirStatus } from './getRedirStatus.js'
 import { type Request, type Response } from 'express'
 import { devices } from '../../server/mpsserver.js'
-import { jest } from '@jest/globals'
-import { type Spied, spyOn } from 'jest-mock'
-
-jest.mock('../../logging', () => ({
+vi.mock('../../logging', () => ({
   logger: {
-    error: jest.fn()
+    error: vi.fn()
   },
   messages: {
     DEVICE_GET_EXCEPTION: 'Device get exception'
   }
 }))
 
-jest.mock('../../server/mpsserver', () => ({
+vi.mock('../../server/mpsserver', () => ({
   devices: {}
 }))
 
@@ -26,21 +24,21 @@ describe('getRedirStatus', () => {
   let req
   let res
   let testDevices
-  let getByIdSpy: Spied<any>
+  let getByIdSpy: MockInstance
 
   beforeEach(() => {
     testDevices = devices
     req = {
       params: { guid: 'test-guid' },
       query: {},
-      db: { devices: { getById: jest.fn() } }
+      db: { devices: { getById: vi.fn() } }
     } as unknown as Request
     res = {
-      status: jest.fn().mockReturnThis(),
-      json: jest.fn().mockReturnThis(),
-      end: jest.fn()
+      status: vi.fn().mockReturnThis(),
+      json: vi.fn().mockReturnThis(),
+      end: vi.fn()
     } as unknown as Response
-    getByIdSpy = spyOn(req.db.devices, 'getById')
+    getByIdSpy = vi.spyOn(req.db.devices, 'getById')
   })
 
   it('should return 404 if device is not found', async () => {

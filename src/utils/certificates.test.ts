@@ -3,22 +3,20 @@
  * SPDX-License-Identifier: Apache-2.0
  **********************************************************************/
 
+import { vi, type MockInstance } from 'vitest'
 import { Certificates } from './certificates.js'
 import { type certAndKeyType, type certificatesType } from '../models/Config.js'
 import forge from 'node-forge'
 import { type ISecretManagerService } from '../interfaces/ISecretManagerService.js'
-import { jest } from '@jest/globals'
-import { type Spied, spyOn } from 'jest-mock'
-
 let certificates: Certificates
 let certificatesTls12: Certificates
-let generateKeyPairSpy: Spied<any>
-let createCertificateSpy: Spied<any>
-let getPublicKeyFingerprintSpy: Spied<any>
-let sha384CreateSpy: Spied<any>
-let getMPSCertsSpy: Spied<any>
-let storeCertificatesSpy: Spied<any>
-let writeSecretWithObjectSpy: Spied<any>
+let generateKeyPairSpy: MockInstance
+let createCertificateSpy: MockInstance
+let getPublicKeyFingerprintSpy: MockInstance
+let sha384CreateSpy: MockInstance
+let getMPSCertsSpy: MockInstance
+let storeCertificatesSpy: MockInstance
+let writeSecretWithObjectSpy: MockInstance
 const config = {
   common_name: 'me',
   country: 'us',
@@ -46,20 +44,20 @@ const secrets: ISecretManagerService = {
 }
 
 beforeEach(() => {
-  getMPSCertsSpy = spyOn(secrets, 'getMPSCerts')
+  getMPSCertsSpy = vi.spyOn(secrets, 'getMPSCerts')
   certificates = new Certificates(config as any, secrets)
   certificatesTls12 = new Certificates(configtls12 as any, secrets)
-  writeSecretWithObjectSpy = spyOn(secrets, 'writeSecretWithObject')
-  storeCertificatesSpy = spyOn(certificates, 'storeCertificates')
-  generateKeyPairSpy = spyOn(forge.pki.rsa, 'generateKeyPair')
-  createCertificateSpy = spyOn(forge.pki, 'createCertificate')
-  getPublicKeyFingerprintSpy = spyOn(forge.pki, 'getPublicKeyFingerprint')
-  sha384CreateSpy = spyOn(forge.md.sha384, 'create')
+  writeSecretWithObjectSpy = vi.spyOn(secrets, 'writeSecretWithObject')
+  storeCertificatesSpy = vi.spyOn(certificates, 'storeCertificates')
+  generateKeyPairSpy = vi.spyOn(forge.pki.rsa, 'generateKeyPair')
+  createCertificateSpy = vi.spyOn(forge.pki, 'createCertificate')
+  getPublicKeyFingerprintSpy = vi.spyOn(forge.pki, 'getPublicKeyFingerprint')
+  sha384CreateSpy = vi.spyOn(forge.md.sha384, 'create')
 })
 
 afterEach(() => {
-  jest.clearAllMocks()
-  jest.resetModules()
+  vi.clearAllMocks()
+  vi.resetModules()
 })
 
 describe('constructor', () => {
@@ -71,10 +69,10 @@ describe('constructor', () => {
 
 describe('generateCertificates', () => {
   it('should generate certificates', () => {
-    const generateRootCertificateSpy = spyOn(certificates, 'GenerateRootCertificate').mockReturnValue({})
-    const certificateToPemSpy = spyOn(forge.pki, 'certificateToPem').mockReturnValue('certificate')
-    const privateKeyToPemSpy = spyOn(forge.pki, 'privateKeyToPem').mockReturnValue('private key')
-    const issueWebServerCertificateSpy = spyOn(certificates, 'IssueWebServerCertificate').mockReturnValue({})
+    const generateRootCertificateSpy = vi.spyOn(certificates, 'GenerateRootCertificate').mockReturnValue({})
+    const certificateToPemSpy = vi.spyOn(forge.pki, 'certificateToPem').mockReturnValue('certificate')
+    const privateKeyToPemSpy = vi.spyOn(forge.pki, 'privateKeyToPem').mockReturnValue('private key')
+    const issueWebServerCertificateSpy = vi.spyOn(certificates, 'IssueWebServerCertificate').mockReturnValue({})
     const result: certificatesType = certificates.generateCertificates()
     expect(result.mps_tls_config).toBeTruthy()
     expect(result.web_tls_config).toBeTruthy()
@@ -86,10 +84,10 @@ describe('generateCertificates', () => {
   })
 
   it('should generate certificates for TLS1.2', () => {
-    const generateRootCertificateSpy = spyOn(certificatesTls12, 'GenerateRootCertificate').mockReturnValue({})
-    const certificateToPemSpy = spyOn(forge.pki, 'certificateToPem').mockReturnValue('certificate')
-    const privateKeyToPemSpy = spyOn(forge.pki, 'privateKeyToPem').mockReturnValue('private key')
-    const issueWebServerCertificateSpy = spyOn(certificatesTls12, 'IssueWebServerCertificate').mockReturnValue({})
+    const generateRootCertificateSpy = vi.spyOn(certificatesTls12, 'GenerateRootCertificate').mockReturnValue({})
+    const certificateToPemSpy = vi.spyOn(forge.pki, 'certificateToPem').mockReturnValue('certificate')
+    const privateKeyToPemSpy = vi.spyOn(forge.pki, 'privateKeyToPem').mockReturnValue('private key')
+    const issueWebServerCertificateSpy = vi.spyOn(certificatesTls12, 'IssueWebServerCertificate').mockReturnValue({})
     const result: certificatesType = certificatesTls12.generateCertificates()
     expect(result.mps_tls_config).toBeTruthy()
     expect(result.web_tls_config).toBeTruthy()
@@ -111,10 +109,10 @@ describe('generateCertificates', () => {
       }
     }
     const certificates3072 = new Certificates(config3072 as any, secrets)
-    const generateRootCertificateSpy = spyOn(certificates3072, 'GenerateRootCertificate').mockReturnValue({})
-    const issueWebServerCertificateSpy = spyOn(certificates3072, 'IssueWebServerCertificate').mockReturnValue({})
-    spyOn(forge.pki, 'certificateToPem').mockReturnValue('certificate')
-    spyOn(forge.pki, 'privateKeyToPem').mockReturnValue('private key')
+    const generateRootCertificateSpy = vi.spyOn(certificates3072, 'GenerateRootCertificate').mockReturnValue({})
+    const issueWebServerCertificateSpy = vi.spyOn(certificates3072, 'IssueWebServerCertificate').mockReturnValue({})
+    vi.spyOn(forge.pki, 'certificateToPem').mockReturnValue('certificate')
+    vi.spyOn(forge.pki, 'privateKeyToPem').mockReturnValue('private key')
     const result: certificatesType = certificates3072.generateCertificates()
     expect(result).toBeTruthy()
     expect(issueWebServerCertificateSpy).toHaveBeenCalledWith(
@@ -139,10 +137,10 @@ describe('generateCertificates', () => {
       }
     }
     const certificates2048 = new Certificates(config2048 as any, secrets)
-    const issueWebServerCertificateSpy = spyOn(certificates2048, 'IssueWebServerCertificate').mockReturnValue({})
-    spyOn(certificates2048, 'GenerateRootCertificate').mockReturnValue({})
-    spyOn(forge.pki, 'certificateToPem').mockReturnValue('certificate')
-    spyOn(forge.pki, 'privateKeyToPem').mockReturnValue('private key')
+    const issueWebServerCertificateSpy = vi.spyOn(certificates2048, 'IssueWebServerCertificate').mockReturnValue({})
+    vi.spyOn(certificates2048, 'GenerateRootCertificate').mockReturnValue({})
+    vi.spyOn(forge.pki, 'certificateToPem').mockReturnValue('certificate')
+    vi.spyOn(forge.pki, 'privateKeyToPem').mockReturnValue('private key')
     const result: certificatesType = certificates2048.generateCertificates()
     expect(result).toBeTruthy()
     expect(issueWebServerCertificateSpy).toHaveBeenCalledWith(
@@ -164,10 +162,10 @@ describe('GenerateRootCertificate', () => {
   } as any
   const certificate = {
     validity: {},
-    setSubject: jest.fn(),
-    setIssuer: jest.fn(),
-    setExtensions: jest.fn(),
-    sign: jest.fn()
+    setSubject: vi.fn(),
+    setIssuer: vi.fn(),
+    setExtensions: vi.fn(),
+    sign: vi.fn()
   } as any
 
   beforeEach(() => {
@@ -213,7 +211,7 @@ describe('getCertificates', () => {
     const expectedCertificates = {} as any
     getMPSCertsSpy.mockReturnValue(null)
     storeCertificatesSpy.mockImplementation(() => {})
-    const generateCertificatesSpy = spyOn(certificates, 'generateCertificates').mockReturnValue(expectedCertificates)
+    const generateCertificatesSpy = vi.spyOn(certificates, 'generateCertificates').mockReturnValue(expectedCertificates)
     const result = await certificates.getCertificates()
     expect(result).toEqual(expectedCertificates)
     expect(generateCertificatesSpy).toHaveBeenCalled()
@@ -244,13 +242,13 @@ describe('IssueWebServerCertificate', () => {
     const certificate = {
       validity: {
         notAfter: {
-          getFullYear: jest.fn().mockReturnValue('2022')
+          getFullYear: vi.fn().mockReturnValue('2022')
         }
       },
-      setSubject: jest.fn(),
-      setIssuer: jest.fn(),
-      setExtensions: jest.fn(),
-      sign: jest.fn()
+      setSubject: vi.fn(),
+      setIssuer: vi.fn(),
+      setExtensions: vi.fn(),
+      sign: vi.fn()
     } as any
     generateKeyPairSpy.mockReturnValue(keyPair)
     createCertificateSpy.mockReturnValue(certificate)
@@ -288,13 +286,13 @@ describe('IssueWebServerCertificate', () => {
     const certificate = {
       validity: {
         notAfter: {
-          getFullYear: jest.fn().mockReturnValue('2022')
+          getFullYear: vi.fn().mockReturnValue('2022')
         }
       },
-      setSubject: jest.fn(),
-      setIssuer: jest.fn(),
-      setExtensions: jest.fn(),
-      sign: jest.fn()
+      setSubject: vi.fn(),
+      setIssuer: vi.fn(),
+      setExtensions: vi.fn(),
+      sign: vi.fn()
     } as any
     generateKeyPairSpy.mockReturnValue(keyPair)
     createCertificateSpy.mockReturnValue(certificate)

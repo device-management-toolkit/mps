@@ -3,12 +3,11 @@
  * SPDX-License-Identifier: Apache-2.0
  **********************************************************************/
 
+import { vi } from 'vitest'
 import { type CIRASocket } from '../models/models.js'
 import APFProcessor from './APFProcessor.js'
 import { CIRAChannel } from './CIRAChannel.js'
 import { type connectionParams, HttpHandler } from './HttpHandler.js'
-import { jest } from '@jest/globals'
-import { spyOn } from 'jest-mock'
 import { Environment } from '../utils/Environment.js'
 import { config } from '../test/helper/config.js'
 Environment.Config = config
@@ -25,7 +24,7 @@ describe('CIRA Channel', () => {
     ciraChannel = new CIRAChannel(new HttpHandler(), 4000, socket)
   })
   afterEach(() => {
-    jest.resetAllMocks()
+    vi.resetAllMocks()
   })
   it('should initialize', () => {
     expect(ciraChannel).toBeDefined()
@@ -63,8 +62,13 @@ describe('CIRA Channel', () => {
   it('should close channel when open', () => {
     ciraChannel.state = 2
     ciraChannel.amtchannelid = 44
-    const sendChannelSpy = spyOn(APFProcessor, 'SendChannelClose').mockImplementation(() => {})
-    sendChannelSpy.mockReset()
+    // Note: Jest's mockReset() after mockImplementation() cleared call history
+    // but left the no-op implementation in place. Vitest's mockReset() also
+    // wipes the implementation, which would cause the real SendChannelClose
+    // to run against a socket mock that lacks .write(). We use mockClear() to
+    // only reset call history and preserve the stub.
+    const sendChannelSpy = vi.spyOn(APFProcessor, 'SendChannelClose').mockImplementation(() => {})
+    sendChannelSpy.mockClear()
     const state = ciraChannel.CloseChannel()
     expect(sendChannelSpy).toHaveBeenCalledWith(ciraChannel)
     expect(state).toBe(0)
@@ -81,7 +85,7 @@ describe('CIRA Channel', () => {
       username: 'admin',
       password: 'P@ssw0rd'
     }
-    const sendChannelSpy = spyOn(APFProcessor, 'SendChannelData').mockImplementation(() => {})
+    const sendChannelSpy = vi.spyOn(APFProcessor, 'SendChannelData').mockImplementation(() => {})
 
     const writePromise = ciraChannel.writeData(data, params)
     ciraChannel.onData(httpHeader200 + enumCimSoftwareIdentityResponse)
@@ -100,8 +104,8 @@ describe('CIRA Channel', () => {
     ciraChannel.sendcredits = 10
     ciraChannel.sendBuffer = Buffer.alloc(10)
     const data = String.fromCharCode(1, 2, 3, 4, 0xc0, 5)
-    const sendChannelSpy = spyOn(APFProcessor, 'SendChannelData').mockImplementation(() => {})
-    sendChannelSpy.mockReset()
+    const sendChannelSpy = vi.spyOn(APFProcessor, 'SendChannelData').mockImplementation(() => {})
+    sendChannelSpy.mockClear()
     const writePromise = ciraChannel.writeData(data, null)
     const responseData = await writePromise
 
@@ -121,8 +125,8 @@ describe('CIRA Channel', () => {
       username: 'admin',
       password: 'P@ssw0rd'
     }
-    const sendChannelSpy = spyOn(APFProcessor, 'SendChannelData').mockImplementation(() => {})
-    sendChannelSpy.mockReset()
+    const sendChannelSpy = vi.spyOn(APFProcessor, 'SendChannelData').mockImplementation(() => {})
+    sendChannelSpy.mockClear()
     const writePromise = ciraChannel.writeData(data, params)
     ciraChannel.onData('KVMR')
     const responseData = await writePromise

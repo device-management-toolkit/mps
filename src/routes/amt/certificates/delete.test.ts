@@ -3,8 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  **********************************************************************/
 
-import { jest } from '@jest/globals'
-import { spyOn } from 'jest-mock'
+import { vi } from 'vitest'
 import { deleteAMTCertificate } from './delete.js'
 import { DeviceAction } from '../../../amt/DeviceAction.js'
 import { CIRAHandler } from '../../../amt/CIRAHandler.js'
@@ -26,13 +25,13 @@ describe('deleteAMTCertificate', () => {
     const device = new DeviceAction(handler, null)
 
     // Mock MQTT provider
-    publishEventSpy = jest.fn()
-    jest.spyOn(MqttProvider, 'publishEvent').mockImplementation(publishEventSpy)
+    publishEventSpy = vi.fn()
+    vi.spyOn(MqttProvider, 'publishEvent').mockImplementation(publishEventSpy)
 
     resSpy = {
-      status: jest.fn(() => resSpy),
-      json: jest.fn(() => resSpy),
-      end: jest.fn(() => resSpy)
+      status: vi.fn(() => resSpy),
+      json: vi.fn(() => resSpy),
+      end: vi.fn(() => resSpy)
     }
 
     req = {
@@ -44,13 +43,13 @@ describe('deleteAMTCertificate', () => {
       deviceAction: device
     }
 
-    getCertificatesSpy = spyOn(device, 'getCertificates')
-    removeCertificateSpy = spyOn(device, 'removeCertificate')
+    getCertificatesSpy = vi.spyOn(device, 'getCertificates')
+    removeCertificateSpy = vi.spyOn(device, 'removeCertificate')
   })
 
   afterEach(() => {
-    jest.clearAllMocks()
-    jest.restoreAllMocks()
+    vi.clearAllMocks()
+    vi.restoreAllMocks()
   })
 
   describe('Success Cases', () => {

@@ -3,16 +3,14 @@
  * SPDX-License-Identifier: Apache-2.0
  **********************************************************************/
 
-import { createSpyObj } from '../../test/helper/jest.js'
+import { vi } from 'vitest'
+import { createSpyObj } from '../../test/helper/vitest.js'
 import { Environment } from '../../utils/Environment.js'
-import { jest } from '@jest/globals'
-import { spyOn } from 'jest-mock'
-
-jest.unstable_mockModule('express-validator', () => ({
+vi.mock('express-validator', () => ({
   validationResult: () =>
     ({
-      isEmpty: jest.fn().mockReturnValue(true),
-      array: jest.fn().mockReturnValue([{ test: 'error' }])
+      isEmpty: vi.fn().mockReturnValue(true),
+      array: vi.fn().mockReturnValue([{ test: 'error' }])
     }) as any
 }))
 const auth = await import('./authorizeDevice.js')
@@ -51,7 +49,7 @@ describe('Check login', () => {
     } as any
   })
   it('should fail with device does not exits', async () => {
-    const query = spyOn(req.db.devices, 'getById')
+    const query = vi.spyOn(req.db.devices, 'getById')
     query.mockResolvedValueOnce(null)
     await auth.authorizeDevice(req, resSpy)
     expect(resSpy.status).toHaveBeenCalledWith(404)
@@ -66,7 +64,7 @@ describe('Check login', () => {
       mpsusername: 'admin',
       tenantId: null
     }
-    const query = spyOn(req.db.devices, 'getById')
+    const query = vi.spyOn(req.db.devices, 'getById')
     query.mockResolvedValueOnce({ rows: [device], command: '', fields: null, rowCount: 0, oid: 0 })
     await auth.authorizeDevice(req, resSpy)
     expect(resSpy.status).toHaveBeenCalledWith(200)

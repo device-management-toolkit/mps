@@ -3,14 +3,13 @@
  * SPDX-License-Identifier: Apache-2.0
  **********************************************************************/
 
+import { vi } from 'vitest'
 import { generalSettings } from './getGeneralSettings.js'
-import { createSpyObj } from '../../test/helper/jest.js'
+import { createSpyObj } from '../../test/helper/vitest.js'
 import { CIRAHandler } from '../../amt/CIRAHandler.js'
 import { DeviceAction } from '../../amt/DeviceAction.js'
 import { HttpHandler } from '../../amt/HttpHandler.js'
 import { messages } from '../../logging/index.js'
-import { spyOn } from 'jest-mock'
-
 const response = {
   Envelope: {
     Header: {
@@ -71,7 +70,7 @@ describe('general settings', () => {
     resSpy.json.mockReturnThis()
     resSpy.send.mockReturnThis()
 
-    generalSettingsSpy = spyOn(device, 'getGeneralSettings')
+    generalSettingsSpy = vi.spyOn(device, 'getGeneralSettings')
   })
 
   it('should get version', async () => {

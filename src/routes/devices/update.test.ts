@@ -3,16 +3,14 @@
  * SPDX-License-Identifier: Apache-2.0
  **********************************************************************/
 
+import { vi, type MockInstance } from 'vitest'
 import { MPSValidationError } from '../../utils/MPSValidationError.js'
 import { updateDevice } from './update.js'
 import { logger } from '../../logging/index.js'
-import { jest } from '@jest/globals'
-import { type Spied, spyOn } from 'jest-mock'
-
 let res: Express.Response
-let statusSpy: Spied<any>
-let jsonSpy: Spied<any>
-let endSpy: Spied<any>
+let statusSpy: MockInstance
+let jsonSpy: MockInstance
+let endSpy: MockInstance
 
 beforeEach(() => {
   res = {
@@ -20,25 +18,25 @@ beforeEach(() => {
     json: () => res,
     end: () => res
   }
-  statusSpy = spyOn(res as any, 'status')
-  jsonSpy = spyOn(res as any, 'json')
-  endSpy = spyOn(res as any, 'end')
+  statusSpy = vi.spyOn(res as any, 'status')
+  jsonSpy = vi.spyOn(res as any, 'json')
+  endSpy = vi.spyOn(res as any, 'end')
 })
 
 afterEach(() => {
-  jest.clearAllMocks()
-  jest.resetModules()
+  vi.clearAllMocks()
+  vi.resetModules()
 })
 
 describe('update', () => {
   const guid = '00000000-0000-0000-0000-000000000000'
-  const errorSpy = spyOn(logger, 'error')
+  const errorSpy = vi.spyOn(logger, 'error')
 
   it('should set status to 404 if getById gets no result', async () => {
     const req = {
       db: {
         devices: {
-          getById: jest.fn().mockReturnValue(null)
+          getById: vi.fn().mockReturnValue(null)
         }
       },
       body: {
@@ -57,7 +55,7 @@ describe('update', () => {
     const req = {
       db: {
         devices: {
-          getById: jest.fn().mockReturnValue(device),
+          getById: vi.fn().mockReturnValue(device),
           update: () => {}
         }
       },
@@ -66,7 +64,7 @@ describe('update', () => {
       }
     }
     const expectedDevice = { ...device, ...req.body }
-    const updateSpy = spyOn(req.db.devices, 'update').mockReturnValue(expectedDevice)
+    const updateSpy = vi.spyOn(req.db.devices, 'update').mockReturnValue(expectedDevice)
     await updateDevice(req as any, res as any)
     expect(updateSpy).toHaveBeenCalled()
     expect(statusSpy).toHaveBeenCalledWith(200)
@@ -81,7 +79,7 @@ describe('update', () => {
     const req = {
       db: {
         devices: {
-          getById: jest.fn().mockImplementation(() => {
+          getById: vi.fn().mockImplementation(() => {
             throw new MPSValidationError(errorMessage, errorStatus, errorName)
           })
         }
@@ -101,7 +99,7 @@ describe('update', () => {
     const req = {
       db: {
         devices: {
-          getById: jest.fn().mockImplementation(() => {
+          getById: vi.fn().mockImplementation(() => {
             throw new TypeError('fake error')
           })
         }

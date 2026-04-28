@@ -3,12 +3,12 @@
  * SPDX-License-Identifier: Apache-2.0
  **********************************************************************/
 
-import { type Spied, spyOn } from 'jest-mock'
+import { vi, type MockInstance } from 'vitest'
 import { CIRAHandler } from '../../amt/CIRAHandler.js'
 import { DeviceAction } from '../../amt/DeviceAction.js'
 import { HttpHandler } from '../../amt/HttpHandler.js'
 import { messages } from '../../logging/index.js'
-import { createSpyObj } from '../../test/helper/jest.js'
+import { createSpyObj } from '../../test/helper/vitest.js'
 import { ErrorResponse } from '../../utils/amtHelper.js'
 import { MqttProvider } from '../../utils/MqttProvider.js'
 import { setLinkPreference } from './setLinkPreference.js'
@@ -16,8 +16,8 @@ import { setLinkPreference } from './setLinkPreference.js'
 describe('Link Preference', () => {
   let req
   let resSpy
-  let mqttSpy: Spied<any>
-  let setEthernetLinkPreferenceSpy: Spied<any>
+  let mqttSpy: MockInstance
+  let setEthernetLinkPreferenceSpy: MockInstance
   let device: DeviceAction
 
   beforeEach(() => {
@@ -43,8 +43,8 @@ describe('Link Preference', () => {
     resSpy.status.mockReturnThis()
     resSpy.json.mockReturnThis()
     resSpy.send.mockReturnThis()
-    mqttSpy = spyOn(MqttProvider, 'publishEvent')
-    setEthernetLinkPreferenceSpy = spyOn(device, 'setEthernetLinkPreference').mockResolvedValue(0)
+    mqttSpy = vi.spyOn(MqttProvider, 'publishEvent')
+    setEthernetLinkPreferenceSpy = vi.spyOn(device, 'setEthernetLinkPreference').mockResolvedValue(0)
   })
 
   it('should set link preference to ME (1) with timeout', async () => {

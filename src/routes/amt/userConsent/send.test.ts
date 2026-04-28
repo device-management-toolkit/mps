@@ -3,15 +3,14 @@
  * SPDX-License-Identifier: Apache-2.0
  **********************************************************************/
 
-import { createSpyObj } from '../../../test/helper/jest.js'
+import { vi } from 'vitest'
+import { createSpyObj } from '../../../test/helper/vitest.js'
 import { send } from './send.js'
 import { sendOptInCodeResponse } from '../../../test/helper/wsmanResponses.js'
 import { HttpHandler } from '../../../amt/HttpHandler.js'
 import { CIRAHandler } from '../../../amt/CIRAHandler.js'
 import { DeviceAction } from '../../../amt/DeviceAction.js'
 import { messages } from '../../../logging/index.js'
-import { spyOn } from 'jest-mock'
-
 describe('send user consent code', () => {
   let resSpy
   let req
@@ -34,7 +33,7 @@ describe('send user consent code', () => {
     resSpy.json.mockReturnThis()
     resSpy.send.mockReturnThis()
 
-    sendUserConsetCodeSpy = spyOn(device, 'sendUserConsentCode')
+    sendUserConsetCodeSpy = vi.spyOn(device, 'sendUserConsentCode')
   })
 
   it('should send user conset code', async () => {
