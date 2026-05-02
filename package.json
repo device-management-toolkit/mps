@@ -67,7 +67,7 @@
     "@types/pg": "^8.20.0",
     "@types/ws": "^8.18.1",
     "@vitest/coverage-v8": "^4.1.5",
-    "eslint": "^10.2.1",
+    "eslint": "^10.3.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-license-header": "^0.9.0",
     "genversion": "^3.2.0",
