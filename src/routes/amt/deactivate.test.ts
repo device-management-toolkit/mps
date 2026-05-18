@@ -3,17 +3,16 @@
  * SPDX-License-Identifier: Apache-2.0
  **********************************************************************/
 
+import { vi, type MockInstance } from 'vitest'
 import { deactivate } from './deactivate.js'
 import { messages } from '../../logging/index.js'
-import { createSpyObj } from '../../test/helper/jest.js'
-import { type Spied, spyOn } from 'jest-mock'
-
+import { createSpyObj } from '../../test/helper/vitest.js'
 describe('deactivate', () => {
   let resSpy: any
   let req: any
-  let deleteSpy: Spied<any>
-  let deleteSecretAtPathSpy: Spied<any>
-  let deprovisionDeviceSpy: Spied<any>
+  let deleteSpy: MockInstance
+  let deleteSecretAtPathSpy: MockInstance
+  let deprovisionDeviceSpy: MockInstance
 
   beforeEach(() => {
     resSpy = createSpyObj('Response', ['status', 'json'])
@@ -36,9 +35,9 @@ describe('deactivate', () => {
     resSpy.status.mockReturnThis()
     resSpy.json.mockReturnThis()
 
-    deleteSpy = spyOn(req.db.devices, 'delete').mockResolvedValue({})
-    deleteSecretAtPathSpy = spyOn(req.secrets, 'deleteSecretAtPath').mockResolvedValue({})
-    deprovisionDeviceSpy = spyOn(req.deviceAction, 'unprovisionDevice').mockResolvedValue({
+    deleteSpy = vi.spyOn(req.db.devices, 'delete').mockResolvedValue({})
+    deleteSecretAtPathSpy = vi.spyOn(req.secrets, 'deleteSecretAtPath').mockResolvedValue({})
+    deprovisionDeviceSpy = vi.spyOn(req.deviceAction, 'unprovisionDevice').mockResolvedValue({
       Body: { Unprovision_OUTPUT: { ReturnValue: 0 } }
     })
   })
@@ -52,7 +51,7 @@ describe('deactivate', () => {
     expect(deprovisionDeviceSpy).toHaveBeenCalled()
   })
   it('should return 200, even if return value is not zero', async () => {
-    deprovisionDeviceSpy = spyOn(req.deviceAction, 'unprovisionDevice').mockResolvedValue({
+    deprovisionDeviceSpy = vi.spyOn(req.deviceAction, 'unprovisionDevice').mockResolvedValue({
       Body: { Unprovision_OUTPUT: { ReturnValue: 1 } }
     })
     await deactivate(req, resSpy)
@@ -61,7 +60,7 @@ describe('deactivate', () => {
     expect(deprovisionDeviceSpy).toHaveBeenCalled()
   })
   it('should return 500, even if return value is not zero', async () => {
-    deprovisionDeviceSpy = spyOn(req.deviceAction, 'unprovisionDevice').mockImplementation(() => {
+    deprovisionDeviceSpy = vi.spyOn(req.deviceAction, 'unprovisionDevice').mockImplementation(() => {
       throw new Error()
     })
     await deactivate(req, resSpy)

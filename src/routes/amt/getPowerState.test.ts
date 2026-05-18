@@ -3,12 +3,12 @@
  * SPDX-License-Identifier: Apache-2.0
  **********************************************************************/
 
-import { spyOn } from 'jest-mock'
+import { vi } from 'vitest'
 import { CIRAHandler } from '../../amt/CIRAHandler.js'
 import { DeviceAction } from '../../amt/DeviceAction.js'
 import { HttpHandler } from '../../amt/HttpHandler.js'
 import { messages } from '../../logging/index.js'
-import { createSpyObj } from '../../test/helper/jest.js'
+import { createSpyObj } from '../../test/helper/vitest.js'
 import { serviceAvailableToElement } from '../../test/helper/wsmanResponses.js'
 import { TIMEOUT_MESSAGE, TimeoutError } from '../../utils/timeoutOpManagement.js'
 import { powerState } from './getPowerState.js'
@@ -35,7 +35,7 @@ describe('power state', () => {
     resSpy.json.mockReturnThis()
     resSpy.send.mockReturnThis()
 
-    osPowerStateGetSpy = spyOn(device, 'getOSPowerSavingState').mockResolvedValue({
+    osPowerStateGetSpy = vi.spyOn(device, 'getOSPowerSavingState').mockResolvedValue({
       Body: {
         IPS_PowerManagementService: {
           CreationClassName: 'IPS_PowerManagementService',
@@ -50,7 +50,7 @@ describe('power state', () => {
       }
     } as any)
 
-    powerStateSpy = spyOn(device, 'getPowerState')
+    powerStateSpy = vi.spyOn(device, 'getPowerState')
   })
 
   it('should get power state', async () => {

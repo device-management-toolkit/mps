@@ -3,15 +3,14 @@
  * SPDX-License-Identifier: Apache-2.0
  **********************************************************************/
 
+import { vi } from 'vitest'
 import { eventLog, GetEventDetailStr } from './eventLog.js'
-import { createSpyObj } from '../../test/helper/jest.js'
+import { createSpyObj } from '../../test/helper/vitest.js'
 import { amtMessageLog } from '../../test/helper/wsmanResponses.js'
 import { CIRAHandler } from '../../amt/CIRAHandler.js'
 import { HttpHandler } from '../../amt/HttpHandler.js'
 import { DeviceAction } from '../../amt/DeviceAction.js'
 import { messages } from '../../logging/index.js'
-import { spyOn } from 'jest-mock'
-
 describe('event log', () => {
   let resSpy
   let req
@@ -33,7 +32,7 @@ describe('event log', () => {
     resSpy.json.mockReturnThis()
     resSpy.send.mockReturnThis()
 
-    eventLogSpy = spyOn(device, 'getEventLog')
+    eventLogSpy = vi.spyOn(device, 'getEventLog')
   })
 
   it('should get event logs', async () => {

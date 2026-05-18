@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  **********************************************************************/
 
+import { vi, type MockInstance } from 'vitest'
 import { WsRedirect } from './wsRedirect.js'
 import { type queryParams } from '../models/Config.js'
 import { RedirectInterceptor } from './redirectInterceptor.js'
@@ -11,8 +12,6 @@ import { ConnectedDevice } from '../amt/ConnectedDevice.js'
 import { Socket } from 'node:net'
 import { MqttProvider } from './MqttProvider.js'
 import { EventEmitter } from 'node:events'
-import { jest } from '@jest/globals'
-import { type Spied, spyOn } from 'jest-mock'
 import { logger } from '../logging/index.js'
 
 const fakeGuid = '00000000-0000-0000-0000-000000000000'
@@ -20,12 +19,12 @@ const fakeGuid = '00000000-0000-0000-0000-000000000000'
 describe('WsRedirect tests', () => {
   const mockWebSocket = {
     _socket: {
-      pause: jest.fn(),
-      resume: jest.fn()
+      pause: vi.fn(),
+      resume: vi.fn()
     }
   }
-  let pauseSpy: Spied<any>
-  let resumeSpy: Spied<any>
+  let pauseSpy: MockInstance
+  let resumeSpy: MockInstance
   let wsRedirect: WsRedirect
 
   beforeEach(() => {
@@ -38,23 +37,23 @@ describe('WsRedirect tests', () => {
       deleteSecretAtPath: async (path: string) => {},
       health: async () => ({})
     }
-    resumeSpy = spyOn(mockWebSocket._socket, 'resume').mockReturnValue(null)
-    pauseSpy = spyOn(mockWebSocket._socket, 'pause').mockReturnValue(null)
+    resumeSpy = vi.spyOn(mockWebSocket._socket, 'resume').mockReturnValue(null)
+    pauseSpy = vi.spyOn(mockWebSocket._socket, 'pause').mockReturnValue(null)
     wsRedirect = new WsRedirect(mockWebSocket as any, secretManagerService)
   })
 
   describe('handleConnection tests', () => {
     it('should handle connection with TCP socket', async () => {
       const mockSocket = new Socket()
-      ;(mockSocket as any).connect = jest.fn()
+      ;(mockSocket as any).connect = vi.fn()
 
       const mockIncomingMessage = {
         url: `https://iotg.com?tls=0&host=${fakeGuid}`
       }
       devices[fakeGuid] = new ConnectedDevice(null, 'admin', 'P@ssw0rd', '')
 
-      const setNormalTCPSpy = spyOn(wsRedirect, 'setNormalTCP').mockReturnValue()
-      const publishEventSpy = spyOn(MqttProvider, 'publishEvent')
+      const setNormalTCPSpy = vi.spyOn(wsRedirect, 'setNormalTCP').mockReturnValue()
+      const publishEventSpy = vi.spyOn(MqttProvider, 'publishEvent')
       await wsRedirect.handleConnection(mockIncomingMessage as any)
 
       expect(setNormalTCPSpy).toHaveBeenCalled()
@@ -67,19 +66,19 @@ describe('WsRedirect tests', () => {
     const message: any = { data: 'hello' }
 
     wsRedirect.websocketFromDevice = {
-      writeData: jest.fn(),
+      writeData: vi.fn(),
       state: 1
     } as any
     wsRedirect.websocketFromWeb = {
-      close: jest.fn()
+      close: vi.fn()
     } as any
     wsRedirect.interceptor = {
-      processBrowserData: jest.fn()
+      processBrowserData: vi.fn()
     } as any
-    const interceptorSpy = spyOn(wsRedirect.interceptor, 'processBrowserData').mockReturnValue('binaryData')
-    const writeSpy = spyOn(wsRedirect.websocketFromDevice, 'writeData')
+    const interceptorSpy = vi.spyOn(wsRedirect.interceptor, 'processBrowserData').mockReturnValue('binaryData')
+    const writeSpy = vi.spyOn(wsRedirect.websocketFromDevice, 'writeData')
     void wsRedirect.handleMessage(message)
-    const closeSpy = spyOn(wsRedirect.websocketFromWeb, 'close')
+    const closeSpy = vi.spyOn(wsRedirect.websocketFromWeb, 'close')
 
     expect(interceptorSpy).toHaveBeenCalledWith(message.data)
     expect(writeSpy).toHaveBeenCalledWith('binaryData')
@@ -89,19 +88,19 @@ describe('WsRedirect tests', () => {
     const message: any = { data: 'hello' }
 
     wsRedirect.websocketFromDevice = {
-      writeData: jest.fn(),
+      writeData: vi.fn(),
       state: 0
     } as any
     wsRedirect.websocketFromWeb = {
-      close: jest.fn()
+      close: vi.fn()
     } as any
     wsRedirect.interceptor = {
-      processBrowserData: jest.fn()
+      processBrowserData: vi.fn()
     } as any
-    const interceptorSpy = spyOn(wsRedirect.interceptor, 'processBrowserData').mockReturnValue('binaryData')
-    const writeSpy = spyOn(wsRedirect.websocketFromDevice, 'writeData')
+    const interceptorSpy = vi.spyOn(wsRedirect.interceptor, 'processBrowserData').mockReturnValue('binaryData')
+    const writeSpy = vi.spyOn(wsRedirect.websocketFromDevice, 'writeData')
     void wsRedirect.handleMessage(message)
-    const closeSpy = spyOn(wsRedirect.websocketFromWeb, 'close')
+    const closeSpy = vi.spyOn(wsRedirect.websocketFromWeb, 'close')
 
     expect(interceptorSpy).toHaveBeenCalledWith(message.data)
     expect(closeSpy).toHaveBeenCalled()
@@ -119,11 +118,11 @@ describe('WsRedirect tests', () => {
         mode: 'kvm' // default mode for testing
       } as any
       wsRedirect.websocketFromDevice = {
-        CloseChannel: jest.fn(),
+        CloseChannel: vi.fn(),
         state: 1 // Default state: connecting/active
       } as any
       devices[params.host] = { kvmConnect: true, iderConnect: true, solConnect: true } as any
-      publishEventSpy = spyOn(MqttProvider, 'publishEvent')
+      publishEventSpy = vi.spyOn(MqttProvider, 'publishEvent')
       mockEvent = {
         wasClean: true,
         code: 1000,
@@ -132,7 +131,7 @@ describe('WsRedirect tests', () => {
     })
 
     it('should handle close for KVM mode', () => {
-      const logKvmCloseSpy = spyOn(wsRedirect as any, 'logKvmCloseSource')
+      const logKvmCloseSpy = vi.spyOn(wsRedirect as any, 'logKvmCloseSource')
       wsRedirect.handleClose(params, mockEvent)
       expect(logKvmCloseSpy).toHaveBeenCalledWith(true, 1, params.host)
       expect(publishEventSpy).toHaveBeenCalled()
@@ -161,12 +160,12 @@ describe('WsRedirect tests', () => {
   })
 
   describe('logKvmCloseSource tests', () => {
-    let publishEventSpy: Spied<any>
-    let loggerInfoSpy: Spied<any>
+    let publishEventSpy: MockInstance
+    let loggerInfoSpy: MockInstance
 
     beforeEach(() => {
-      publishEventSpy = spyOn(MqttProvider, 'publishEvent')
-      loggerInfoSpy = spyOn(logger, 'info')
+      publishEventSpy = vi.spyOn(MqttProvider, 'publishEvent')
+      loggerInfoSpy = vi.spyOn(logger, 'info')
     })
 
     it('should log device-side closure when wasClean is true and state is 0', () => {
@@ -207,7 +206,7 @@ describe('WsRedirect tests', () => {
     })
 
     it('should log unexpected closure when wasClean is false', () => {
-      const loggerWarnSpy = spyOn(logger, 'warn')
+      const loggerWarnSpy = vi.spyOn(logger, 'warn')
       wsRedirect['logKvmCloseSource'](false, 0, fakeGuid)
 
       expect(loggerWarnSpy).toHaveBeenCalledWith(`[${fakeGuid}] KVM session closed unexpectedly (state: 0)`)
@@ -220,7 +219,7 @@ describe('WsRedirect tests', () => {
     })
 
     it('should log unexpected closure when wasClean is false regardless of state', () => {
-      const loggerWarnSpy = spyOn(logger, 'warn')
+      const loggerWarnSpy = vi.spyOn(logger, 'warn')
       wsRedirect['logKvmCloseSource'](false, 1, fakeGuid)
 
       expect(loggerWarnSpy).toHaveBeenCalledWith(`[${fakeGuid}] KVM session closed unexpectedly (state: 1)`)
@@ -233,7 +232,7 @@ describe('WsRedirect tests', () => {
     })
 
     it('should log warning when state is unexpected and return early', () => {
-      const loggerWarnSpy = spyOn(logger, 'warn')
+      const loggerWarnSpy = vi.spyOn(logger, 'warn')
       loggerInfoSpy.mockClear() // Clear previous calls from other tests
       wsRedirect['logKvmCloseSource'](true, 999, fakeGuid)
 
@@ -305,17 +304,17 @@ describe('WsRedirect tests', () => {
         port: 16994
       } as any
       const mockCiraChannel = {
-        onData: jest.fn(),
-        onStateChange: { on: jest.fn() },
-        send: jest.fn()
+        onData: vi.fn(),
+        onStateChange: { on: vi.fn() },
+        send: vi.fn()
       } as any
       wsRedirect.ciraHandler = {
-        SetupCiraChannel: jest.fn()
+        SetupCiraChannel: vi.fn()
       } as any
       wsRedirect.interceptor = {
-        processBrowserData: jest.fn()
+        processBrowserData: vi.fn()
       } as any
-      const setupCIRASpy = spyOn(wsRedirect.ciraHandler, 'SetupCiraChannel').mockReturnValue(mockCiraChannel)
+      const setupCIRASpy = vi.spyOn(wsRedirect.ciraHandler, 'SetupCiraChannel').mockReturnValue(mockCiraChannel)
 
       wsRedirect.setNormalTCP(params)
       expect(setupCIRASpy).toHaveBeenCalled()
@@ -330,18 +329,18 @@ describe('WsRedirect tests', () => {
         port: 16994
       } as any
       const mockCiraChannel = {
-        onData: jest.fn(),
+        onData: vi.fn(),
         onStateChange: new EventEmitter(),
-        send: jest.fn()
+        send: vi.fn()
       } as any
       wsRedirect.ciraHandler = {
-        SetupCiraChannel: jest.fn()
+        SetupCiraChannel: vi.fn()
       } as any
-      const setupCIRASpy = spyOn(wsRedirect.ciraHandler, 'SetupCiraChannel').mockReturnValue(mockCiraChannel)
+      const setupCIRASpy = vi.spyOn(wsRedirect.ciraHandler, 'SetupCiraChannel').mockReturnValue(mockCiraChannel)
 
       wsRedirect.setNormalTCP(params)
 
-      const onClose = jest.fn()
+      const onClose = vi.fn()
       wsRedirect.websocketFromWeb = { close: onClose } as any
       wsRedirect.websocketFromDevice.onStateChange.emit('stateChange', 0) // Emit stateChange event
 

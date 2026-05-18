@@ -3,15 +3,13 @@
  * SPDX-License-Identifier: Apache-2.0
  **********************************************************************/
 
+import { vi, type MockInstance } from 'vitest'
 import { logger, messages } from '../../logging/index.js'
 import { devices } from '../../server/mpsserver.js'
 import { disconnect } from './disconnect.js'
-import { jest } from '@jest/globals'
-import { type Spied, spyOn } from 'jest-mock'
-
 let res: Express.Response
-let statusSpy: Spied<any>
-let jsonSpy: Spied<any>
+let statusSpy: MockInstance
+let jsonSpy: MockInstance
 
 beforeEach(() => {
   res = {
@@ -19,13 +17,13 @@ beforeEach(() => {
     json: () => res,
     end: () => res
   }
-  statusSpy = spyOn(res as any, 'status')
-  jsonSpy = spyOn(res as any, 'json')
+  statusSpy = vi.spyOn(res as any, 'status')
+  jsonSpy = vi.spyOn(res as any, 'json')
 })
 
 afterEach(() => {
-  jest.clearAllMocks()
-  jest.resetModules()
+  vi.clearAllMocks()
+  vi.resetModules()
 })
 
 const req = {
@@ -42,7 +40,7 @@ describe('disconnect', () => {
     const guid = req.params.guid
     devices[guid] = {
       ciraSocket: {
-        destroy: jest.fn()
+        destroy: vi.fn()
       }
     } as any
     await disconnect(req, res as any)
@@ -56,12 +54,12 @@ describe('disconnect', () => {
   it('should set status to 500 if error occurs when calling destroy on socket of connected device', async () => {
     devices[req.params.guid] = {
       ciraSocket: {
-        destroy: jest.fn().mockImplementation(() => {
+        destroy: vi.fn().mockImplementation(() => {
           throw new TypeError('fake error')
         })
       }
     } as any
-    const loggerSpy = spyOn(logger, 'error')
+    const loggerSpy = vi.spyOn(logger, 'error')
     await disconnect(req, res as any)
     expect(statusSpy).toHaveBeenCalledWith(500)
     expect(loggerSpy).toHaveBeenCalled()

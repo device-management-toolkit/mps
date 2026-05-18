@@ -3,11 +3,12 @@
  * SPDX-License-Identifier: Apache-2.0
  **********************************************************************/
 
+import { vi, type MockInstance } from 'vitest'
 import { type AMT } from '@device-management-toolkit/wsman-messages'
 import { CIRAHandler } from '../../amt/CIRAHandler.js'
 import { DeviceAction } from '../../amt/DeviceAction.js'
 import { HttpHandler } from '../../amt/HttpHandler.js'
-import { createSpyObj } from '../../test/helper/jest.js'
+import { createSpyObj } from '../../test/helper/vitest.js'
 import {
   bootOptions,
   determinePowerAction,
@@ -16,18 +17,17 @@ import {
   determineBootDevice,
   validateHTTPBootParams
 } from './bootOptions.js'
-import { type Spied, spyOn } from 'jest-mock'
 import { messages } from '../../logging/index.js'
 
 describe('Boot Options', () => {
   let resSpy: any
   let req: any
-  let getBootOptionsSpy: Spied<any>
-  let setBootConfigurationSpy: Spied<any>
-  let forceBootModeSpy: Spied<any>
-  let changeBootOrderSpy: Spied<any>
-  let sendPowerActionSpy: Spied<any>
-  let getSetupAndConfigurationServiceSpy: Spied<any>
+  let getBootOptionsSpy: MockInstance
+  let setBootConfigurationSpy: MockInstance
+  let forceBootModeSpy: MockInstance
+  let changeBootOrderSpy: MockInstance
+  let sendPowerActionSpy: MockInstance
+  let getSetupAndConfigurationServiceSpy: MockInstance
   let bootSettingData: AMT.Models.BootSettingData | any
   beforeEach(() => {
     const handler = new CIRAHandler(new HttpHandler(), 'admin', 'P@ssw0rd')
@@ -65,19 +65,19 @@ describe('Boot Options', () => {
       SecureErase: 'false'
     }
 
-    getSetupAndConfigurationServiceSpy = spyOn(device, 'getSetupAndConfigurationService')
+    getSetupAndConfigurationServiceSpy = vi.spyOn(device, 'getSetupAndConfigurationService')
     getSetupAndConfigurationServiceSpy.mockResolvedValue({
       Body: { AMT_SetupAndConfigurationService: { ProvisioningMode: 1 } } // Default to ACM mode
     })
-    getBootOptionsSpy = spyOn(device, 'getBootOptions')
+    getBootOptionsSpy = vi.spyOn(device, 'getBootOptions')
     getBootOptionsSpy.mockResolvedValue({ AMT_BootSettingData: bootSettingData })
-    setBootConfigurationSpy = spyOn(device, 'setBootConfiguration')
+    setBootConfigurationSpy = vi.spyOn(device, 'setBootConfiguration')
     setBootConfigurationSpy.mockResolvedValue({})
-    forceBootModeSpy = spyOn(device, 'forceBootMode')
+    forceBootModeSpy = vi.spyOn(device, 'forceBootMode')
     forceBootModeSpy.mockResolvedValue({})
-    changeBootOrderSpy = spyOn(device, 'changeBootOrder')
+    changeBootOrderSpy = vi.spyOn(device, 'changeBootOrder')
     changeBootOrderSpy.mockResolvedValue({})
-    sendPowerActionSpy = spyOn(device, 'sendPowerAction')
+    sendPowerActionSpy = vi.spyOn(device, 'sendPowerAction')
     sendPowerActionSpy.mockResolvedValue({ Body: { RequestPowerStateChange_OUTPUT: { ReturnValue: 0 } } })
   })
   it('should handle error', async () => {

@@ -85,7 +85,9 @@ export class WsRedirect {
     if (this.websocketFromDevice) {
       const device = devices[params.host]
       if (device == null) {
-        logger.warn(`[${params.host}] Device not found in devices map while closing redirect session - mode: ${params.mode}, wasClean: ${event.wasClean}, channelState: ${this.websocketFromDevice.state}`)
+        logger.warn(
+          `[${params.host}] Device not found in devices map while closing redirect session - mode: ${params.mode}, wasClean: ${event.wasClean}, channelState: ${this.websocketFromDevice.state}`
+        )
         this.websocketFromDevice.CloseChannel()
         return
       }

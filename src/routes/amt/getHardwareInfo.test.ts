@@ -3,8 +3,9 @@
  * SPDX-License-Identifier: Apache-2.0
  **********************************************************************/
 
+import { vi } from 'vitest'
 import { hardwareInfo } from './getHardwareInfo.js'
-import { createSpyObj } from '../../test/helper/jest.js'
+import { createSpyObj } from '../../test/helper/vitest.js'
 import {
   biosElement,
   card,
@@ -21,9 +22,6 @@ import { type DeviceAction } from '../../amt/DeviceAction.js'
 // import { CIRAHandler } from '../../amt/CIRAHandler.js'
 // import { HttpHandler } from '../../amt/HttpHandler.js'
 import { messages } from '../../logging/index.js'
-import { jest } from '@jest/globals'
-import { spyOn } from 'jest-mock'
-
 describe('Hardware information', () => {
   let resSpy
   let req
@@ -33,16 +31,16 @@ describe('Hardware information', () => {
   beforeEach(() => {
     // const handler = new CIRAHandler(new HttpHandler(), 'admin', 'P@ssw0rd')
     device = {
-      getComputerSystemPackage: jest.fn(),
-      getChassis: jest.fn(),
-      getCard: jest.fn(),
-      getBIOSElement: jest.fn(),
-      getProcessor: jest.fn(),
-      getPhysicalMemory: jest.fn(),
-      getMediaAccessDevice: jest.fn(),
-      getPhysicalPackage: jest.fn(),
-      getSystemPackaging: jest.fn(),
-      getChip: jest.fn()
+      getComputerSystemPackage: vi.fn(),
+      getChassis: vi.fn(),
+      getCard: vi.fn(),
+      getBIOSElement: vi.fn(),
+      getProcessor: vi.fn(),
+      getPhysicalMemory: vi.fn(),
+      getMediaAccessDevice: vi.fn(),
+      getPhysicalPackage: vi.fn(),
+      getSystemPackaging: vi.fn(),
+      getChip: vi.fn()
     } as any
     // new DeviceAction(handler, null)
     resSpy = createSpyObj('Response', [
@@ -55,20 +53,20 @@ describe('Hardware information', () => {
     resSpy.status.mockReturnThis()
     resSpy.json.mockReturnThis()
     resSpy.send.mockReturnThis()
-    ComputerSystemPackageSpy = spyOn(device, 'getComputerSystemPackage')
-    ChassisSpy = spyOn(device, 'getChassis')
-    CardSpy = spyOn(device, 'getCard')
-    BIOSElementSpy = spyOn(device, 'getBIOSElement')
-    ProcessorSpy = spyOn(device, 'getProcessor')
-    PhysicalMemorySpy = spyOn(device, 'getPhysicalMemory')
-    MediaAccessDeviceSpy = spyOn(device, 'getMediaAccessDevice')
-    PhysicalPackageSpy = spyOn(device, 'getPhysicalPackage')
-    SystemPackagingSpy = spyOn(device, 'getSystemPackaging')
-    ChipSpy = spyOn(device, 'getChip')
+    ComputerSystemPackageSpy = vi.spyOn(device, 'getComputerSystemPackage')
+    ChassisSpy = vi.spyOn(device, 'getChassis')
+    CardSpy = vi.spyOn(device, 'getCard')
+    BIOSElementSpy = vi.spyOn(device, 'getBIOSElement')
+    ProcessorSpy = vi.spyOn(device, 'getProcessor')
+    PhysicalMemorySpy = vi.spyOn(device, 'getPhysicalMemory')
+    MediaAccessDeviceSpy = vi.spyOn(device, 'getMediaAccessDevice')
+    PhysicalPackageSpy = vi.spyOn(device, 'getPhysicalPackage')
+    SystemPackagingSpy = vi.spyOn(device, 'getSystemPackaging')
+    ChipSpy = vi.spyOn(device, 'getChip')
   })
 
   afterEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
   })
 
   it('should get hardware information', async () => {
@@ -104,7 +102,7 @@ describe('Hardware information', () => {
     })
   })
   it('should handle error 500', async () => {
-    ;(device as any).getComputerSystemPackage = jest
+    ;(device as any).getComputerSystemPackage = vi
       .fn<any>()
       .mockRejectedValueOnce(new Error('Failed to get ComputerSystemPackage'))
     await hardwareInfo(req, resSpy)

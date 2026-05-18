@@ -3,25 +3,25 @@
  * SPDX-License-Identifier: Apache-2.0
  **********************************************************************/
 
-import { createSpyObj } from '../test/helper/jest.js'
-import { jest } from '@jest/globals'
+import { vi, type Mock } from 'vitest'
+import { createSpyObj } from '../test/helper/vitest.js'
 let mockReturnValue = true
-jest.unstable_mockModule('express-validator', () => ({
+vi.mock('express-validator', () => ({
   validationResult: () =>
     ({
-      isEmpty: jest.fn().mockReturnValue(mockReturnValue),
-      array: jest.fn().mockReturnValue([{ test: 'error' }])
+      isEmpty: vi.fn().mockReturnValue(mockReturnValue),
+      array: vi.fn().mockReturnValue([{ test: 'error' }])
     }) as any
 }))
 
 const v = await import('./validate.js')
 
 describe('Validate Middleware', () => {
-  let next: jest.Mock<any>
+  let next: Mock<any>
   let resSpy
 
   beforeEach(() => {
-    next = jest.fn()
+    next = vi.fn()
     resSpy = createSpyObj('Response', [
       'status',
       'json',

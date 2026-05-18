@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  **********************************************************************/
 
+import { vi } from 'vitest'
 import { type certificatesType } from '../models/Config.js'
 import { type ISecretManagerService } from '../interfaces/ISecretManagerService.js'
 import { config } from '../test/helper/config.js'
@@ -11,30 +12,31 @@ import { IncomingMessage } from 'node:http'
 import { Socket } from 'node:net'
 import { devices } from './mpsserver.js'
 import { signature } from '../routes/auth/signature.js'
-import { jest } from '@jest/globals'
-import { spyOn } from 'jest-mock'
-
 Environment.Config = config
 
 let certs: certificatesType
 let secrets: ISecretManagerService
-jest.unstable_mockModule('node:fs', () => ({
-  existsSync: jest.fn(() => true),
-  lstatSync: jest.fn(() => ({ isDirectory: () => true })),
-  readdirSync: jest.fn(() => ['example.js'] as any)
+vi.mock('node:fs', () => ({
+  existsSync: vi.fn(() => true),
+  lstatSync: vi.fn(() => ({ isDirectory: () => true })),
+  readdirSync: vi.fn(() => ['example.js'] as any)
 }))
-jest.unstable_mockModule('node:url', () => ({
-  URL: jest.fn(() => ({ pathname: '/relay/webrelay.ashx' })),
-  fileURLToPath: jest.fn(() => ''),
-  pathToFileURL: jest.fn(() => ({ href: '../middleware/custom/example' }))
+vi.mock('node:url', () => ({
+  // Vitest requires a constructable implementation (not an arrow fn) so
+  // the production code can call `new URL(...)`.
+  URL: vi.fn(function () {
+    return { pathname: '/relay/webrelay.ashx' }
+  }),
+  fileURLToPath: vi.fn(() => ''),
+  pathToFileURL: vi.fn(() => ({ href: '../middleware/custom/example' }))
 }))
-jest.unstable_mockModule('../middleware/custom/example', () => ({ default: () => function (req, res, next) {} }))
+vi.mock('../middleware/custom/example', () => ({ default: () => function (req, res, next) {} }))
 const webserver = await import('./webserver.js')
 let web: any
 
 describe('webserver tests', () => {
   beforeAll(async function () {
-    jest.setTimeout(60000)
+    vi.setConfig({ testTimeout: 60000 })
 
     secrets = {
       getSecretFromKey: async (path: string, key: string) => 'P@ssw0rd',
@@ -65,7 +67,7 @@ describe('webserver tests', () => {
 
   describe('verify client token', () => {
     it('should return false when client jwt token is invalid', () => {
-      const jwsSpy = spyOn(web.jws, 'verify')
+      const jwsSpy = vi.spyOn(web.jws, 'verify')
       jwsSpy.mockImplementationOnce(() => false)
       const info = {
         req: {
@@ -117,7 +119,7 @@ describe('webserver tests', () => {
       expect(result).toBe(true)
     })
     it('should return false and handle error while client jwt token is verified', () => {
-      const jwsSpy = spyOn(web.jws, 'verify')
+      const jwsSpy = vi.spyOn(web.jws, 'verify')
       jwsSpy.mockImplementationOnce(() => {
         throw new Error()
       })
@@ -271,7 +273,7 @@ describe('webserver tests', () => {
       request.url = '/relay/webrelay.ashx?p=2&host=4c4c4544-004b-4210-8033-b6c04f504633&port=16994&tls=0&tls1only=0'
       const socket: Socket = new Socket()
       const head: Buffer = null
-      const handleUpgradeSpy = spyOn(web.relayWSS, 'handleUpgrade')
+      const handleUpgradeSpy = vi.spyOn(web.relayWSS, 'handleUpgrade')
       web.handleUpgrade(request, socket, head)
       expect(handleUpgradeSpy).toHaveBeenCalledTimes(1)
     })
@@ -286,13 +288,13 @@ describe('webserver tests', () => {
 
   describe('listen', () => {
     it('should listen on port 3000', () => {
-      const listenSpy = spyOn(web.server, 'listen')
+      const listenSpy = vi.spyOn(web.server, 'listen')
       web.listen()
       expect(listenSpy).toHaveBeenCalledTimes(1)
       web.server.close()
     })
     it('should listen on port null', () => {
-      const listenSpy = spyOn(web.server, 'listen')
+      const listenSpy = vi.spyOn(web.server, 'listen')
       Environment.Config.web_port = null
       web.listen()
       expect(listenSpy).toHaveBeenCalledTimes(2)
@@ -307,8 +309,8 @@ describe('webserver tests', () => {
         secrets: null,
         certs: null
       }
-      const useapiv1Spy = spyOn(web, 'useAPIv1')
-      await web.useAPIv1(req as any, {} as any, jest.fn())
+      const useapiv1Spy = vi.spyOn(web, 'useAPIv1')
+      await web.useAPIv1(req as any, {} as any, vi.fn())
       expect(useapiv1Spy).toHaveBeenCalledTimes(1)
     })
   })
@@ -320,8 +322,8 @@ describe('webserver tests', () => {
         secrets: null,
         certs: null
       }
-      const appUseJsonParserSpy = spyOn(web, 'appUseJsonParser')
-      web.appUseJsonParser(null, req as any, {} as any, jest.fn())
+      const appUseJsonParserSpy = vi.spyOn(web, 'appUseJsonParser')
+      web.appUseJsonParser(null, req as any, {} as any, vi.fn())
       expect(appUseJsonParserSpy).toHaveBeenCalledTimes(1)
     })
     it('test appUseJsonParser with error', () => {
@@ -339,8 +341,8 @@ describe('webserver tests', () => {
         send(any): void {}
       }
       const err = new SyntaxError()
-      const appUseJsonParserSpy = spyOn(web, 'appUseJsonParser')
-      web.appUseJsonParser(err, req as any, res as any, jest.fn())
+      const appUseJsonParserSpy = vi.spyOn(web, 'appUseJsonParser')
+      web.appUseJsonParser(err, req as any, res as any, vi.fn())
       expect(appUseJsonParserSpy).toHaveBeenCalledTimes(2)
     })
   })
@@ -353,13 +355,13 @@ describe('webserver tests', () => {
             channel: 2
           }
         },
-        on: jest.fn()
+        on: vi.fn()
       }
       const res: Express.Response = {
-        on: jest.fn()
+        on: vi.fn()
       }
-      const next = jest.fn()
-      const appUseCallSpy = spyOn(web, 'appUseCall')
+      const next = vi.fn()
+      const appUseCallSpy = vi.spyOn(web, 'appUseCall')
       web.appUseCall(req as any, res as any, next)
       expect(appUseCallSpy).toHaveBeenCalledTimes(1)
     })
@@ -371,20 +373,20 @@ describe('webserver tests', () => {
         deviceAction: {
           ciraHandler: {
             channel: {
-              CloseChannel: jest.fn()
+              CloseChannel: vi.fn()
             }
           }
         },
-        on: jest.fn(),
-        removeListener: jest.fn()
+        on: vi.fn(),
+        removeListener: vi.fn()
       }
       const res: Express.Response = {
-        removeListener: jest.fn()
+        removeListener: vi.fn()
       }
-      const afterResponseSpy = spyOn(web, 'afterResponse')
-      const closeChannelSpy = spyOn((req as any).deviceAction.ciraHandler.channel, 'CloseChannel')
-      const reqRemoveListenerSpy = spyOn(req as any, 'removeListener')
-      const resRemoveListenerSpy = spyOn(res as any, 'removeListener')
+      const afterResponseSpy = vi.spyOn(web, 'afterResponse')
+      const closeChannelSpy = vi.spyOn((req as any).deviceAction.ciraHandler.channel, 'CloseChannel')
+      const reqRemoveListenerSpy = vi.spyOn(req as any, 'removeListener')
+      const resRemoveListenerSpy = vi.spyOn(res as any, 'removeListener')
       web.afterResponse(req as any, res as any)
       expect(afterResponseSpy).toHaveBeenCalledTimes(1)
       expect(closeChannelSpy).toHaveBeenCalledTimes(1)
@@ -398,13 +400,13 @@ describe('webserver tests', () => {
             channel: null
           }
         },
-        on: jest.fn(),
-        removeListener: jest.fn()
+        on: vi.fn(),
+        removeListener: vi.fn()
       }
       const res: Express.Response = {
-        removeListener: jest.fn()
+        removeListener: vi.fn()
       }
-      const afterResponseSpy = spyOn(web, 'afterResponse')
+      const afterResponseSpy = vi.spyOn(web, 'afterResponse')
       web.afterResponse(req as any, res as any)
       expect(afterResponseSpy).toHaveBeenCalledTimes(2)
     })
@@ -415,13 +417,13 @@ describe('webserver tests', () => {
             channel: null
           }
         },
-        on: jest.fn(),
-        removeListener: jest.fn()
+        on: vi.fn(),
+        removeListener: vi.fn()
       }
       const res: Express.Response = {
-        removeListener: jest.fn()
+        removeListener: vi.fn()
       }
-      const afterResponseSpy = spyOn(web, 'afterResponse')
+      const afterResponseSpy = vi.spyOn(web, 'afterResponse')
       web.onAborted(req as any, res as any)
       expect(afterResponseSpy).toHaveBeenCalledTimes(3)
     })
@@ -430,20 +432,20 @@ describe('webserver tests', () => {
   describe('relayconnection', () => {
     it('test relayconnection', async () => {
       const mockWebSocket = {
-        pause: jest.fn()
+        pause: vi.fn()
       }
       const mockSocket = new Socket()
-      mockSocket.connect = jest.fn() as any
+      mockSocket.connect = vi.fn() as any
 
       const mockWebSocketExt = {
         _socket: mockWebSocket,
         forwardclient: mockSocket,
-        on: jest.fn()
+        on: vi.fn()
       }
       const mockIncomingMessage = {
         url: 'https://iotg.com?tls=0'
       }
-      const relayConnectionSpy = spyOn(web, 'relayConnection')
+      const relayConnectionSpy = vi.spyOn(web, 'relayConnection')
       await web.relayConnection(mockWebSocketExt as any, mockIncomingMessage as any)
       expect(relayConnectionSpy).toHaveBeenCalledTimes(1)
     })

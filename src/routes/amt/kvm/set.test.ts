@@ -2,9 +2,8 @@
  * Copyright (c) Intel Corporation 2025
  * SPDX-License-Identifier: Apache-2.0
  **********************************************************************/
+import { vi } from 'vitest'
 import { setKVMRedirectionSettingData } from './set.js'
-import { jest } from '@jest/globals'
-
 let req
 let res
 let statusSpy
@@ -16,8 +15,8 @@ beforeEach(() => {
     params: { guid: 'test-guid' },
     body: { displayIndex: 1 },
     deviceAction: {
-      getKVMRedirectionSettingData: jest.fn(),
-      putKVMRedirectionSettingData: jest.fn()
+      getKVMRedirectionSettingData: vi.fn(),
+      putKVMRedirectionSettingData: vi.fn()
     }
   }
   res = {
@@ -31,9 +30,9 @@ beforeEach(() => {
       return this
     }
   }
-  statusSpy = jest.spyOn(res, 'status')
-  jsonSpy = jest.spyOn(res, 'json')
-  endSpy = jest.spyOn(res, 'end')
+  statusSpy = vi.spyOn(res, 'status')
+  jsonSpy = vi.spyOn(res, 'json')
+  endSpy = vi.spyOn(res, 'end')
 })
 
 describe('setKVMRedirectionSettingData', () => {

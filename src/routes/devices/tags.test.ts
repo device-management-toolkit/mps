@@ -3,15 +3,13 @@
  * SPDX-License-Identifier: Apache-2.0
  **********************************************************************/
 
+import { vi, type MockInstance } from 'vitest'
 import { getDistinctTags } from './tags.js'
 import { logger } from '../../logging/index.js'
-import { jest } from '@jest/globals'
-import { type Spied, spyOn } from 'jest-mock'
-
 let req: any
 let res: any
-let statusSpy: Spied<any>
-let jsonSpy: Spied<any>
+let statusSpy: MockInstance
+let jsonSpy: MockInstance
 
 beforeEach(() => {
   req = {
@@ -26,36 +24,36 @@ beforeEach(() => {
     json: () => res,
     end: () => res
   }
-  statusSpy = spyOn(res, 'status')
-  jsonSpy = spyOn(res, 'json')
+  statusSpy = vi.spyOn(res, 'status')
+  jsonSpy = vi.spyOn(res, 'json')
 })
 
 afterEach(() => {
-  jest.clearAllMocks()
-  jest.resetModules()
+  vi.clearAllMocks()
+  vi.resetModules()
 })
 
 describe('tags', () => {
   it('should set status to 200 when getting results from getDistinctTags', async () => {
     const expectedResult = {}
-    req.db.devices.getDistinctTags = jest.fn().mockReturnValue(expectedResult)
+    req.db.devices.getDistinctTags = vi.fn().mockReturnValue(expectedResult)
     await getDistinctTags(req, res)
     expect(statusSpy).toHaveBeenCalledWith(200)
   })
 
   it('should set status to 404 when getting no results from getDistinctTags', async () => {
     const expectedResult = null
-    req.db.devices.getDistinctTags = jest.fn().mockReturnValue(expectedResult)
+    req.db.devices.getDistinctTags = vi.fn().mockReturnValue(expectedResult)
     await getDistinctTags(req, res)
     expect(statusSpy).toHaveBeenCalledWith(404)
     expect(jsonSpy).not.toHaveBeenCalled()
   })
 
   it('should set status to 500 when exception occurs from getDistinctTags', async () => {
-    req.db.devices.getDistinctTags = jest.fn().mockImplementation(() => {
+    req.db.devices.getDistinctTags = vi.fn().mockImplementation(() => {
       throw new TypeError('fake error')
     })
-    const logSpy = spyOn(logger, 'error')
+    const logSpy = vi.spyOn(logger, 'error')
     await getDistinctTags(req, res)
     expect(statusSpy).toHaveBeenCalledWith(500)
     expect(jsonSpy).not.toHaveBeenCalled()

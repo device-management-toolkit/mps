@@ -3,31 +3,30 @@
  * SPDX-License-Identifier: Apache-2.0
  **********************************************************************/
 
+import { vi, type Mocked } from 'vitest'
 import { type Db, type Collection } from 'mongodb'
 import { MongoDeviceTable } from './device.js'
-import { jest } from '@jest/globals'
-
-jest.mock('mongodb')
+vi.mock('mongodb')
 
 describe('MongoDeviceTable', () => {
-  let db: jest.Mocked<Db>
-  let collection: jest.Mocked<Collection>
+  let db: Mocked<Db>
+  let collection: Mocked<Collection>
   let mongoDeviceTable: MongoDeviceTable
 
   beforeEach(() => {
     collection = {
-      countDocuments: jest.fn(),
-      find: jest.fn(),
-      findOne: jest.fn(),
-      deleteOne: jest.fn(),
-      insertOne: jest.fn(),
-      findOneAndUpdate: jest.fn(),
-      distinct: jest.fn(),
-      updateMany: jest.fn()
+      countDocuments: vi.fn(),
+      find: vi.fn(),
+      findOne: vi.fn(),
+      deleteOne: vi.fn(),
+      insertOne: vi.fn(),
+      findOneAndUpdate: vi.fn(),
+      distinct: vi.fn(),
+      updateMany: vi.fn()
     } as any
 
     db = {
-      collection: jest.fn().mockReturnValue(collection)
+      collection: vi.fn().mockReturnValue(collection)
     } as any
 
     mongoDeviceTable = new MongoDeviceTable(db)
@@ -45,9 +44,9 @@ describe('MongoDeviceTable', () => {
   it('should fetch documents based on limit, offset and tenantId', async () => {
     const mockData = [{ some: 'data' }]
     collection.find.mockReturnValue({
-      skip: jest.fn().mockReturnThis(),
-      limit: jest.fn().mockReturnThis(),
-      toArray: jest.fn<any>().mockResolvedValue(mockData)
+      skip: vi.fn().mockReturnThis(),
+      limit: vi.fn().mockReturnThis(),
+      toArray: vi.fn<any>().mockResolvedValue(mockData)
     } as any)
 
     const result = await mongoDeviceTable.get('5', '10', 'someTenantId')
@@ -124,9 +123,9 @@ describe('MongoDeviceTable', () => {
     const mockData = [{ some: 'data' }]
     const mockTags = ['tag1', 'tag2']
     collection.find.mockReturnValue({
-      skip: jest.fn().mockReturnThis(),
-      limit: jest.fn().mockReturnThis(),
-      toArray: jest.fn<any>().mockResolvedValue(mockData)
+      skip: vi.fn().mockReturnThis(),
+      limit: vi.fn().mockReturnThis(),
+      toArray: vi.fn<any>().mockResolvedValue(mockData)
     } as any)
 
     const result = await mongoDeviceTable.getByTags(mockTags, 'AND', '5', '10', 'someTenantId')
@@ -138,7 +137,7 @@ describe('MongoDeviceTable', () => {
   it('should fetch documents by friendly name', async () => {
     const mockData = [{ friendlyName: 'someName' }]
     collection.find.mockReturnValue({
-      toArray: jest.fn<any>().mockResolvedValue(mockData)
+      toArray: vi.fn<any>().mockResolvedValue(mockData)
     } as any)
 
     const result = await mongoDeviceTable.getByFriendlyName('someName', 'someTenantId')
@@ -149,7 +148,7 @@ describe('MongoDeviceTable', () => {
   it('should fetch documents by hostname', async () => {
     const mockData = [{ hostname: 'someHostname' }]
     collection.find.mockReturnValue({
-      toArray: jest.fn<any>().mockResolvedValue(mockData)
+      toArray: vi.fn<any>().mockResolvedValue(mockData)
     } as any)
 
     const result = await mongoDeviceTable.getByHostname('someHostname', 'someTenantId')

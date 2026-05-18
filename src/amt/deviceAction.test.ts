@@ -3,10 +3,10 @@
  * SPDX-License-Identifier: Apache-2.0
  **********************************************************************/
 
+import { vi, type MockInstance } from 'vitest'
 import { type AMT, type CIM } from '@device-management-toolkit/wsman-messages'
 import { type Selector } from '@device-management-toolkit/wsman-messages/WSMan.js'
 import { type Models } from '@device-management-toolkit/wsman-messages/ips/models.js'
-import { type Spied, spyOn } from 'jest-mock'
 import { type CIRASocket } from '../models/models.js'
 import {
   addAlarmClockOccurrenceResponse,
@@ -45,21 +45,21 @@ import { DeviceAction } from './DeviceAction.js'
 import { HttpHandler } from './HttpHandler.js'
 
 describe('Device Action Tests', () => {
-  let enumerateSpy: Spied<any>
-  let pullSpy: Spied<any>
-  let getSpy: Spied<any>
-  let sendSpy: Spied<any>
-  let deleteSpy: Spied<any>
+  let enumerateSpy: MockInstance
+  let pullSpy: MockInstance
+  let getSpy: MockInstance
+  let sendSpy: MockInstance
+  let deleteSpy: MockInstance
   let device: DeviceAction
   beforeEach(() => {
     const socket: CIRASocket = null
     const handler = new CIRAHandler(new HttpHandler(), 'admin', 'P@ssw0rd')
     device = new DeviceAction(handler, socket)
-    enumerateSpy = spyOn(device.ciraHandler, 'Enumerate')
-    pullSpy = spyOn(device.ciraHandler, 'Pull')
-    getSpy = spyOn(device.ciraHandler, 'Get')
-    sendSpy = spyOn(device.ciraHandler, 'Send')
-    deleteSpy = spyOn(device.ciraHandler, 'Delete')
+    enumerateSpy = vi.spyOn(device.ciraHandler, 'Enumerate')
+    pullSpy = vi.spyOn(device.ciraHandler, 'Pull')
+    getSpy = vi.spyOn(device.ciraHandler, 'Get')
+    sendSpy = vi.spyOn(device.ciraHandler, 'Send')
+    deleteSpy = vi.spyOn(device.ciraHandler, 'Delete')
   })
 
   afterEach(() => {
@@ -629,10 +629,10 @@ describe('Device Action Tests', () => {
   })
 
   describe('WiFi port validation and link preference', () => {
-    let getEthernetPortSettingsSpy: Spied<any>
+    let getEthernetPortSettingsSpy: MockInstance
 
     beforeEach(() => {
-      getEthernetPortSettingsSpy = spyOn(device, 'getEthernetPortSettings')
+      getEthernetPortSettingsSpy = vi.spyOn(device, 'getEthernetPortSettings')
     })
 
     it('should find WiFi port automatically', async () => {

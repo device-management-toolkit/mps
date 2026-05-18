@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  **********************************************************************/
 
+import { vi } from 'vitest'
 import { type HttpZResponseModel } from 'http-z'
 import { type CIRASocket } from '../models/models.js'
 import { computerSystemPackage } from '../test/helper/wsmanResponses.js'
@@ -10,7 +11,6 @@ import { parseBody } from '../utils/parseWSManResponseBody.js'
 import APFProcessor from './APFProcessor.js'
 import { CIRAHandler } from './CIRAHandler.js'
 import { HttpHandler } from './HttpHandler.js'
-import { spyOn } from 'jest-mock'
 import { Environment } from '../utils/Environment.js'
 import { config } from '../test/helper/config.js'
 Environment.Config = config
@@ -31,23 +31,23 @@ describe('CIRA Handler', () => {
     ciraHandler = new CIRAHandler(new HttpHandler(), 'admin', 'P@ssw0rd')
   })
   it('should call Send when Pull<T> called', async () => {
-    sendSpy = spyOn(ciraHandler, 'Send').mockResolvedValue('xml')
+    sendSpy = vi.spyOn(ciraHandler, 'Send').mockResolvedValue('xml')
     await ciraHandler.Pull<any>(null, '')
     expect(sendSpy).toHaveBeenCalledWith(null, '')
   })
   it('should call Send when Get<T> called', async () => {
-    sendSpy = spyOn(ciraHandler, 'Send').mockResolvedValue('xml')
+    sendSpy = vi.spyOn(ciraHandler, 'Send').mockResolvedValue('xml')
     await ciraHandler.Get<any>(null, '')
     expect(sendSpy).toHaveBeenCalledWith(null, '')
   })
   it('should call Send when Enumerate called', async () => {
-    sendSpy = spyOn(ciraHandler, 'Send').mockResolvedValue('xml')
+    sendSpy = vi.spyOn(ciraHandler, 'Send').mockResolvedValue('xml')
     await ciraHandler.Enumerate(null, '')
     expect(sendSpy).toHaveBeenCalledWith(null, '')
   })
 
   it('Should add request to send', async () => {
-    const spy = spyOn(ciraHandler, 'ExecRequest').mockResolvedValue('data')
+    const spy = vi.spyOn(ciraHandler, 'ExecRequest').mockResolvedValue('data')
     const result = await ciraHandler.Send(null, 'hello')
     expect(ciraHandler.socket).toBeNull()
     expect(spy).toHaveBeenCalledWith('hello')
@@ -63,10 +63,10 @@ describe('CIRA Handler', () => {
         return 0
       }
     } as any
-    const closeSpy = spyOn(ciraHandler.channel, 'CloseChannel')
-    const execSpy = spyOn(ciraHandler, 'ExecRequest')
+    const closeSpy = vi.spyOn(ciraHandler.channel, 'CloseChannel')
+    const execSpy = vi.spyOn(ciraHandler, 'ExecRequest')
     let count = 0
-    const handleResultSpy = spyOn(ciraHandler, 'handleResult').mockImplementation(() => {
+    const handleResultSpy = vi.spyOn(ciraHandler, 'handleResult').mockImplementation(() => {
       if (count === 0) {
         count++
         throw new Error('Unauthorized')
@@ -74,7 +74,7 @@ describe('CIRA Handler', () => {
         return { data: 'data' }
       }
     })
-    const connectSpy = spyOn(ciraHandler, 'Connect').mockResolvedValue(2)
+    const connectSpy = vi.spyOn(ciraHandler, 'Connect').mockResolvedValue(2)
     expect(ciraHandler.channelState).toBe(0)
     const result = await ciraHandler.ExecRequest('xml')
     expect(connectSpy).toHaveBeenCalled()
@@ -89,8 +89,8 @@ describe('CIRA Handler', () => {
     ciraHandler.channel = {
       write: async () => 'response'
     } as any
-    const handleResultSpy = spyOn(ciraHandler, 'handleResult').mockReturnValue({ data: 'data' })
-    const connectSpy = spyOn(ciraHandler, 'Connect')
+    const handleResultSpy = vi.spyOn(ciraHandler, 'handleResult').mockReturnValue({ data: 'data' })
+    const connectSpy = vi.spyOn(ciraHandler, 'Connect')
     ciraHandler.channelState = 2
     ciraHandler.httpHandler.isAuthInProgress = new Promise((resolve, reject) => {
       ciraHandler.httpHandler.authResolve = resolve
@@ -117,9 +117,9 @@ describe('CIRA Handler', () => {
     }).toThrow('rawMessage has incorrect format')
   })
   it('should throw Unauthorized Error when 401 from ATM - digest challenge', () => {
-    const handleAuthSpy = spyOn(ciraHandler, 'handleAuth')
+    const handleAuthSpy = vi.spyOn(ciraHandler, 'handleAuth')
     ciraHandler.httpHandler.authResolve = () => {}
-    const authSpy = spyOn(ciraHandler.httpHandler, 'authResolve')
+    const authSpy = vi.spyOn(ciraHandler.httpHandler, 'authResolve')
     expect(() => {
       ciraHandler.handleResult(unauthorizedResponse)
     }).toThrow('Unauthorized')
@@ -161,7 +161,7 @@ describe('CIRA Handler', () => {
     expect(response).toEqual(null)
   })
   it('should set up a new CIRA channel', () => {
-    const sendChannelSpy = spyOn(APFProcessor, 'SendChannelOpen').mockImplementation(() => {})
+    const sendChannelSpy = vi.spyOn(APFProcessor, 'SendChannelOpen').mockImplementation(() => {})
     const socket: CIRASocket = {
       tag: {
         first: true,

@@ -3,17 +3,16 @@
  * SPDX-License-Identifier: Apache-2.0
  **********************************************************************/
 
+import { vi, type MockInstance } from 'vitest'
 import { VaultSecretManagerService } from './index.js'
 import { logger } from '../../logging/index.js'
 import { config } from '../../test/helper/config.js'
 import { Environment } from '../../utils/Environment.js'
-import { type Spied, spyOn } from 'jest-mock'
-import { jest } from '@jest/globals'
 import { type Got } from 'got'
 
 let secretManagerService: VaultSecretManagerService = null
 Environment.Config = config
-let gotSpy: Spied<any>
+let gotSpy: MockInstance
 const secretPath = '4c4c4544-004b-4210-8033-b6c04f504633'
 const secretCreds = {
   data: {
@@ -45,16 +44,16 @@ const secretCert = {
 
 beforeEach(() => {
   secretManagerService = new VaultSecretManagerService(logger)
-  gotSpy = spyOn(secretManagerService.gotClient, 'get').mockImplementation(
+  gotSpy = vi.spyOn(secretManagerService.gotClient, 'get').mockImplementation(
     () =>
       ({
-        json: jest.fn(() => secretCreds)
+        json: vi.fn(() => secretCreds)
       }) as any
   )
 })
 
 afterEach(() => {
-  jest.clearAllMocks()
+  vi.clearAllMocks()
 })
 
 test('should get a secret for specific given key of a path', async () => {
@@ -70,10 +69,10 @@ test('should get null, if the key does not exists in the path', async () => {
 })
 
 test('should get null, if path does not exist', async () => {
-  const gotFailSpy = spyOn(secretManagerService.gotClient, 'get').mockImplementation(
+  const gotFailSpy = vi.spyOn(secretManagerService.gotClient, 'get').mockImplementation(
     () =>
       ({
-        json: jest.fn<any>(async () => await Promise.reject(new Error('Not Found')))
+        json: vi.fn<any>(async () => await Promise.reject(new Error('Not Found')))
       }) as any
   )
 
@@ -89,10 +88,10 @@ test('should get a secret from a specific given path', async () => {
 })
 
 test('should throw an exception and return null if given path does not exist', async () => {
-  const gotFailSpy = spyOn(secretManagerService.gotClient, 'get').mockImplementation(
+  const gotFailSpy = vi.spyOn(secretManagerService.gotClient, 'get').mockImplementation(
     () =>
       ({
-        json: jest.fn<any>(async () => await Promise.reject(new Error('Not Found')))
+        json: vi.fn<any>(async () => await Promise.reject(new Error('Not Found')))
       }) as any
   )
   const result = await secretManagerService.getSecretAtPath('does/not/exist')
@@ -101,14 +100,14 @@ test('should throw an exception and return null if given path does not exist', a
 })
 
 test('should create a secret', async () => {
-  const gotPostSpy = spyOn<Got, any, any>(secretManagerService.gotClient, 'post').mockResolvedValue(null)
+  const gotPostSpy = vi.spyOn<Got, any>(secretManagerService.gotClient, 'post').mockResolvedValue(null)
   const result = await secretManagerService.writeSecretWithObject('test', secretCert)
   expect(result).toBe(true)
   expect(gotPostSpy).toHaveBeenCalledWith('test', { json: secretCert })
 })
 
 test('should return false if the path does not exist', async () => {
-  const gotFailSpy = spyOn<Got, 'post', any>(secretManagerService.gotClient, 'post').mockRejectedValue('')
+  const gotFailSpy = vi.spyOn<Got, 'post'>(secretManagerService.gotClient, 'post').mockRejectedValue('')
   const result = await secretManagerService.writeSecretWithObject('does/not/exist', secretCert)
   expect(result).toBe(false)
   expect(gotFailSpy).toHaveBeenCalledWith('does/not/exist', { json: secretCert })
@@ -116,14 +115,14 @@ test('should return false if the path does not exist', async () => {
 
 test('should get AMT credentials for a specific device', async () => {
   const data = ['admin', 'P@ssw0rd']
-  const secretAtPathSpy = spyOn(secretManagerService, 'getSecretAtPath').mockResolvedValue(secretCreds.data)
+  const secretAtPathSpy = vi.spyOn(secretManagerService, 'getSecretAtPath').mockResolvedValue(secretCreds.data)
   const result = await secretManagerService.getAMTCredentials(secretPath)
   expect(result).toEqual(data)
   expect(secretAtPathSpy).toHaveBeenCalledWith(`devices/${secretPath}`)
 })
 
 test('should return null if AMT credentials for a specific device does not exists', async () => {
-  const secretAtPathSpy = spyOn(secretManagerService, 'getSecretAtPath').mockResolvedValue(null)
+  const secretAtPathSpy = vi.spyOn(secretManagerService, 'getSecretAtPath').mockResolvedValue(null)
   const result = await secretManagerService.getAMTCredentials(secretPath)
   expect(result).toEqual(null)
   expect(secretAtPathSpy).toHaveBeenCalledWith(`devices/${secretPath}`)
@@ -138,7 +137,7 @@ test('should return null if AMT_Password for a specific device does not exists',
       }
     }
   }
-  const secretAtPathSpy = spyOn(secretManagerService, 'getSecretAtPath').mockResolvedValue(noCredential.data)
+  const secretAtPathSpy = vi.spyOn(secretManagerService, 'getSecretAtPath').mockResolvedValue(noCredential.data)
   const result = await secretManagerService.getAMTCredentials(secretPath)
   expect(result).toEqual(null)
   expect(secretAtPathSpy).toHaveBeenCalledWith(`devices/${secretPath}`)
@@ -148,21 +147,21 @@ test('should return null if secret data for a specific device does not exists', 
   const noCredential = {
     data: {}
   }
-  const secretAtPathSpy = spyOn(secretManagerService, 'getSecretAtPath').mockResolvedValue(noCredential.data)
+  const secretAtPathSpy = vi.spyOn(secretManagerService, 'getSecretAtPath').mockResolvedValue(noCredential.data)
   const result = await secretManagerService.getAMTCredentials(secretPath)
   expect(result).toEqual(null)
   expect(secretAtPathSpy).toHaveBeenCalledWith(`devices/${secretPath}`)
 })
 
 test('should get MPS certs', async () => {
-  const secretAtPathSpy = spyOn(secretManagerService, 'getSecretAtPath').mockResolvedValue(secretCert)
+  const secretAtPathSpy = vi.spyOn(secretManagerService, 'getSecretAtPath').mockResolvedValue(secretCert)
   const result = await secretManagerService.getMPSCerts()
   expect(result).toEqual(secretCert.data)
   expect(secretAtPathSpy).toHaveBeenCalledWith('MPSCerts')
 })
 
 test('should return null if MPS certs does not exists', async () => {
-  const secretAtPathSpy = spyOn(secretManagerService, 'getSecretAtPath').mockResolvedValue(null)
+  const secretAtPathSpy = vi.spyOn(secretManagerService, 'getSecretAtPath').mockResolvedValue(null)
   const result = await secretManagerService.getMPSCerts()
   expect(result).toEqual(null)
   expect(secretAtPathSpy).toHaveBeenCalledWith('MPSCerts')
@@ -181,10 +180,10 @@ test('should get health of vault', async () => {
     cluster_name: 'vault-cluster-426a5cd4',
     cluster_id: '3f02d0f2-4048-cdcd-7e4d-7d2905c52995'
   }
-  const gothealthSpy = spyOn(secretManagerService.gotClient, 'get').mockImplementation(
+  const gothealthSpy = vi.spyOn(secretManagerService.gotClient, 'get').mockImplementation(
     () =>
       ({
-        json: jest.fn(() => data)
+        json: vi.fn(() => data)
       }) as any
   )
   const result = await secretManagerService.health()

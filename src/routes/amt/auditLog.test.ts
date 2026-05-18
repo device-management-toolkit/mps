@@ -3,21 +3,20 @@
  * SPDX-License-Identifier: Apache-2.0
  **********************************************************************/
 
+import { vi, type MockInstance } from 'vitest'
 import * as auditLog from './auditLog.js'
 import { MqttProvider } from '../../utils/MqttProvider.js'
-import { createSpyObj } from '../../test/helper/jest.js'
+import { createSpyObj } from '../../test/helper/vitest.js'
 import { DeviceAction } from '../../amt/DeviceAction.js'
 import { CIRAHandler } from '../../amt/CIRAHandler.js'
 import { HttpHandler } from '../../amt/HttpHandler.js'
 import { type AMT } from '@device-management-toolkit/wsman-messages'
-import { type Spied, spyOn } from 'jest-mock'
-
 describe('auditLog', () => {
   let req
   let resSpy
   let device: DeviceAction
-  let mqttSpy: Spied<any>
-  let getAuditLogSpy: Spied<any>
+  let mqttSpy: MockInstance
+  let getAuditLogSpy: MockInstance
   const fakeGuid = '00000000-0000-0000-0000-000000000000'
   const eventRecords = [
     'ABUAAAAJJCRPc0FkbWluP/Nj6wAJMTI3LjAuMC4xBFyZIW4=',
@@ -60,8 +59,8 @@ describe('auditLog', () => {
     resSpy.status.mockReturnThis()
     resSpy.json.mockReturnThis()
     resSpy.send.mockReturnThis()
-    mqttSpy = spyOn(MqttProvider, 'publishEvent')
-    getAuditLogSpy = spyOn(device, 'getAuditLog')
+    mqttSpy = vi.spyOn(MqttProvider, 'publishEvent')
+    getAuditLogSpy = vi.spyOn(device, 'getAuditLog')
   })
 
   it('should convert response to an auditLog result', () => {
