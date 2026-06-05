@@ -72,7 +72,7 @@
     "eslint-plugin-license-header": "^0.9.0",
     "genversion": "^3.2.0",
     "prettier-config-standard": "^7.0.0",
-    "prettier-plugin-multiline-arrays": "^4.1.8",
+    "prettier-plugin-multiline-arrays": "^4.1.9",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.3",
     "typescript-eslint": "8.60.1",
