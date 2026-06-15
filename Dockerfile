@@ -4,7 +4,7 @@
 #*********************************************************************/
 #Multistage docker layer to isolate the git credentials
 #First stage copy and install dependencies
-FROM node:lts-bullseye-slim@sha256:e27057f6adaf0b3f172345fb5cdca821e07203ca81bc35f7b0a9e9631b255340 as builder
+FROM node:lts-bullseye-slim@sha256:97f4db7fcde59ccb550cf2815238b846744d447456995f61a800e7e961925e3e as builder
 
 WORKDIR /mps
 
@@ -22,7 +22,7 @@ COPY .mpsrc ./
 RUN npm run build
 RUN npm prune --production
 
-FROM alpine:latest@sha256:5b10f432ef3da1b8d4c7eb6c487f2f5a8f096bc91145e68878dd4a5019afde11
+FROM alpine:latest@sha256:a2d49ea686c2adfe3c992e47dc3b5e7fa6e6b5055609400dc2acaeb241c829f4
 LABEL license='SPDX-License-Identifier: Apache-2.0' \
       copyright='Copyright (c) Intel Corporation 2021'
 

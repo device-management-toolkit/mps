@@ -3,15 +3,13 @@
  * SPDX-License-Identifier: Apache-2.0
  **********************************************************************/
 
+import { vi, type MockInstance } from 'vitest'
 import { logger } from '../../logging/index.js'
 import { deleteDevice } from './delete.js'
-import { jest } from '@jest/globals'
-import { type Spied, spyOn } from 'jest-mock'
-
 let res: Express.Response
-let statusSpy: Spied<any>
-let jsonSpy: Spied<any>
-let endSpy: Spied<any>
+let statusSpy: MockInstance
+let jsonSpy: MockInstance
+let endSpy: MockInstance
 
 beforeEach(() => {
   res = {
@@ -19,14 +17,14 @@ beforeEach(() => {
     json: () => res,
     end: () => res
   }
-  statusSpy = spyOn(res as any, 'status')
-  endSpy = spyOn(res as any, 'end')
-  jsonSpy = spyOn(res as any, 'json')
+  statusSpy = vi.spyOn(res as any, 'status')
+  endSpy = vi.spyOn(res as any, 'end')
+  jsonSpy = vi.spyOn(res as any, 'json')
 })
 
 afterEach(() => {
-  jest.clearAllMocks()
-  jest.resetModules()
+  vi.clearAllMocks()
+  vi.resetModules()
 })
 
 const req = {
@@ -69,8 +67,8 @@ const reqWithOutQuery = {
 
 describe('delete', () => {
   it('should set status to 404 when device does not exist in db and deleteSecrets is false', async () => {
-    req.db.devices.getById = jest.fn().mockReturnValue(null)
-    req.db.devices.delete = jest.fn().mockReturnValue(0)
+    req.db.devices.getById = vi.fn().mockReturnValue(null)
+    req.db.devices.delete = vi.fn().mockReturnValue(0)
 
     await deleteDevice(req, res as any)
     expect(statusSpy).toHaveBeenCalledWith(404)
@@ -79,9 +77,9 @@ describe('delete', () => {
   })
 
   it('should set status to 204 when device does not exist in db and deleteSecrets is true', async () => {
-    req.db.devices.getById = jest.fn().mockReturnValue(null)
-    req.db.devices.delete = jest.fn().mockReturnValue(0)
-    req.secrets.deleteSecretAtPath = jest.fn().mockReturnValue(true)
+    req.db.devices.getById = vi.fn().mockReturnValue(null)
+    req.db.devices.delete = vi.fn().mockReturnValue(0)
+    req.secrets.deleteSecretAtPath = vi.fn().mockReturnValue(true)
 
     req.query.isSecretToBeDeleted = 'true'
 
@@ -91,8 +89,8 @@ describe('delete', () => {
   })
 
   it('should return 404 when device or secrets deletion fails', async () => {
-    req.secrets.deleteSecretAtPath = jest.fn<any>().mockRejectedValue(new Error())
-    req.db.devices.getById = jest.fn().mockReturnValue(null)
+    req.secrets.deleteSecretAtPath = vi.fn<any>().mockRejectedValue(new Error())
+    req.db.devices.getById = vi.fn().mockReturnValue(null)
     req.query.isSecretToBeDeleted = 'true'
     await deleteDevice(req, res as any)
 
@@ -102,8 +100,8 @@ describe('delete', () => {
   })
 
   it('should set status to 204 when delete device exists in db and deleteSecrets is false', async () => {
-    req.db.devices.getById = jest.fn().mockReturnValue({})
-    req.db.devices.delete = jest.fn().mockReturnValue({})
+    req.db.devices.getById = vi.fn().mockReturnValue({})
+    req.db.devices.delete = vi.fn().mockReturnValue({})
 
     req.query.isSecretToBeDeleted = 'false'
 
@@ -114,9 +112,9 @@ describe('delete', () => {
   })
 
   it('should set status to 204 when delete device exists in db and deleteSecrets is true', async () => {
-    req.db.devices.getById = jest.fn().mockReturnValue({})
-    req.db.devices.delete = jest.fn().mockReturnValue({})
-    req.secrets.deleteSecretAtPath = jest.fn().mockReturnValue(true)
+    req.db.devices.getById = vi.fn().mockReturnValue({})
+    req.db.devices.delete = vi.fn().mockReturnValue({})
+    req.secrets.deleteSecretAtPath = vi.fn().mockReturnValue(true)
 
     req.query.isSecretToBeDeleted = 'true'
 
@@ -127,9 +125,9 @@ describe('delete', () => {
   })
 
   it('should set status to 404 when guid exists in db and secrets, but fails to delete from secret', async () => {
-    req.db.devices.getById = jest.fn().mockReturnValue({})
-    req.db.devices.delete = jest.fn().mockReturnValue({})
-    req.secrets.deleteSecretAtPath = jest.fn<any>().mockRejectedValue(new Error())
+    req.db.devices.getById = vi.fn().mockReturnValue({})
+    req.db.devices.delete = vi.fn().mockReturnValue({})
+    req.secrets.deleteSecretAtPath = vi.fn<any>().mockRejectedValue(new Error())
 
     req.query.isSecretToBeDeleted = 'true'
 
@@ -140,8 +138,8 @@ describe('delete', () => {
   })
 
   it('should set status to 204 and delete device if it exists in db', async () => {
-    req.db.devices.getById = jest.fn().mockReturnValue({})
-    req.db.devices.delete = jest.fn().mockReturnValue({})
+    req.db.devices.getById = vi.fn().mockReturnValue({})
+    req.db.devices.delete = vi.fn().mockReturnValue({})
 
     req.query.isSecretToBeDeleted = 'false'
 
@@ -153,11 +151,11 @@ describe('delete', () => {
   })
 
   it('should set status to 500 and not delete device if error occurs', async () => {
-    req.db.devices.getById = jest.fn().mockImplementation(() => {
+    req.db.devices.getById = vi.fn().mockImplementation(() => {
       throw new TypeError('fake error')
     })
-    req.db.devices.delete = jest.fn().mockReturnValue({})
-    const errorSpy = spyOn(logger, 'error')
+    req.db.devices.delete = vi.fn().mockReturnValue({})
+    const errorSpy = vi.spyOn(logger, 'error')
     await deleteDevice(req, res as any)
     expect(statusSpy).toHaveBeenCalledWith(500)
     expect(jsonSpy).not.toHaveBeenCalled()
@@ -166,8 +164,8 @@ describe('delete', () => {
   })
 
   it('should set status to 404 when device does not exist in db and no deleteSecrets param', async () => {
-    reqWithOutQuery.db.devices.getById = jest.fn().mockReturnValue(null)
-    reqWithOutQuery.db.devices.delete = jest.fn().mockReturnValue(0)
+    reqWithOutQuery.db.devices.getById = vi.fn().mockReturnValue(null)
+    reqWithOutQuery.db.devices.delete = vi.fn().mockReturnValue(0)
 
     await deleteDevice(reqWithOutQuery, res as any)
     expect(statusSpy).toHaveBeenCalledWith(404)
@@ -176,7 +174,7 @@ describe('delete', () => {
   })
 
   //  it('should set status to 404 when there is no secret in vault', async () => {
-  //   req.db.devices.getById = jest.fn().mockReturnValue({})
-  //   req.db.devices.delete = jest.fn().mockReturnValue({})
+  //   req.db.devices.getById = vi.fn().mockReturnValue({})
+  //   req.db.devices.delete = vi.fn().mockReturnValue({})
   // })
 })

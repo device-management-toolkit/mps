@@ -4,7 +4,7 @@
  **********************************************************************/
 
 import { mpsrootcert } from './index.js'
-import { createSpyObj } from '../../test/helper/jest.js'
+import { createSpyObj } from '../../test/helper/vitest.js'
 import { ErrorResponse } from '../../utils/amtHelper.js'
 import { messages } from '../../logging/index.js'
 

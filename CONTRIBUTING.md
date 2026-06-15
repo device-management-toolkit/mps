@@ -16,9 +16,9 @@ Each commit message consists of a **header**, a **body** and a **footer**. The h
 
 The **header** with **type** is mandatory. The **scope** of the header is optional as far as the automated PR checks are concerned, but be advised that PR reviewers **may request** you provide an applicable scope.
 
-Any line of the commit message should no be longer 72 characters! This allows the message to be easier to read on GitHub as well as in various git tools.
+Any line of the commit message should not be longer than 72 characters! This allows the message to be easier to read on GitHub as well as in various git tools.
 
-The footer should contain a reference to an Azure Boards ticket (e.g. AB#[number]).
+The footer should contain a reference to a GitHub issue (e.g. `#1234`) using the [GitHub closing-keyword syntax](https://docs.github.com/en/issues/tracking-your-work-with-issues/linking-a-pull-request-to-an-issue) so the issue auto-closes when the PR merges.
 
 Example 1:
 
@@ -28,7 +28,7 @@ feat(telemetry): Add new MQTT events
 Events are now emitted over various /mps topics on MQTT for success/failures
 as they occur throughout the service.
 
-Resolves: AB#2222
+Closes: #1234
 ```
 
 ### Revert
@@ -100,7 +100,7 @@ Further paragraphs come after blank lines.
 
 ### Footer
 
-The footer should contain a reference to JIRA ticket (e.g. SL6-0000) that this commit **Closes** or **Resolves**.
+The footer should contain a reference to the GitHub issue this commit **Closes**, **Fixes**, or **Resolves** (e.g. `Closes: #1234`). See [GitHub's closing-keyword syntax](https://docs.github.com/en/issues/tracking-your-work-with-issues/linking-a-pull-request-to-an-issue) for the keywords that trigger auto-close on merge.
 The footer should contain any information about **Breaking Changes**.
 
 **Breaking Changes** should start with the word `BREAKING CHANGE:` with a space or two newlines.

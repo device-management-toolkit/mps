@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  **********************************************************************/
 
+import { vi, type MockInstance } from 'vitest'
 import { type certificatesType } from '../models/Config.js'
 import { devices, MPSServer } from './mpsserver.js'
 import { type ISecretManagerService } from '../interfaces/ISecretManagerService.js'
@@ -12,9 +13,6 @@ import { type IDB } from '../interfaces/IDb.js'
 import { Environment } from '../utils/Environment.js'
 import { logger } from '../logging/index.js'
 import APFProcessor from '../amt/APFProcessor.js'
-import { jest } from '@jest/globals'
-import { type Spied, spyOn } from 'jest-mock'
-
 let certs: certificatesType
 let db: IDB
 let devicesMock: IDeviceTable
@@ -22,17 +20,17 @@ let secrets: ISecretManagerService
 let mps: MPSServer
 
 describe('MPS Server', function () {
-  let deviceSpy: Spied<any>
-  let deviceUpdateSpy: Spied<any>
-  let processCommandSpy: Spied<any>
-  let getSecretSpy: Spied<any>
-  let getCredsSpy: Spied<any>
-  let sendUserAuthSpy: Spied<any>
-  let sendUserAuthFailSpy: Spied<any>
+  let deviceSpy: MockInstance
+  let deviceUpdateSpy: MockInstance
+  let processCommandSpy: MockInstance
+  let getSecretSpy: MockInstance
+  let getCredsSpy: MockInstance
+  let sendUserAuthSpy: MockInstance
+  let sendUserAuthFailSpy: MockInstance
   let socket
   let testDevice: Device
   beforeEach(async function () {
-    jest.setTimeout(60000)
+    vi.setConfig({ testTimeout: 60000 })
     testDevice = { mpsusername: 'admin' } as any
     devicesMock = {
       get: async () => [] as Device[],
@@ -66,22 +64,22 @@ describe('MPS Server', function () {
       mps_tls_config: {} as any,
       web_tls_config: {} as any
     }
-    deviceSpy = spyOn(devicesMock, 'getById')
-    deviceUpdateSpy = spyOn(devicesMock, 'update')
-    getSecretSpy = spyOn(secrets, 'getSecretFromKey')
-    getCredsSpy = spyOn(secrets, 'getAMTCredentials')
-    sendUserAuthSpy = spyOn(APFProcessor, 'SendUserAuthSuccess').mockReturnValue(null)
-    sendUserAuthFailSpy = spyOn(APFProcessor, 'SendUserAuthFail').mockReturnValue(null)
-    processCommandSpy = spyOn(APFProcessor, 'processCommand').mockResolvedValue(0)
+    deviceSpy = vi.spyOn(devicesMock, 'getById')
+    deviceUpdateSpy = vi.spyOn(devicesMock, 'update')
+    getSecretSpy = vi.spyOn(secrets, 'getSecretFromKey')
+    getCredsSpy = vi.spyOn(secrets, 'getAMTCredentials')
+    sendUserAuthSpy = vi.spyOn(APFProcessor, 'SendUserAuthSuccess').mockReturnValue(null)
+    sendUserAuthFailSpy = vi.spyOn(APFProcessor, 'SendUserAuthFail').mockReturnValue(null)
+    processCommandSpy = vi.spyOn(APFProcessor, 'processCommand').mockResolvedValue(0)
     socket = {
       tag: { SystemId: '123', id: 'ABC123XYZ', nodeid: '123' },
-      end: jest.fn(),
-      write: jest.fn(),
-      setEncoding: jest.fn(),
-      setTimeout: jest.fn(),
-      on: jest.fn(),
-      addListener: jest.fn(),
-      getPeerCertificate: jest.fn()
+      end: vi.fn(),
+      write: vi.fn(),
+      setEncoding: vi.fn(),
+      setTimeout: vi.fn(),
+      on: vi.fn(),
+      addListener: vi.fn(),
+      getPeerCertificate: vi.fn()
     } as any
     delete devices['123']
     mps = new MPSServer(certs, db, secrets)
@@ -95,20 +93,20 @@ describe('MPS Server', function () {
     expect(true).toBeTruthy()
   })
   it('should listen on configured port', () => {
-    const listenSpy = spyOn(mps.server, 'listen').mockReturnValue(null)
+    const listenSpy = vi.spyOn(mps.server, 'listen').mockReturnValue(null)
     Environment.Config = { port: 3000 } as any
     mps.listen()
     expect(listenSpy).toHaveBeenCalledWith(3000, mps.listeningListener)
   })
   it('should log what port the server is listening on', () => {
-    const infoSpy = spyOn(logger, 'info')
+    const infoSpy = vi.spyOn(logger, 'info')
     Environment.Config = { common_name: 'localhost', port: 3000 } as any
     mps.listeningListener()
     expect(infoSpy).toHaveBeenCalledWith('Intel(R) AMT server running on localhost:3000.')
   })
   it('should handle onAPFDisconnected', async () => {
-    const deviceDisconnectSpy = spyOn(mps, 'handleDeviceDisconnect')
-    const emitSpy = spyOn(mps.events, 'emit')
+    const deviceDisconnectSpy = vi.spyOn(mps, 'handleDeviceDisconnect')
+    const emitSpy = vi.spyOn(mps.events, 'emit')
     devices['123'] = { ciraSocket: { tag: { id: 'ABC123XYZ', nodeid: '123' } } } as any
     await mps.onAPFDisconnected('123')
     expect(devices['123']).toBeUndefined()
@@ -116,7 +114,7 @@ describe('MPS Server', function () {
     expect(emitSpy).toHaveBeenCalledWith('disconnected', '123')
   })
   it('should handle onAPFKeepAliveRequest', async () => {
-    const lastSeenUpdateSpy = spyOn(mps, 'handleLastSeenUpdate')
+    const lastSeenUpdateSpy = vi.spyOn(mps, 'handleLastSeenUpdate')
     devices['123'] = { ciraSocket: { tag: { id: 'ABC123XYZ', nodeid: '123' } } } as any
     await mps.onAPFKeepAliveRequest('123')
     expect(lastSeenUpdateSpy).toHaveBeenCalledWith('123')
@@ -126,14 +124,14 @@ describe('MPS Server', function () {
     expect(deviceSpy).toHaveBeenCalledWith('123')
   })
   it('should not allow device to connect if exists in db', async () => {
-    deviceSpy = spyOn(devicesMock, 'getById').mockResolvedValue(null)
-    const endSpy = spyOn(socket, 'end')
+    deviceSpy = vi.spyOn(devicesMock, 'getById').mockResolvedValue(null)
+    const endSpy = vi.spyOn(socket, 'end')
     await mps.onAPFProtocolVersion(socket)
     expect(deviceSpy).toHaveBeenCalledWith('123')
     expect(endSpy).toHaveBeenCalled()
   })
   it('should verify user auth when valid', async () => {
-    const deviceConnectSpy = spyOn(mps, 'handleDeviceConnect').mockResolvedValue(null)
+    const deviceConnectSpy = vi.spyOn(mps, 'handleDeviceConnect').mockResolvedValue(null)
     await mps.onVerifyUserAuth(socket, 'admin', 'P@ssw0rd')
     expect(deviceSpy).toHaveBeenCalledWith('123')
     expect(getSecretSpy).toHaveBeenCalledWith('devices/123', 'MPS_PASSWORD')
@@ -143,9 +141,9 @@ describe('MPS Server', function () {
     expect(sendUserAuthSpy).toHaveBeenCalledWith(socket)
   })
   it('should delete old device connection if a new connection request comes from same device', async () => {
-    const deviceConnectSpy = spyOn(mps, 'handleDeviceConnect')
-    const deviceDisconnectSpy = spyOn(mps, 'handleDeviceDisconnect')
-    devices['123'] = { ciraSocket: { tag: { SystemId: '123', id: 'MNO123XYZ', nodeid: '123' }, end: jest.fn() } } as any
+    const deviceConnectSpy = vi.spyOn(mps, 'handleDeviceConnect')
+    const deviceDisconnectSpy = vi.spyOn(mps, 'handleDeviceDisconnect')
+    devices['123'] = { ciraSocket: { tag: { SystemId: '123', id: 'MNO123XYZ', nodeid: '123' }, end: vi.fn() } } as any
     await mps.onVerifyUserAuth(socket, 'admin', 'P@ssw0rd')
     expect(deviceSpy).toHaveBeenCalledWith('123')
     expect(getSecretSpy).toHaveBeenCalledWith('devices/123', 'MPS_PASSWORD')
@@ -157,10 +155,10 @@ describe('MPS Server', function () {
     expect(sendUserAuthSpy).toHaveBeenCalledWith(socket)
   })
   it('should update last seen update', async () => {
-    const debugSpy = spyOn(logger, 'debug')
+    const debugSpy = vi.spyOn(logger, 'debug')
     testDevice = {} as any
     Environment.Config = { instance_name: 'mpsInstance' } as any
-    devices['123'] = { ciraSocket: { tag: { SystemId: '123', id: 'MNO123XYZ', nodeid: '123' }, end: jest.fn() } } as any
+    devices['123'] = { ciraSocket: { tag: { SystemId: '123', id: 'MNO123XYZ', nodeid: '123' }, end: vi.fn() } } as any
     await mps.handleLastSeenUpdate('123')
     expect(deviceSpy).toHaveBeenCalledWith('123')
     expect(deviceUpdateSpy).toHaveBeenCalledWith({
@@ -171,7 +169,7 @@ describe('MPS Server', function () {
     expect(debugSpy).toHaveBeenCalledWith('Device last seen status updated in db : 123')
   })
   it('should NOT verify user auth when NOT valid', async () => {
-    const deviceConnectSpy = spyOn(mps, 'handleDeviceConnect').mockResolvedValue(null)
+    const deviceConnectSpy = vi.spyOn(mps, 'handleDeviceConnect').mockResolvedValue(null)
     await mps.onVerifyUserAuth(socket, 'admin', 'WrongP@ssw0rd')
     expect(deviceSpy).toHaveBeenCalled()
     expect(getSecretSpy).toHaveBeenCalled()
@@ -181,7 +179,7 @@ describe('MPS Server', function () {
     expect(sendUserAuthFailSpy).toHaveBeenCalledWith(socket)
   })
   it('should NOT verify user auth valid but vault call fails', async () => {
-    const deviceConnectSpy = spyOn(mps, 'handleDeviceConnect').mockResolvedValue(null)
+    const deviceConnectSpy = vi.spyOn(mps, 'handleDeviceConnect').mockResolvedValue(null)
     getCredsSpy.mockRejectedValue(new Error('unknown'))
     await mps.onVerifyUserAuth(socket, 'admin', 'P@ssw0rd')
     expect(deviceSpy).toHaveBeenCalled()
@@ -192,17 +190,17 @@ describe('MPS Server', function () {
     expect(sendUserAuthFailSpy).toHaveBeenCalledWith(socket)
   })
   it('should connect with TLS', () => {
-    const addHandlersSpy = spyOn(mps, 'addHandlers').mockReturnValue(null)
+    const addHandlersSpy = vi.spyOn(mps, 'addHandlers').mockReturnValue(null)
     delete socket.tag
     mps.onTLSConnection(socket)
     expect(socket.tag).toBeDefined()
     expect(addHandlersSpy).toHaveBeenCalledWith(socket)
   })
   it('should add handlers', () => {
-    const setEncodingSpy = spyOn(socket, 'setEncoding')
-    const setTimeoutSpy = spyOn(socket, 'setTimeout')
-    const onSpy = spyOn(socket, 'on')
-    const addListenerSpy = spyOn(socket, 'addListener')
+    const setEncodingSpy = vi.spyOn(socket, 'setEncoding')
+    const setTimeoutSpy = vi.spyOn(socket, 'setTimeout')
+    const onSpy = vi.spyOn(socket, 'on')
+    const addListenerSpy = vi.spyOn(socket, 'addListener')
     mps.addHandlers(socket)
     expect(setEncodingSpy).toHaveBeenCalled()
     expect(setTimeoutSpy).toHaveBeenCalled()
@@ -210,8 +208,8 @@ describe('MPS Server', function () {
     expect(addListenerSpy).toHaveBeenCalledTimes(3)
   })
   it('should disconnect on timeout', async () => {
-    const endSpy = spyOn(socket, 'end')
-    const deviceDisconnectSpy = spyOn(mps, 'handleDeviceDisconnect')
+    const endSpy = vi.spyOn(socket, 'end')
+    const deviceDisconnectSpy = vi.spyOn(mps, 'handleDeviceDisconnect')
     devices['123'] = { ciraSocket: { tag: { id: 'ABC123XYZ', nodeid: '123' } } } as any
     await mps.onTimeout(socket)
     expect(endSpy).toHaveBeenCalled()
@@ -219,8 +217,8 @@ describe('MPS Server', function () {
     expect(devices['123']).toBeUndefined()
   })
   it('should NOT disconnect on timeout if socketids dont match', async () => {
-    const endSpy = spyOn(socket, 'end')
-    const deviceDisconnectSpy = spyOn(mps, 'handleDeviceDisconnect')
+    const endSpy = vi.spyOn(socket, 'end')
+    const deviceDisconnectSpy = vi.spyOn(mps, 'handleDeviceDisconnect')
     devices['123'] = { ciraSocket: { tag: { id: 'Mno123XYZ', nodeid: '123' } } } as any
     await mps.onTimeout(socket)
     expect(endSpy).toHaveBeenCalled()
@@ -228,7 +226,7 @@ describe('MPS Server', function () {
     expect(devices['123']).toBeDefined()
   })
   it('should do nothing data when not much is received', async () => {
-    const endSpy = spyOn(socket, 'end')
+    const endSpy = vi.spyOn(socket, 'end')
     socket.tag.accumulator = ''
     socket.tag.first = true
     await mps.onDataReceived(socket, 'A')
@@ -236,7 +234,7 @@ describe('MPS Server', function () {
     expect(processCommandSpy).not.toHaveBeenCalled()
   })
   it('should NOT process data when HTTP request received', async () => {
-    const endSpy = spyOn(socket, 'end')
+    const endSpy = vi.spyOn(socket, 'end')
     socket.tag.accumulator = ''
     socket.tag.first = true
     await mps.onDataReceived(socket, 'GET')
@@ -244,7 +242,7 @@ describe('MPS Server', function () {
     expect(processCommandSpy).not.toHaveBeenCalled()
   })
   it('should process data when data received', async () => {
-    const endSpy = spyOn(socket, 'end')
+    const endSpy = vi.spyOn(socket, 'end')
     socket.tag.accumulator = ''
     socket.tag.first = true
     await mps.onDataReceived(socket, 'data')
@@ -254,14 +252,14 @@ describe('MPS Server', function () {
   it('should continue process data when data received ', async () => {
     const length = 9
     let callCount = 0
-    processCommandSpy = spyOn(APFProcessor, 'processCommand').mockImplementation(async () => {
+    processCommandSpy = vi.spyOn(APFProcessor, 'processCommand').mockImplementation(async () => {
       if (callCount === 0) {
         callCount++
         return length
       }
       return 0
     })
-    const endSpy = spyOn(socket, 'end')
+    const endSpy = vi.spyOn(socket, 'end')
     socket.tag.accumulator = ''
     socket.tag.first = true
     await mps.onDataReceived(socket, 'datadata')
@@ -270,8 +268,8 @@ describe('MPS Server', function () {
     expect(endSpy).not.toHaveBeenCalled()
   })
   it('should end connection when unknown command', async () => {
-    processCommandSpy = spyOn(APFProcessor, 'processCommand').mockResolvedValue(-1)
-    const endSpy = spyOn(socket, 'end')
+    processCommandSpy = vi.spyOn(APFProcessor, 'processCommand').mockResolvedValue(-1)
+    const endSpy = vi.spyOn(socket, 'end')
     socket.tag.accumulator = ''
     socket.tag.first = true
     await mps.onDataReceived(socket, 'data')
@@ -279,30 +277,30 @@ describe('MPS Server', function () {
     expect(endSpy).toHaveBeenCalled()
   })
   it('should disconnect on close', async () => {
-    const deviceDisconnectSpy = spyOn(mps, 'handleDeviceDisconnect')
+    const deviceDisconnectSpy = vi.spyOn(mps, 'handleDeviceDisconnect')
     devices['123'] = { ciraSocket: { tag: { id: 'ABC123XYZ', nodeid: '123' } } } as any
     await mps.onClose(socket)
     expect(deviceDisconnectSpy).toHaveBeenCalledWith('123')
   })
   it('should NOT disconnect on close if socketids dont match', async () => {
-    const deviceDisconnectSpy = spyOn(mps, 'handleDeviceDisconnect')
+    const deviceDisconnectSpy = vi.spyOn(mps, 'handleDeviceDisconnect')
     devices['123'] = { ciraSocket: { tag: { id: 'OAMCT123MNO', nodeid: '123' } } } as any
     await mps.onClose(socket)
     expect(deviceDisconnectSpy).not.toHaveBeenCalledWith('123')
     expect(devices['123']).toBeDefined()
   })
   it('should NOT log on error when ECONNRESET', () => {
-    const errorLogSpy = spyOn(logger, 'error')
+    const errorLogSpy = vi.spyOn(logger, 'error')
     mps.onError(socket, { code: 'ECONNRESET' } as any)
     expect(errorLogSpy).not.toHaveBeenCalled()
   })
   it('should log on error when other error', () => {
-    const errorLogSpy = spyOn(logger, 'error')
+    const errorLogSpy = vi.spyOn(logger, 'error')
     mps.onError(socket, { code: 'COOL ERROR' } as any)
     expect(errorLogSpy).toHaveBeenCalled()
   })
   it('should handle device disconnect', async () => {
-    const emitSpy = spyOn(mps.events, 'emit')
+    const emitSpy = vi.spyOn(mps.events, 'emit')
     devices['123'] = { device: 'a device' } as any
     await mps.handleDeviceDisconnect('123')
     expect(devices['123']).toBeUndefined()

@@ -3,13 +3,13 @@
  * SPDX-License-Identifier: Apache-2.0
  **********************************************************************/
 
+import { vi, type MockInstance } from 'vitest'
 import { type CIM } from '@device-management-toolkit/wsman-messages'
-import { type Spied, spyOn } from 'jest-mock'
 import { CIRAHandler } from '../../amt/CIRAHandler.js'
 import { DeviceAction } from '../../amt/DeviceAction.js'
 import { HttpHandler } from '../../amt/HttpHandler.js'
 import { messages } from '../../logging/index.js'
-import { createSpyObj } from '../../test/helper/jest.js'
+import { createSpyObj } from '../../test/helper/vitest.js'
 import { ErrorResponse } from '../../utils/amtHelper.js'
 import { MqttProvider } from '../../utils/MqttProvider.js'
 import { powerAction } from './powerAction.js'
@@ -17,13 +17,13 @@ import { powerAction } from './powerAction.js'
 describe('Power Capabilities', () => {
   let req: Express.Request
   let resSpy
-  let mqttSpy: Spied<any>
+  let mqttSpy: MockInstance
   let powerActionFromDevice: CIM.Models.PowerActionResponse
   let osPowerActionFromDevice
-  let getBootOptionsSpy: Spied<any>
-  let setBootConfigurationSpy: Spied<any>
-  let osPowerStateChangeSpy: Spied<any>
-  let osPowerStateGetSpy: Spied<any>
+  let getBootOptionsSpy: MockInstance
+  let setBootConfigurationSpy: MockInstance
+  let osPowerStateChangeSpy: MockInstance
+  let osPowerStateGetSpy: MockInstance
   let device: DeviceAction
 
   beforeEach(() => {
@@ -47,12 +47,12 @@ describe('Power Capabilities', () => {
     resSpy.status.mockReturnThis()
     resSpy.json.mockReturnThis()
     resSpy.send.mockReturnThis()
-    mqttSpy = spyOn(MqttProvider, 'publishEvent')
+    mqttSpy = vi.spyOn(MqttProvider, 'publishEvent')
     powerActionFromDevice = { Body: { RequestPowerStateChange_OUTPUT: { ReturnValue: 0 } } } as any
-    getBootOptionsSpy = spyOn(device, 'getBootOptions').mockResolvedValue({ AMT_BootSettingData: {} } as any)
-    setBootConfigurationSpy = spyOn(device, 'setBootConfiguration').mockResolvedValue({} as any)
+    getBootOptionsSpy = vi.spyOn(device, 'getBootOptions').mockResolvedValue({ AMT_BootSettingData: {} } as any)
+    setBootConfigurationSpy = vi.spyOn(device, 'setBootConfiguration').mockResolvedValue({} as any)
 
-    osPowerStateGetSpy = spyOn(device, 'getOSPowerSavingState').mockResolvedValue({
+    osPowerStateGetSpy = vi.spyOn(device, 'getOSPowerSavingState').mockResolvedValue({
       Body: {
         CreationClassName: 'IPS_PowerManagementService',
         ElementName: 'Intel(r) AMT Power Management Service',
@@ -65,9 +65,9 @@ describe('Power Capabilities', () => {
       }
     } as any)
     osPowerActionFromDevice = { Body: { RequestOSPowerSavingStateChange_OUTPUT: { ReturnValue: 0 } } }
-    osPowerStateChangeSpy = spyOn(device, 'requestOSPowerSavingStateChange').mockResolvedValue(
-      osPowerActionFromDevice as any
-    )
+    osPowerStateChangeSpy = vi
+      .spyOn(device, 'requestOSPowerSavingStateChange')
+      .mockResolvedValue(osPowerActionFromDevice as any)
   })
   it('Should send power action', async () => {
     const expectedResponse = {
@@ -76,7 +76,7 @@ describe('Power Capabilities', () => {
         ReturnValueStr: 'SUCCESS'
       }
     }
-    spyOn(device, 'sendPowerAction').mockResolvedValue(powerActionFromDevice)
+    vi.spyOn(device, 'sendPowerAction').mockResolvedValue(powerActionFromDevice)
     await powerAction(req as any, resSpy)
     expect(getBootOptionsSpy).toHaveBeenCalled()
     expect(setBootConfigurationSpy).toHaveBeenCalled()
@@ -96,7 +96,7 @@ describe('Power Capabilities', () => {
     const powerActionErrorFromDevice: CIM.Models.PowerActionResponse = {
       Body: { RequestPowerStateChange_OUTPUT: { ReturnValue: -1 } }
     } as any
-    spyOn(device, 'sendPowerAction').mockResolvedValue(powerActionErrorFromDevice)
+    vi.spyOn(device, 'sendPowerAction').mockResolvedValue(powerActionErrorFromDevice)
 
     await powerAction(req as any, resSpy)
     expect(getBootOptionsSpy).toHaveBeenCalled()
@@ -108,7 +108,7 @@ describe('Power Capabilities', () => {
   })
 
   it('Should handle error', async () => {
-    spyOn(device, 'sendPowerAction').mockResolvedValue(null)
+    vi.spyOn(device, 'sendPowerAction').mockResolvedValue(null)
     await powerAction(req as any, resSpy)
     expect(getBootOptionsSpy).toHaveBeenCalled()
     expect(setBootConfigurationSpy).toHaveBeenCalled()
@@ -136,8 +136,8 @@ describe('Power Capabilities', () => {
       }
     }
 
-    spyOn(device, 'sendPowerAction').mockResolvedValue(osPowerActionFromDevice)
-    spyOn(device, 'getOSPowerSavingState').mockResolvedValue({
+    vi.spyOn(device, 'sendPowerAction').mockResolvedValue(osPowerActionFromDevice)
+    vi.spyOn(device, 'getOSPowerSavingState').mockResolvedValue({
       Body: { IPS_PowerManagementService: { OSPowerSavingState: '3' } }
     } as any)
     await powerAction(req as any, resSpy)
@@ -167,8 +167,8 @@ describe('Power Capabilities', () => {
         ReturnValueStr: 'COMPLETED_WITH_NO_ERROR'
       }
     }
-    spyOn(device, 'sendPowerAction').mockResolvedValue(osPowerActionFromDevice)
-    spyOn(device, 'getOSPowerSavingState').mockResolvedValue({
+    vi.spyOn(device, 'sendPowerAction').mockResolvedValue(osPowerActionFromDevice)
+    vi.spyOn(device, 'getOSPowerSavingState').mockResolvedValue({
       Body: { IPS_PowerManagementService: { OSPowerSavingState: '2' } }
     } as any)
     await powerAction(req as any, resSpy)

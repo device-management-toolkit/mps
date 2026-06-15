@@ -3,17 +3,16 @@
  * SPDX-License-Identifier: Apache-2.0
  **********************************************************************/
 
+import { vi } from 'vitest'
 import jws from 'jws'
-import { createSpyObj } from '../../test/helper/jest.js'
+import { createSpyObj } from '../../test/helper/vitest.js'
 import { Environment } from '../../utils/Environment.js'
-import { jest } from '@jest/globals'
-import { spyOn } from 'jest-mock'
 let expressValidatorMockReturnValue = true
-jest.unstable_mockModule('express-validator', () => ({
+vi.mock('express-validator', () => ({
   validationResult: () =>
     ({
-      isEmpty: jest.fn().mockReturnValue(expressValidatorMockReturnValue),
-      array: jest.fn().mockReturnValue([{ test: 'error' }])
+      isEmpty: vi.fn().mockReturnValue(expressValidatorMockReturnValue),
+      array: vi.fn().mockReturnValue([{ test: 'error' }])
     }) as any
 }))
 const login = await import('./login.js')
@@ -39,9 +38,9 @@ describe('Check login', () => {
     resSpy.status.mockReturnThis()
     resSpy.json.mockReturnThis()
     resSpy.send.mockReturnThis()
-    // spyOn(val, 'validationResult').mockImplementation(() => ({
-    //   isEmpty: jest.fn().mockReturnValue(true),
-    //   array: jest.fn().mockReturnValue([{ test: 'error' }])
+    // vi.spyOn(val, 'validationResult').mockImplementation(() => ({
+    //   isEmpty: vi.fn().mockReturnValue(true),
+    //   array: vi.fn().mockReturnValue([{ test: 'error' }])
     // } as any))
     Environment.Config = {
       web_admin_user: 'admin',
@@ -95,7 +94,7 @@ describe('Check login', () => {
   })
   it('should pass with expected expiration', async () => {
     Environment.Config.web_auth_enabled = true
-    spyOn(global.Date, 'now').mockImplementation(() => new Date('2019-05-14T11:01:58.135Z').valueOf())
+    vi.spyOn(global.Date, 'now').mockImplementation(() => new Date('2019-05-14T11:01:58.135Z').valueOf())
     const expiration = Math.floor((Date.now() + 1000 * 60 * Environment.Config.jwt_expiration) / 1000)
     const expected = {
       payload: {

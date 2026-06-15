@@ -3,32 +3,30 @@
  * SPDX-License-Identifier: Apache-2.0
  **********************************************************************/
 
+import { vi, type MockInstance } from 'vitest'
 import { web, mps } from './tlsConfiguration.js'
 import path from 'node:path'
 import fs from 'node:fs'
 import { logger } from '../logging/index.js'
 import { type mpsConfigType, type webConfigType } from '../models/Config.js'
 import { constants } from 'node:crypto'
-import { jest } from '@jest/globals'
-import { type Spied, spyOn } from 'jest-mock'
-
-let existsSyncSpy: Spied<any>
-let readFileSyncSpy: Spied<any>
-let jsonParseSpy: Spied<any>
-let errorSpy: Spied<any>
-let exitSpy: Spied<any>
+let existsSyncSpy: MockInstance
+let readFileSyncSpy: MockInstance
+let jsonParseSpy: MockInstance
+let errorSpy: MockInstance
+let exitSpy: MockInstance
 
 beforeEach(() => {
-  errorSpy = spyOn(logger, 'error')
-  exitSpy = spyOn(process, 'exit').mockImplementation((code: number) => null as never)
-  existsSyncSpy = spyOn(fs, 'existsSync')
-  readFileSyncSpy = spyOn(fs, 'readFileSync')
-  jsonParseSpy = spyOn(JSON, 'parse')
+  errorSpy = vi.spyOn(logger, 'error')
+  exitSpy = vi.spyOn(process, 'exit').mockImplementation((code: number) => null as never)
+  existsSyncSpy = vi.spyOn(fs, 'existsSync')
+  readFileSyncSpy = vi.spyOn(fs, 'readFileSync')
+  jsonParseSpy = vi.spyOn(JSON, 'parse')
 })
 
 afterEach(() => {
-  jest.clearAllMocks()
-  jest.resetModules()
+  vi.clearAllMocks()
+  vi.resetModules()
 })
 
 describe('web', () => {

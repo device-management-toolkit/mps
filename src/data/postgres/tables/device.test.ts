@@ -3,24 +3,23 @@
  * SPDX-License-Identifier: Apache-2.0
  **********************************************************************/
 
+import { vi, type MockInstance } from 'vitest'
 import { DeviceTable } from './device.js'
 import { type Device } from '../../../models/models.js'
 import PostgresDb from '../index.js'
-import { jest } from '@jest/globals'
-import { type Spied, spyOn } from 'jest-mock'
 import { MPSValidationError } from '../../../utils/MPSValidationError.js'
 
 describe('device tests', () => {
   let db: PostgresDb
   let deviceTable: DeviceTable
-  let querySpy: Spied<any>
+  let querySpy: MockInstance
   beforeEach(() => {
     db = new PostgresDb('')
     deviceTable = new DeviceTable(db)
-    querySpy = spyOn(deviceTable.db, 'query')
+    querySpy = vi.spyOn(deviceTable.db, 'query')
   })
   afterEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
   })
 
   test('should get a count of zero when no devices', async () => {
@@ -402,7 +401,7 @@ describe('device tests', () => {
   })
 
   test('should return device when successfully inserted', async () => {
-    const getById = spyOn(deviceTable, 'getById')
+    const getById = vi.spyOn(deviceTable, 'getById')
     const device: Device = {
       guid: '4c4c4544-004b-4210-8033-b6c04f504633',
       hostname: 'hostname',
@@ -447,7 +446,7 @@ describe('device tests', () => {
   })
 
   test('should return device when successfully inserted without deviceInfo field', async () => {
-    const getById = spyOn(deviceTable, 'getById')
+    const getById = vi.spyOn(deviceTable, 'getById')
     const device: Device = {
       guid: '4c4c4544-004b-4210-8033-b6c04f504633',
       hostname: 'hostname',
@@ -569,7 +568,7 @@ describe('device tests', () => {
   })
 
   // test('should get a device when device updates with change', async () => {
-  //   const getById = spyOn(deviceTable, 'getById')
+  //   const getById = vi.spyOn(deviceTable, 'getById')
   //   const device: Device = {
   //     guid: '4c4c4544-004b-4210-8033-b6c04f504633',
   //     hostname: 'hostname',

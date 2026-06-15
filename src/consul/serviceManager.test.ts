@@ -3,13 +3,12 @@
  * SPDX-License-Identifier: Apache-2.0
  **********************************************************************/
 
+import { vi } from 'vitest'
 import { type IServiceManager } from '../interfaces/IServiceManager.js'
 import { ConsulService } from './consul.js'
 import { Environment } from '../utils/Environment.js'
-import { jest } from '@jest/globals'
-
-const backOffSpy = jest.fn()
-jest.unstable_mockModule('exponential-backoff', () => ({
+const backOffSpy = vi.fn()
+vi.mock('exponential-backoff', () => ({
   backOff: backOffSpy
 }))
 
@@ -22,15 +21,15 @@ let config: any
 describe('Index', () => {
   componentName = 'MPS'
   afterEach(() => {
-    jest.clearAllMocks()
-    jest.restoreAllMocks()
-    jest.resetAllMocks()
+    vi.clearAllMocks()
+    vi.restoreAllMocks()
+    vi.resetAllMocks()
   })
   beforeEach(() => {
-    jest.clearAllMocks()
-    jest.restoreAllMocks()
-    jest.resetAllMocks()
-    jest.resetModules()
+    vi.clearAllMocks()
+    vi.restoreAllMocks()
+    vi.resetAllMocks()
+    vi.resetModules()
 
     config = {
       consul_enabled: false,
@@ -44,7 +43,7 @@ describe('Index', () => {
   it('should wait for service provider', async () => {
     let shouldBeOk = false
     const secretMock: IServiceManager = {
-      health: jest.fn(() => {
+      health: vi.fn(() => {
         if (shouldBeOk) return null
         shouldBeOk = true
         throw new Error('error')
@@ -55,8 +54,8 @@ describe('Index', () => {
   })
 
   it('should pass processServiceConfigs empty Consul', async () => {
-    consul.get = jest.fn(() => null)
-    consul.seed = jest.fn(async () => await Promise.resolve(true))
+    consul.get = vi.fn(() => null)
+    consul.seed = vi.fn(async () => await Promise.resolve(true))
     await svcMngr.processServiceConfigs(consul, config)
     expect(consul.get).toHaveBeenCalledWith(config.consul_key_prefix)
     expect(consul.seed).toHaveBeenCalledWith(config.consul_key_prefix, config)
@@ -68,8 +67,8 @@ describe('Index', () => {
         Value: '{"web_port": 8081, "delay_timer": 12}'
       }
     ]
-    consul.get = jest.fn(async () => await Promise.resolve(consulValues))
-    consul.process = jest.fn(() => JSON.stringify(consulValues, null, 2))
+    consul.get = vi.fn(async () => await Promise.resolve(consulValues))
+    consul.process = vi.fn(() => JSON.stringify(consulValues, null, 2))
     await svcMngr.processServiceConfigs(consul, config)
     expect(consul.get).toHaveBeenCalledWith(config.consul_key_prefix)
     expect(consul.process).toHaveBeenCalledWith(consulValues)

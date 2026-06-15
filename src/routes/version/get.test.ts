@@ -4,7 +4,7 @@
  **********************************************************************/
 
 import { getVersion } from './get.js'
-import { createSpyObj } from '../../test/helper/jest.js'
+import { createSpyObj } from '../../test/helper/vitest.js'
 import { version } from '../../utils/version.js'
 
 describe('Checks version of dependent services', () => {

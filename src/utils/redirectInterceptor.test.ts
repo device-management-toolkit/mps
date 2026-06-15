@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  **********************************************************************/
 
+import { vi } from 'vitest'
 import { AmtMode, type Args, type Connection, ConnectionType } from '../models/models.js'
 import { config } from '../test/helper/config.js'
 import Common from './common.js'
@@ -14,9 +15,6 @@ import {
   RedirectInterceptor,
   StartRedirectionSessionReplyStatus
 } from './redirectInterceptor.js'
-import { jest } from '@jest/globals'
-import { spyOn } from 'jest-mock'
-
 Environment.Config = config
 
 let interceptor: RedirectInterceptor = null
@@ -33,12 +31,12 @@ beforeEach(() => {
 })
 
 afterEach(() => {
-  jest.clearAllMocks()
+  vi.clearAllMocks()
   interceptor = null
 })
 
 test('processAmtData test', () => {
-  spyOn(interceptor, 'processAmtDataEx').mockReturnValueOnce('mockResult')
+  vi.spyOn(interceptor, 'processAmtDataEx').mockReturnValueOnce('mockResult')
   const result = interceptor.processAmtData('input')
   expect(result).toBe('mockResult')
 })
@@ -61,8 +59,8 @@ test('processAmtDataEx empty acc', () => {
   }
 
   interceptor.amt = connection
-  spyOn(interceptor, 'handleStartRedirectionSessionReply').mockReturnValueOnce('handleStartRedirectionSessionReply')
-  spyOn(interceptor, 'handleAuthenticateSessionReply').mockReturnValueOnce('handleAuthenticateSessionReply')
+  vi.spyOn(interceptor, 'handleStartRedirectionSessionReply').mockReturnValueOnce('handleStartRedirectionSessionReply')
+  vi.spyOn(interceptor, 'handleAuthenticateSessionReply').mockReturnValueOnce('handleAuthenticateSessionReply')
 
   const result = interceptor.processAmtDataEx()
   expect(result).toBe('')
@@ -86,8 +84,8 @@ test('processAmtDataEx direct mode', () => {
   }
 
   interceptor.amt = connection
-  spyOn(interceptor, 'handleStartRedirectionSessionReply').mockReturnValueOnce('handleStartRedirectionSessionReply')
-  spyOn(interceptor, 'handleAuthenticateSessionReply').mockReturnValueOnce('handleAuthenticateSessionReply')
+  vi.spyOn(interceptor, 'handleStartRedirectionSessionReply').mockReturnValueOnce('handleStartRedirectionSessionReply')
+  vi.spyOn(interceptor, 'handleAuthenticateSessionReply').mockReturnValueOnce('handleAuthenticateSessionReply')
 
   const result = interceptor.processAmtDataEx()
   expect(result).toBe('abcdefghij1234567890')
@@ -112,8 +110,8 @@ test('processAmtDataEx StartRedirectionSessionReply mode', () => {
   }
 
   interceptor.amt = connection
-  spyOn(interceptor, 'handleStartRedirectionSessionReply').mockReturnValueOnce('handleStartRedirectionSessionReply')
-  spyOn(interceptor, 'handleAuthenticateSessionReply').mockReturnValueOnce('handleAuthenticateSessionReply')
+  vi.spyOn(interceptor, 'handleStartRedirectionSessionReply').mockReturnValueOnce('handleStartRedirectionSessionReply')
+  vi.spyOn(interceptor, 'handleAuthenticateSessionReply').mockReturnValueOnce('handleAuthenticateSessionReply')
 
   const result = interceptor.processAmtDataEx()
   expect(result).toBe('handleStartRedirectionSessionReply')
@@ -137,8 +135,8 @@ test('processAmtDataEx AuthenticateSessionReply mode', () => {
   }
 
   interceptor.amt = connection
-  spyOn(interceptor, 'handleStartRedirectionSessionReply').mockReturnValueOnce('handleStartRedirectionSessionReply')
-  spyOn(interceptor, 'handleAuthenticateSessionReply').mockReturnValueOnce('handleAuthenticateSessionReply')
+  vi.spyOn(interceptor, 'handleStartRedirectionSessionReply').mockReturnValueOnce('handleStartRedirectionSessionReply')
+  vi.spyOn(interceptor, 'handleAuthenticateSessionReply').mockReturnValueOnce('handleAuthenticateSessionReply')
 
   const result = interceptor.processAmtDataEx()
   expect(result).toBe('handleAuthenticateSessionReply')
@@ -162,8 +160,8 @@ test('processAmtDataEx error condition', () => {
   }
 
   interceptor.amt = connection
-  spyOn(interceptor, 'handleStartRedirectionSessionReply').mockReturnValueOnce('handleStartRedirectionSessionReply')
-  spyOn(interceptor, 'handleAuthenticateSessionReply').mockReturnValueOnce('handleAuthenticateSessionReply')
+  vi.spyOn(interceptor, 'handleStartRedirectionSessionReply').mockReturnValueOnce('handleStartRedirectionSessionReply')
+  vi.spyOn(interceptor, 'handleAuthenticateSessionReply').mockReturnValueOnce('handleAuthenticateSessionReply')
 
   const result = interceptor.processAmtDataEx()
   expect(result).toBe('')
@@ -355,7 +353,7 @@ test('handleAuthenticateSessionReply DIGEST auth FALIURE status', () => {
 
   interceptor.amt = connection
 
-  spyOn(Common, 'ReadIntX').mockReturnValueOnce(0)
+  vi.spyOn(Common, 'ReadIntX').mockReturnValueOnce(0)
 
   const result = interceptor.handleAuthenticateSessionReply()
   expect(result).toBe(
@@ -388,7 +386,7 @@ test('handleAuthenticateSessionReply auth SUCCESS', () => {
 
   interceptor.amt = connection
 
-  spyOn(Common, 'ReadIntX').mockReturnValueOnce(0)
+  vi.spyOn(Common, 'ReadIntX').mockReturnValueOnce(0)
 
   const result = interceptor.handleAuthenticateSessionReply()
 
@@ -403,7 +401,7 @@ test('handleAuthenticateSessionReply auth SUCCESS', () => {
 })
 
 test('processBrowserData', () => {
-  spyOn(interceptor, 'processBrowserDataEx').mockReturnValueOnce('mock output')
+  vi.spyOn(interceptor, 'processBrowserDataEx').mockReturnValueOnce('mock output')
 
   const result = interceptor.processBrowserData('input')
   expect(result).toBe('mock output')
@@ -427,9 +425,9 @@ test('processBrowserDataEx empty acc', () => {
   }
 
   interceptor.ws = connection
-  spyOn(interceptor, 'handleStartRedirectionSession').mockReturnValueOnce('handleStartRedirectionSession')
-  spyOn(interceptor, 'handleEndRedirectionSession').mockReturnValueOnce('handleEndRedirectionSession')
-  spyOn(interceptor, 'handleAuthenticateSession').mockReturnValueOnce('handleAuthenticateSession')
+  vi.spyOn(interceptor, 'handleStartRedirectionSession').mockReturnValueOnce('handleStartRedirectionSession')
+  vi.spyOn(interceptor, 'handleEndRedirectionSession').mockReturnValueOnce('handleEndRedirectionSession')
+  vi.spyOn(interceptor, 'handleAuthenticateSession').mockReturnValueOnce('handleAuthenticateSession')
 
   const result = interceptor.processBrowserDataEx()
   expect(result).toBe('')
@@ -453,9 +451,9 @@ test('processBrowserDataEx direct mode', () => {
   }
 
   interceptor.ws = connection
-  spyOn(interceptor, 'handleStartRedirectionSession').mockReturnValueOnce('handleStartRedirectionSession')
-  spyOn(interceptor, 'handleEndRedirectionSession').mockReturnValueOnce('handleEndRedirectionSession')
-  spyOn(interceptor, 'handleAuthenticateSession').mockReturnValueOnce('handleAuthenticateSession')
+  vi.spyOn(interceptor, 'handleStartRedirectionSession').mockReturnValueOnce('handleStartRedirectionSession')
+  vi.spyOn(interceptor, 'handleEndRedirectionSession').mockReturnValueOnce('handleEndRedirectionSession')
+  vi.spyOn(interceptor, 'handleAuthenticateSession').mockReturnValueOnce('handleAuthenticateSession')
 
   const result = interceptor.processBrowserDataEx()
   expect(result).toBe('1234567890')
@@ -480,9 +478,9 @@ test('processBrowserDataEx handleStartRedirectionSession', () => {
   }
 
   interceptor.ws = connection
-  spyOn(interceptor, 'handleStartRedirectionSession').mockReturnValueOnce('handleStartRedirectionSession')
-  spyOn(interceptor, 'handleEndRedirectionSession').mockReturnValueOnce('handleEndRedirectionSession')
-  spyOn(interceptor, 'handleAuthenticateSession').mockReturnValueOnce('handleAuthenticateSession')
+  vi.spyOn(interceptor, 'handleStartRedirectionSession').mockReturnValueOnce('handleStartRedirectionSession')
+  vi.spyOn(interceptor, 'handleEndRedirectionSession').mockReturnValueOnce('handleEndRedirectionSession')
+  vi.spyOn(interceptor, 'handleAuthenticateSession').mockReturnValueOnce('handleAuthenticateSession')
 
   const result = interceptor.processBrowserDataEx()
   expect(result).toBe('handleStartRedirectionSession')
@@ -506,9 +504,9 @@ test('processBrowserDataEx handleEndRedirectionSession', () => {
   }
 
   interceptor.ws = connection
-  spyOn(interceptor, 'handleStartRedirectionSession').mockReturnValueOnce('handleStartRedirectionSession')
-  spyOn(interceptor, 'handleEndRedirectionSession').mockReturnValueOnce('handleEndRedirectionSession')
-  spyOn(interceptor, 'handleAuthenticateSession').mockReturnValueOnce('handleAuthenticateSession')
+  vi.spyOn(interceptor, 'handleStartRedirectionSession').mockReturnValueOnce('handleStartRedirectionSession')
+  vi.spyOn(interceptor, 'handleEndRedirectionSession').mockReturnValueOnce('handleEndRedirectionSession')
+  vi.spyOn(interceptor, 'handleAuthenticateSession').mockReturnValueOnce('handleAuthenticateSession')
 
   const result = interceptor.processBrowserDataEx()
   expect(result).toBe('handleEndRedirectionSession')
@@ -532,9 +530,9 @@ test('processBrowserDataEx handleAuthenticateSession ', () => {
   }
 
   interceptor.ws = connection
-  spyOn(interceptor, 'handleStartRedirectionSession').mockReturnValueOnce('handleStartRedirectionSession')
-  spyOn(interceptor, 'handleEndRedirectionSession').mockReturnValueOnce('handleEndRedirectionSession')
-  spyOn(interceptor, 'handleAuthenticateSession').mockReturnValueOnce('handleAuthenticateSession')
+  vi.spyOn(interceptor, 'handleStartRedirectionSession').mockReturnValueOnce('handleStartRedirectionSession')
+  vi.spyOn(interceptor, 'handleEndRedirectionSession').mockReturnValueOnce('handleEndRedirectionSession')
+  vi.spyOn(interceptor, 'handleAuthenticateSession').mockReturnValueOnce('handleAuthenticateSession')
 
   const result = interceptor.processBrowserDataEx()
   expect(result).toBe('handleAuthenticateSession')
@@ -558,9 +556,9 @@ test('processBrowserDataEx error condition', () => {
   }
 
   interceptor.ws = connection
-  spyOn(interceptor, 'handleStartRedirectionSession').mockReturnValueOnce('handleStartRedirectionSession')
-  spyOn(interceptor, 'handleEndRedirectionSession').mockReturnValueOnce('handleEndRedirectionSession')
-  spyOn(interceptor, 'handleAuthenticateSession').mockReturnValueOnce('handleAuthenticateSession')
+  vi.spyOn(interceptor, 'handleStartRedirectionSession').mockReturnValueOnce('handleStartRedirectionSession')
+  vi.spyOn(interceptor, 'handleEndRedirectionSession').mockReturnValueOnce('handleEndRedirectionSession')
+  vi.spyOn(interceptor, 'handleAuthenticateSession').mockReturnValueOnce('handleAuthenticateSession')
 
   const result = interceptor.processBrowserDataEx()
   expect(result).toBe('')
@@ -751,7 +749,7 @@ test('handleAuthenticateSession short length acc 2', () => {
 
   interceptor.ws = connection
 
-  spyOn(Common, 'ReadIntX').mockReturnValueOnce(1)
+  vi.spyOn(Common, 'ReadIntX').mockReturnValueOnce(1)
 
   const result = interceptor.handleAuthenticateSession()
   expect(result).toBe('')
@@ -793,8 +791,8 @@ test('handleAuthenticateSession DIGEST with user, pass and digestRealm', () => {
   interceptor.amt = amt
   interceptor.ws = ws
 
-  spyOn(Common, 'ReadIntX').mockReturnValueOnce(1)
-  spyOn(Common, 'ComputeDigesthash').mockReturnValueOnce('digest')
+  vi.spyOn(Common, 'ReadIntX').mockReturnValueOnce(1)
+  vi.spyOn(Common, 'ComputeDigesthash').mockReturnValueOnce('digest')
 
   const authurl = '/RedirectionService'
   const nc = ws.authCNonceCount
@@ -872,7 +870,7 @@ test('handleAuthenticateSession DIGEST with user, pass and digestRealm 2', () =>
   interceptor.amt = amt
   interceptor.ws = ws
 
-  spyOn(Common, 'ReadIntX').mockReturnValueOnce(1)
+  vi.spyOn(Common, 'ReadIntX').mockReturnValueOnce(1)
 
   const authurl = '/RedirectionService'
 
@@ -925,7 +923,7 @@ test('handleAuthenticateSession w/o DIGEST', () => {
   interceptor.amt = amt
   interceptor.ws = ws
 
-  spyOn(Common, 'ReadIntX').mockReturnValueOnce(1)
+  vi.spyOn(Common, 'ReadIntX').mockReturnValueOnce(1)
 
   const result = interceptor.handleAuthenticateSession()
   expect(result).toBe(`1234${String.fromCharCode(AuthenticationType.BADDIGEST)}56789`)

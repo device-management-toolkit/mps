@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  **********************************************************************/
 
+import { describe, expect, it } from 'vitest'
 import { validationResult } from 'express-validator'
-import { describe, expect, it } from '@jest/globals'
 import { validator } from './deviceValidator.js'
 
 async function getValidationErrors(body: any): Promise<any[]> {
@@ -37,7 +37,7 @@ describe('device validator dnsSuffix checks', () => {
     expect(errors).toHaveLength(0)
   })
 
-  it("accepts empty string dnsSuffix", async () => {
+  it('accepts empty string dnsSuffix', async () => {
     const errors = await getValidationErrors({
       guid: '123e4567-e89b-12d3-a456-426614174000',
       dnsSuffix: ''

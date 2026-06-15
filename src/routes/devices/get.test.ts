@@ -3,18 +3,16 @@
  * SPDX-License-Identifier: Apache-2.0
  **********************************************************************/
 
+import { vi, type MockInstance } from 'vitest'
 import { randomUUID } from 'node:crypto'
 import { getDevice } from './get.js'
 import { type Device } from '../../models/models.js'
-import { jest } from '@jest/globals'
-import { type Spied, spyOn } from 'jest-mock'
-
 let req
 let res
-let statusSpy: Spied<any>
-let jsonSpy: Spied<any>
-let endSpy: Spied<any>
-let getByIdSpy: Spied<any>
+let statusSpy: MockInstance
+let jsonSpy: MockInstance
+let endSpy: MockInstance
+let getByIdSpy: MockInstance
 let mockDevice: Device
 
 beforeEach(() => {
@@ -46,7 +44,7 @@ beforeEach(() => {
     params: { guid },
     db: {
       devices: {
-        getById: jest.fn()
+        getById: vi.fn()
       }
     }
   }
@@ -55,10 +53,10 @@ beforeEach(() => {
     json: () => res,
     end: () => res
   }
-  statusSpy = spyOn(res, 'status')
-  endSpy = spyOn(res, 'end')
-  jsonSpy = spyOn(res, 'json')
-  getByIdSpy = spyOn(req.db.devices, 'getById')
+  statusSpy = vi.spyOn(res, 'status')
+  endSpy = vi.spyOn(res, 'end')
+  jsonSpy = vi.spyOn(res, 'json')
+  getByIdSpy = vi.spyOn(req.db.devices, 'getById')
 })
 
 async function run200(): Promise<void> {

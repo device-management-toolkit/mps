@@ -78,7 +78,7 @@ export interface webConfigType {
 
 export interface certAndKeyType {
   cert: forge.pki.Certificate
-  key: forge.pki.PrivateKey
+  key: forge.pki.rsa.PrivateKey
 }
 
 export interface apiResponseType {

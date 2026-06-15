@@ -3,13 +3,12 @@
  * SPDX-License-Identifier: Apache-2.0
  **********************************************************************/
 
+import { vi, type MockInstance } from 'vitest'
 import index from './index.js'
-import { type Spied, spyOn } from 'jest-mock'
-
 describe('Check index from version', () => {
-  let indexSpy: Spied<any>
+  let indexSpy: MockInstance
   beforeEach(() => {
-    indexSpy = spyOn(index, 'get')
+    indexSpy = vi.spyOn(index, 'get')
   })
   it('should pass', async () => {
     expect(indexSpy).toBeDefined()

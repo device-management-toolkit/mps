@@ -3,8 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  **********************************************************************/
 
-import { jest } from '@jest/globals'
-import { spyOn } from 'jest-mock'
+import { vi } from 'vitest'
 import { Buffer } from 'node:buffer'
 import { EventEmitter } from 'node:events'
 import { logger } from '../logging/index.js'
@@ -16,10 +15,10 @@ import { type CIRAChannel } from './CIRAChannel.js'
 
 describe('APFProcessor Tests', () => {
   afterEach(() => {
-    jest.clearAllMocks()
-    jest.resetAllMocks()
-    jest.restoreAllMocks()
-    jest.resetModules()
+    vi.clearAllMocks()
+    vi.resetAllMocks()
+    vi.restoreAllMocks()
+    vi.resetModules()
   })
 
   describe('processCommand', () => {
@@ -35,98 +34,98 @@ describe('APFProcessor Tests', () => {
 
     it('should call keepAliveRequest', async () => {
       fakeCiraSocket.tag.accumulator = String.fromCharCode(APFProtocol.KEEPALIVE_REQUEST)
-      const cmdSpy = spyOn(APFProcessor, 'keepAliveRequest')
+      const cmdSpy = vi.spyOn(APFProcessor, 'keepAliveRequest')
       await APFProcessor.processCommand(fakeCiraSocket)
       expect(cmdSpy).toHaveBeenCalled()
     })
 
     it('should call keepAliveReply', async () => {
       fakeCiraSocket.tag.accumulator = String.fromCharCode(APFProtocol.KEEPALIVE_REPLY)
-      const cmdSpy = spyOn(APFProcessor, 'keepAliveReply')
+      const cmdSpy = vi.spyOn(APFProcessor, 'keepAliveReply')
       await APFProcessor.processCommand(fakeCiraSocket)
       expect(cmdSpy).toHaveBeenCalled()
     })
 
     it('should call keepAliveOptionsReply', async () => {
       fakeCiraSocket.tag.accumulator = String.fromCharCode(APFProtocol.KEEPALIVE_OPTIONS_REPLY)
-      const cmdSpy = spyOn(APFProcessor, 'keepAliveOptionsReply')
+      const cmdSpy = vi.spyOn(APFProcessor, 'keepAliveOptionsReply')
       await APFProcessor.processCommand(fakeCiraSocket)
       expect(cmdSpy).toHaveBeenCalled()
     })
 
     it('should call protocolVersion', async () => {
       fakeCiraSocket.tag.accumulator = String.fromCharCode(APFProtocol.PROTOCOLVERSION)
-      const cmdSpy = spyOn(APFProcessor, 'protocolVersion')
+      const cmdSpy = vi.spyOn(APFProcessor, 'protocolVersion')
       await APFProcessor.processCommand(fakeCiraSocket)
       expect(cmdSpy).toHaveBeenCalled()
     })
 
     it('should call userAuthRequest', async () => {
       fakeCiraSocket.tag.accumulator = String.fromCharCode(APFProtocol.USERAUTH_REQUEST)
-      const cmdSpy = spyOn(APFProcessor, 'userAuthRequest')
+      const cmdSpy = vi.spyOn(APFProcessor, 'userAuthRequest')
       await APFProcessor.processCommand(fakeCiraSocket)
       expect(cmdSpy).toHaveBeenCalled()
     })
 
     it('should call serviceRequest', async () => {
       fakeCiraSocket.tag.accumulator = String.fromCharCode(APFProtocol.SERVICE_REQUEST)
-      const cmdSpy = spyOn(APFProcessor, 'serviceRequest')
+      const cmdSpy = vi.spyOn(APFProcessor, 'serviceRequest')
       await APFProcessor.processCommand(fakeCiraSocket)
       expect(cmdSpy).toHaveBeenCalled()
     })
 
     it('should call globalRequest', async () => {
       fakeCiraSocket.tag.accumulator = String.fromCharCode(APFProtocol.GLOBAL_REQUEST)
-      const cmdSpy = spyOn(APFProcessor, 'globalRequest')
+      const cmdSpy = vi.spyOn(APFProcessor, 'globalRequest')
       await APFProcessor.processCommand(fakeCiraSocket)
       expect(cmdSpy).toHaveBeenCalled()
     })
 
     it('should call channelOpen', async () => {
       fakeCiraSocket.tag.accumulator = String.fromCharCode(APFProtocol.CHANNEL_OPEN)
-      const cmdSpy = spyOn(APFProcessor, 'channelOpen')
+      const cmdSpy = vi.spyOn(APFProcessor, 'channelOpen')
       await APFProcessor.processCommand(fakeCiraSocket)
       expect(cmdSpy).toHaveBeenCalled()
     })
 
     it('should call channelOpenConfirmation', async () => {
       fakeCiraSocket.tag.accumulator = String.fromCharCode(APFProtocol.CHANNEL_OPEN_CONFIRMATION)
-      const cmdSpy = spyOn(APFProcessor, 'channelOpenConfirmation')
+      const cmdSpy = vi.spyOn(APFProcessor, 'channelOpenConfirmation')
       await APFProcessor.processCommand(fakeCiraSocket)
       expect(cmdSpy).toHaveBeenCalled()
     })
 
     it('should call channelOpenFailure', async () => {
       fakeCiraSocket.tag.accumulator = String.fromCharCode(APFProtocol.CHANNEL_OPEN_FAILURE)
-      const cmdSpy = spyOn(APFProcessor, 'channelOpenFailure')
+      const cmdSpy = vi.spyOn(APFProcessor, 'channelOpenFailure')
       await APFProcessor.processCommand(fakeCiraSocket)
       expect(cmdSpy).toHaveBeenCalled()
     })
 
     it('should call channelClose', async () => {
       fakeCiraSocket.tag.accumulator = String.fromCharCode(APFProtocol.CHANNEL_CLOSE)
-      const cmdSpy = spyOn(APFProcessor, 'channelClose')
+      const cmdSpy = vi.spyOn(APFProcessor, 'channelClose')
       await APFProcessor.processCommand(fakeCiraSocket)
       expect(cmdSpy).toHaveBeenCalled()
     })
 
     it('should call channelWindowAdjust', async () => {
       fakeCiraSocket.tag.accumulator = String.fromCharCode(APFProtocol.CHANNEL_WINDOW_ADJUST)
-      const cmdSpy = spyOn(APFProcessor, 'channelWindowAdjust')
+      const cmdSpy = vi.spyOn(APFProcessor, 'channelWindowAdjust')
       await APFProcessor.processCommand(fakeCiraSocket)
       expect(cmdSpy).toHaveBeenCalled()
     })
 
     it('should call channelData', async () => {
       fakeCiraSocket.tag.accumulator = String.fromCharCode(APFProtocol.CHANNEL_DATA)
-      const cmdSpy = spyOn(APFProcessor, 'channelData')
+      const cmdSpy = vi.spyOn(APFProcessor, 'channelData')
       await APFProcessor.processCommand(fakeCiraSocket)
       expect(cmdSpy).toHaveBeenCalled()
     })
 
     it('should call disconnect', async () => {
       fakeCiraSocket.tag.accumulator = String.fromCharCode(APFProtocol.DISCONNECT)
-      const cmdSpy = spyOn(APFProcessor, 'disconnect')
+      const cmdSpy = vi.spyOn(APFProcessor, 'disconnect')
       await APFProcessor.processCommand(fakeCiraSocket)
       expect(cmdSpy).toHaveBeenCalled()
     })
@@ -151,12 +150,12 @@ describe('APFProcessor Tests', () => {
     it('should disconnect and return 7 when len is >= 7', () => {
       const fakeCiraSocket = {
         tag: {
-          nodeid: jest.fn().mockReturnValue('fakeNodeid')
+          nodeid: vi.fn().mockReturnValue('fakeNodeid')
         }
       }
       const len = 66666
       const data = 'data'
-      const emitSpy = spyOn(APFProcessor.APFEvents, 'emit')
+      const emitSpy = vi.spyOn(APFProcessor.APFEvents, 'emit')
       const result = APFProcessor.disconnect(fakeCiraSocket as any, len, data)
       const expectedResult = 7
       expect(emitSpy).toHaveBeenCalledTimes(1)
@@ -178,7 +177,7 @@ describe('APFProcessor Tests', () => {
       const fakeCiraSocket: any = null
       const len: number = 9 + 1048577
       const data: string = null
-      const readIntSpy = spyOn(Common, 'ReadInt').mockReturnValueOnce(1).mockReturnValueOnce(1048577)
+      const readIntSpy = vi.spyOn(Common, 'ReadInt').mockReturnValueOnce(1).mockReturnValueOnce(1048577)
       const result = APFProcessor.channelData(fakeCiraSocket, len, data)
       const expectedResult = -1
       expect(result).toEqual(expectedResult)
@@ -189,7 +188,7 @@ describe('APFProcessor Tests', () => {
       const fakeCiraSocket: CIRASocket = null
       const len = 9
       const data: string = null
-      spyOn(Common, 'ReadInt').mockReturnValue(1)
+      vi.spyOn(Common, 'ReadInt').mockReturnValue(1)
       const result = APFProcessor.channelData(fakeCiraSocket, len, data)
       const expectedResult = 0
       expect(result).toEqual(expectedResult)
@@ -205,8 +204,8 @@ describe('APFProcessor Tests', () => {
       const len = 100
       const data: string = null
       const lengthOfData = 1
-      const readIntSpy = spyOn(Common, 'ReadInt').mockReturnValue(lengthOfData)
-      const errorSpy = spyOn(logger, 'error')
+      const readIntSpy = vi.spyOn(Common, 'ReadInt').mockReturnValue(lengthOfData)
+      const errorSpy = vi.spyOn(logger, 'error')
       const result = APFProcessor.channelData(fakeCiraSocket, len, data)
       const expectedResult = 9 + lengthOfData
       expect(result).toEqual(expectedResult)
@@ -219,9 +218,9 @@ describe('APFProcessor Tests', () => {
         amtpendingcredits: 1000,
         ciraWindow: 1000,
         socket: {
-          write: jest.fn()
+          write: vi.fn()
         },
-        onData: jest.fn()
+        onData: vi.fn()
       } as any
       const fakeCiraSocket: CIRASocket = {
         tag: {
@@ -232,8 +231,8 @@ describe('APFProcessor Tests', () => {
       const len = 100
       const data: string = Common.IntToStr(100)
       const lengthOfData = 1
-      const readIntSpy = spyOn(Common, 'ReadInt').mockReturnValue(lengthOfData)
-      const sendChannelWindowAdjustSpy = spyOn(APFProcessor, 'SendChannelWindowAdjust')
+      const readIntSpy = vi.spyOn(Common, 'ReadInt').mockReturnValue(lengthOfData)
+      const sendChannelWindowAdjustSpy = vi.spyOn(APFProcessor, 'SendChannelWindowAdjust')
       const result = APFProcessor.channelData(fakeCiraSocket, len, data)
       const expectedResult = 9 + lengthOfData
       expect(result).toEqual(expectedResult)
@@ -256,7 +255,7 @@ describe('APFProcessor Tests', () => {
         }
       } as any
       const data: string = Common.IntToStr(0)
-      const errorSpy = spyOn(logger, 'error')
+      const errorSpy = vi.spyOn(logger, 'error')
       const result = APFProcessor.channelWindowAdjust(fakeCiraSocket, 9, data)
       expect(result).toEqual(9)
       expect(errorSpy).toHaveBeenCalled()
@@ -267,7 +266,7 @@ describe('APFProcessor Tests', () => {
         sendBuffer: Buffer.alloc(1000),
         sendcredits: 1000,
         socket: {
-          write: jest.fn()
+          write: vi.fn()
         },
         state: 2
       } as any
@@ -277,10 +276,10 @@ describe('APFProcessor Tests', () => {
           channels: [fakeCiraChannel]
         }
       } as any
-      const readIntSpy = spyOn(Common, 'ReadInt').mockReturnValueOnce(0).mockReturnValueOnce(0)
+      const readIntSpy = vi.spyOn(Common, 'ReadInt').mockReturnValueOnce(0).mockReturnValueOnce(0)
       const data = ''
       const len = 9
-      const sendChannelDataSpy = spyOn(APFProcessor, 'SendChannelData')
+      const sendChannelDataSpy = vi.spyOn(APFProcessor, 'SendChannelData')
       const result = APFProcessor.channelWindowAdjust(fakeCiraSocket, len, data)
       expect(result).toEqual(9)
       expect(sendChannelDataSpy).toHaveBeenCalled()
@@ -292,7 +291,7 @@ describe('APFProcessor Tests', () => {
         sendBuffer: Buffer.from('my fake buffer'),
         sendcredits: 5,
         socket: {
-          write: jest.fn()
+          write: vi.fn()
         },
         amtchannelid: 0,
         state: 2
@@ -305,8 +304,8 @@ describe('APFProcessor Tests', () => {
       } as any
       const data = ''
       const len = 9
-      const readIntSpy = spyOn(Common, 'ReadInt').mockReturnValueOnce(0).mockReturnValueOnce(0)
-      const sendChannelDataSpy = spyOn(APFProcessor, 'SendChannelData')
+      const readIntSpy = vi.spyOn(Common, 'ReadInt').mockReturnValueOnce(0).mockReturnValueOnce(0)
+      const sendChannelDataSpy = vi.spyOn(APFProcessor, 'SendChannelData')
       const result = APFProcessor.channelWindowAdjust(fakeCiraSocket, len, data)
       expect(result).toEqual(9)
       expect(sendChannelDataSpy).toHaveBeenCalled()
@@ -329,8 +328,8 @@ describe('APFProcessor Tests', () => {
           channels: [null, null]
         }
       } as any
-      const readIntSpy = spyOn(Common, 'ReadInt').mockReturnValue(0)
-      const errorSpy = spyOn(logger, 'error')
+      const readIntSpy = vi.spyOn(Common, 'ReadInt').mockReturnValue(0)
+      const errorSpy = vi.spyOn(logger, 'error')
       const result = APFProcessor.channelClose(fakeCiraSocket, 5, '')
       expect(result).toEqual(5)
       expect(readIntSpy).toHaveBeenCalled()
@@ -340,7 +339,7 @@ describe('APFProcessor Tests', () => {
     it('should return 5 on happy path', () => {
       const fakeCiraChannel: CIRAChannel = {
         socket: {
-          write: jest.fn()
+          write: vi.fn()
         },
         state: 1,
         onStateChange: new EventEmitter()
@@ -351,8 +350,8 @@ describe('APFProcessor Tests', () => {
           channels: [null, fakeCiraChannel]
         }
       } as any
-      const readIntSpy = spyOn(Common, 'ReadInt').mockReturnValue(1)
-      const sendChannelCloseSpy = spyOn(APFProcessor, 'SendChannelClose')
+      const readIntSpy = vi.spyOn(Common, 'ReadInt').mockReturnValue(1)
+      const sendChannelCloseSpy = vi.spyOn(APFProcessor, 'SendChannelClose')
       const result = APFProcessor.channelClose(fakeCiraSocket, 5, '')
       expect(result).toEqual(5)
       expect(readIntSpy).toHaveBeenCalled()
@@ -377,8 +376,8 @@ describe('APFProcessor Tests', () => {
 
     it('should return 17 if cirachannel is null', () => {
       const data = ''
-      const readIntSpy = spyOn(Common, 'ReadInt').mockReturnValue(0)
-      const errorSpy = spyOn(logger, 'error')
+      const readIntSpy = vi.spyOn(Common, 'ReadInt').mockReturnValue(0)
+      const errorSpy = vi.spyOn(logger, 'error')
       const result = APFProcessor.channelOpenFailure(fakeCiraSocket, 17, data)
       expect(result).toEqual(17)
       expect(errorSpy).toHaveBeenCalled()
@@ -397,7 +396,7 @@ describe('APFProcessor Tests', () => {
         }
       } as any
       const length = 17
-      const readIntSpy = spyOn(Common, 'ReadInt').mockReturnValue(1)
+      const readIntSpy = vi.spyOn(Common, 'ReadInt').mockReturnValue(1)
 
       const result = APFProcessor.channelOpenFailure(fakeCiraSocket, length, '')
       expect(result).toEqual(17)
@@ -412,9 +411,9 @@ describe('APFProcessor Tests', () => {
     let sendChannelDataSpy
     beforeEach(() => {
       fakeCiraChannel = {
-        onStateChange: jest.fn(),
+        onStateChange: vi.fn(),
         socket: {
-          write: jest.fn()
+          write: vi.fn()
         }
       } as any
       fakeCiraSocket = {
@@ -423,8 +422,8 @@ describe('APFProcessor Tests', () => {
           channels: [null, fakeCiraChannel]
         }
       } as any
-      sendChannelCloseSpy = spyOn(APFProcessor, 'SendChannelClose')
-      sendChannelDataSpy = spyOn(APFProcessor, 'SendChannelData')
+      sendChannelCloseSpy = vi.spyOn(APFProcessor, 'SendChannelClose')
+      sendChannelDataSpy = vi.spyOn(APFProcessor, 'SendChannelData')
     })
 
     it('should return 0 if length < 17', () => {
@@ -443,7 +442,7 @@ describe('APFProcessor Tests', () => {
       } as any
       const length = 17
       const data = ''
-      const readIntSpy = spyOn(Common, 'ReadInt').mockReturnValue(0)
+      const readIntSpy = vi.spyOn(Common, 'ReadInt').mockReturnValue(0)
       const result = APFProcessor.channelOpenConfirmation(fakeCiraSocket, length, data)
       expect(result).toEqual(17)
       expect(readIntSpy).toHaveBeenCalled()
@@ -453,7 +452,7 @@ describe('APFProcessor Tests', () => {
       const length = 17
       const data = ''
       fakeCiraChannel.closing = 1
-      const readIntSpy = spyOn(Common, 'ReadInt').mockReturnValue(1)
+      const readIntSpy = vi.spyOn(Common, 'ReadInt').mockReturnValue(1)
       const result = APFProcessor.channelOpenConfirmation(fakeCiraSocket, length, data)
       expect(result).toEqual(17)
       expect(readIntSpy).toHaveBeenCalled()
@@ -461,7 +460,8 @@ describe('APFProcessor Tests', () => {
     })
 
     it('should call SendChannelData to send entire pending buffer', () => {
-      const readIntSpy = spyOn(Common, 'ReadInt')
+      const readIntSpy = vi
+        .spyOn(Common, 'ReadInt')
         .mockReturnValueOnce(1)
         .mockReturnValueOnce(5)
         .mockReturnValueOnce(1000)
@@ -480,7 +480,7 @@ describe('APFProcessor Tests', () => {
     it('should call SendChannelData to send part of pending buffer', () => {
       const length = 17
       const data = ''
-      const readIntSpy = spyOn(Common, 'ReadInt').mockReturnValue(1)
+      const readIntSpy = vi.spyOn(Common, 'ReadInt').mockReturnValue(1)
       fakeCiraChannel.closing = 0
       fakeCiraChannel.sendBuffer = Buffer.from('fake buffer')
       fakeCiraChannel.onStateChange = new EventEmitter()
@@ -496,7 +496,7 @@ describe('APFProcessor Tests', () => {
     let fakeCiraSocket: CIRASocket
     beforeEach(() => {
       fakeCiraSocket = {
-        write: jest.fn()
+        write: vi.fn()
       } as any
     })
 
@@ -510,7 +510,7 @@ describe('APFProcessor Tests', () => {
     it('should return -1 if ChannelTypeLength > 2048', () => {
       const length = 33
       const data = ''
-      const readIntSpy = spyOn(Common, 'ReadInt').mockReturnValueOnce(2049)
+      const readIntSpy = vi.spyOn(Common, 'ReadInt').mockReturnValueOnce(2049)
       const result = APFProcessor.channelOpen(fakeCiraSocket, length, data)
       expect(result).toEqual(-1)
       expect(readIntSpy).toHaveBeenCalled()
@@ -519,7 +519,7 @@ describe('APFProcessor Tests', () => {
     it('should return 0 if length < 33 + ChannelTypeLength', () => {
       const length = 33
       const data = ''
-      const readIntSpy = spyOn(Common, 'ReadInt').mockReturnValueOnce(1)
+      const readIntSpy = vi.spyOn(Common, 'ReadInt').mockReturnValueOnce(1)
       const result = APFProcessor.channelOpen(fakeCiraSocket, length, data)
       expect(result).toEqual(0)
       expect(readIntSpy).toHaveBeenCalled()
@@ -528,7 +528,8 @@ describe('APFProcessor Tests', () => {
     it('should return -1 if TargetLen > 2048', () => {
       const length = 33 + 1
       const data = ''
-      const readIntSpy = spyOn(Common, 'ReadInt')
+      const readIntSpy = vi
+        .spyOn(Common, 'ReadInt')
         .mockReturnValueOnce(1) // ChannelTypeLength
         .mockReturnValueOnce(1) // SenderChannel
         .mockReturnValueOnce(20) // WindowSize
@@ -541,7 +542,8 @@ describe('APFProcessor Tests', () => {
     it('should return 0 if length < 33 + ChannelTypeLength + TargetLen', () => {
       const length = 33 + 1 + 10 - 1
       const data = ''
-      const readIntSpy = spyOn(Common, 'ReadInt')
+      const readIntSpy = vi
+        .spyOn(Common, 'ReadInt')
         .mockReturnValueOnce(1) // ChannelTypeLength
         .mockReturnValueOnce(1) // SenderChannel
         .mockReturnValueOnce(20) // WindowSize
@@ -554,7 +556,8 @@ describe('APFProcessor Tests', () => {
     it('should return -1 if SourceLen > 2048', () => {
       const length = 33 + 1 + 10
       const data = ''
-      const readIntSpy = spyOn(Common, 'ReadInt')
+      const readIntSpy = vi
+        .spyOn(Common, 'ReadInt')
         .mockReturnValueOnce(1) // ChannelTypeLength
         .mockReturnValueOnce(1) // SenderChannel
         .mockReturnValueOnce(20) // WindowSize
@@ -569,7 +572,8 @@ describe('APFProcessor Tests', () => {
     it('should return 0 if length < 33 + ChannelTypeLength + TargetLen', () => {
       const length = 33 + 1 + 10 + 10 - 1
       const data = ''
-      const readIntSpy = spyOn(Common, 'ReadInt')
+      const readIntSpy = vi
+        .spyOn(Common, 'ReadInt')
         .mockReturnValueOnce(1) // ChannelTypeLength
         .mockReturnValueOnce(1) // SenderChannel
         .mockReturnValueOnce(20) // WindowSize
@@ -584,7 +588,8 @@ describe('APFProcessor Tests', () => {
     it('should return on happy path', () => {
       const length = 1000
       const data = ''
-      const readIntSpy = spyOn(Common, 'ReadInt')
+      const readIntSpy = vi
+        .spyOn(Common, 'ReadInt')
         .mockReturnValueOnce(1) // ChannelTypeLength
         .mockReturnValueOnce(1) // SenderChannel
         .mockReturnValueOnce(20) // WindowSize
@@ -592,7 +597,7 @@ describe('APFProcessor Tests', () => {
         .mockReturnValueOnce(22) // TargetPort
         .mockReturnValueOnce(10) // SourcerLen
         .mockReturnValueOnce(22) // SourcePort
-      const sendChannelOpenFailureSpy = spyOn(APFProcessor, 'SendChannelOpenFailure')
+      const sendChannelOpenFailureSpy = vi.spyOn(APFProcessor, 'SendChannelOpenFailure')
       const result = APFProcessor.channelOpen(fakeCiraSocket, length, data)
       expect(result).toBeGreaterThan(33)
       expect(readIntSpy).toHaveBeenCalled()
@@ -602,7 +607,7 @@ describe('APFProcessor Tests', () => {
 
   describe('globalRequest', () => {
     const fakeCiraChannel: CIRAChannel = {
-      onStateChange: jest.fn()
+      onStateChange: vi.fn()
     } as any
     const fakeCiraSocket: CIRASocket = {
       tag: {
@@ -614,7 +619,7 @@ describe('APFProcessor Tests', () => {
     it('should return -1 if requestLen > 2048', () => {
       const length = 14
       const data = ''
-      const readIntSpy = spyOn(Common, 'ReadInt').mockReturnValueOnce(2049)
+      const readIntSpy = vi.spyOn(Common, 'ReadInt').mockReturnValueOnce(2049)
       const result = APFProcessor.globalRequest(fakeCiraSocket, length, data)
       expect(result).toEqual(-1)
       expect(readIntSpy).toHaveBeenCalled()
@@ -630,7 +635,7 @@ describe('APFProcessor Tests', () => {
     it('should return 0 if length + request length < 14', () => {
       const length = 14
       const data = ''
-      const readIntSpy = spyOn(Common, 'ReadInt').mockReturnValue(1)
+      const readIntSpy = vi.spyOn(Common, 'ReadInt').mockReturnValue(1)
       const result = APFProcessor.globalRequest(fakeCiraSocket, length, data)
       expect(result).toEqual(0)
       expect(readIntSpy).toHaveBeenCalled()
@@ -638,10 +643,10 @@ describe('APFProcessor Tests', () => {
 
     it('should return 0 if inadequate length on tcpip-forward', () => {
       fakeCiraSocket.tag.boundPorts = []
-      fakeCiraSocket.write = jest.fn() as any
+      fakeCiraSocket.write = vi.fn() as any
       const length = 27
       const data = '01234tcpip-forward'
-      const readIntSpy = spyOn(Common, 'ReadInt').mockImplementation((x, y) => {
+      const readIntSpy = vi.spyOn(Common, 'ReadInt').mockImplementation((x, y) => {
         if (y === 1) {
           return 13
         } else if (y === 6 + 13) {
@@ -655,12 +660,12 @@ describe('APFProcessor Tests', () => {
 
     it('should call SendTcpForwardSuccessReply on tcpip-forward happy path', () => {
       fakeCiraSocket.tag.boundPorts = []
-      fakeCiraSocket.write = jest.fn() as any
+      fakeCiraSocket.write = vi.fn() as any
       const length = 1000
       const data = '01234tcpip-forward'
-      const readIntSpy = spyOn(Common, 'ReadInt').mockReturnValue(13)
-      const sendTcpForwardSuccessReplySpy = spyOn(APFProcessor, 'SendTcpForwardSuccessReply')
-      const sendTcpForwardCancelReplySpy = spyOn(APFProcessor, 'SendTcpForwardCancelReply')
+      const readIntSpy = vi.spyOn(Common, 'ReadInt').mockReturnValue(13)
+      const sendTcpForwardSuccessReplySpy = vi.spyOn(APFProcessor, 'SendTcpForwardSuccessReply')
+      const sendTcpForwardCancelReplySpy = vi.spyOn(APFProcessor, 'SendTcpForwardCancelReply')
       const result = APFProcessor.globalRequest(fakeCiraSocket, length, data)
       expect(result).toBeGreaterThan(14)
       expect(sendTcpForwardSuccessReplySpy).toHaveBeenCalled()
@@ -670,10 +675,10 @@ describe('APFProcessor Tests', () => {
 
     it('should return 0 if inadequate length on cancel-tcpip-forward', () => {
       fakeCiraSocket.tag.boundPorts = []
-      fakeCiraSocket.write = jest.fn() as any
+      fakeCiraSocket.write = vi.fn() as any
       const length = 50
       const data = '01234cancel-tcpip-forward'
-      const readIntSpy = spyOn(Common, 'ReadInt').mockImplementation((x, y) => {
+      const readIntSpy = vi.spyOn(Common, 'ReadInt').mockImplementation((x, y) => {
         if (y === 1) {
           return 20
         } else if (y === 6 + 20) {
@@ -689,10 +694,10 @@ describe('APFProcessor Tests', () => {
       fakeCiraSocket.tag.boundPorts = []
       const length = 1000
       const data = '01234cancel-tcpip-forward'
-      const readIntSpy = spyOn(Common, 'ReadInt').mockReturnValue(25)
-      const sendTcpForwardSuccessReplySpy = spyOn(APFProcessor, 'SendTcpForwardSuccessReply')
+      const readIntSpy = vi.spyOn(Common, 'ReadInt').mockReturnValue(25)
+      const sendTcpForwardSuccessReplySpy = vi.spyOn(APFProcessor, 'SendTcpForwardSuccessReply')
       sendTcpForwardSuccessReplySpy.mockReset()
-      const sendTcpForwardCancelReplySpy = spyOn(APFProcessor, 'SendTcpForwardCancelReply')
+      const sendTcpForwardCancelReplySpy = vi.spyOn(APFProcessor, 'SendTcpForwardCancelReply')
       const result = APFProcessor.globalRequest(fakeCiraSocket, length, data)
       expect(result).toBeGreaterThan(14)
       expect(sendTcpForwardSuccessReplySpy).not.toHaveBeenCalled()
@@ -704,7 +709,7 @@ describe('APFProcessor Tests', () => {
       fakeCiraSocket.tag.boundPorts = []
       const length = 1000
       const data = '01234udp-send-to@amt.intel.com'
-      const readIntSpy = spyOn(Common, 'ReadInt').mockReturnValue(25)
+      const readIntSpy = vi.spyOn(Common, 'ReadInt').mockReturnValue(25)
       const result = APFProcessor.globalRequest(fakeCiraSocket, length, data)
       expect(result).toBeGreaterThan(26)
       expect(readIntSpy).toHaveBeenCalled()
@@ -713,7 +718,7 @@ describe('APFProcessor Tests', () => {
     it('should return 6 + requestLen on unsupported requested', () => {
       const length = 1000
       const data = '01234unsupported--request'
-      const readIntSpy = spyOn(Common, 'ReadInt').mockReturnValue(20)
+      const readIntSpy = vi.spyOn(Common, 'ReadInt').mockReturnValue(20)
       const result = APFProcessor.globalRequest(fakeCiraSocket, length, data)
       expect(result).toBeGreaterThan(6)
       expect(readIntSpy).toHaveBeenCalled()
@@ -723,7 +728,7 @@ describe('APFProcessor Tests', () => {
   describe('serviceRequest', () => {
     let sendServiceAcceptSpy
     beforeEach(() => {
-      sendServiceAcceptSpy = spyOn(APFProcessor, 'SendServiceAccept')
+      sendServiceAcceptSpy = vi.spyOn(APFProcessor, 'SendServiceAccept')
     })
 
     it('should return 0 if length < 5', () => {
@@ -738,7 +743,7 @@ describe('APFProcessor Tests', () => {
       const fakeCiraSocket = null
       const length = 13
       const data = ''
-      const readIntSpy = spyOn(Common, 'ReadInt').mockReturnValueOnce(2049)
+      const readIntSpy = vi.spyOn(Common, 'ReadInt').mockReturnValueOnce(2049)
       const result = APFProcessor.serviceRequest(fakeCiraSocket, length, data)
       expect(result).toEqual(-1)
       expect(readIntSpy).toHaveBeenCalled()
@@ -748,7 +753,7 @@ describe('APFProcessor Tests', () => {
       const fakeCiraSocket = null
       const length = 5
       const data = ''
-      const readIntSpy = spyOn(Common, 'ReadInt').mockReturnValue(1)
+      const readIntSpy = vi.spyOn(Common, 'ReadInt').mockReturnValue(1)
       const result = APFProcessor.serviceRequest(fakeCiraSocket, length, data)
       expect(result).toEqual(0)
       expect(readIntSpy).toHaveBeenCalled()
@@ -756,11 +761,11 @@ describe('APFProcessor Tests', () => {
 
     it('should call SendServiceAccept for pfwd@amt.intel.com', () => {
       const fakeCiraSocket = {
-        write: jest.fn()
+        write: vi.fn()
       } as any
       const length = 100
       const data = '01234pfwd@amt.intel.com'
-      const readIntSpy = spyOn(Common, 'ReadInt').mockReturnValue(18)
+      const readIntSpy = vi.spyOn(Common, 'ReadInt').mockReturnValue(18)
       const result = APFProcessor.serviceRequest(fakeCiraSocket, length, data)
       expect(sendServiceAcceptSpy).toHaveBeenCalled()
       expect(result).toBeGreaterThan(5)
@@ -769,11 +774,11 @@ describe('APFProcessor Tests', () => {
 
     it('should call SendServiceAccept for auth@amt.intel.com', () => {
       const fakeCiraSocket = {
-        write: jest.fn()
+        write: vi.fn()
       } as any
       const length = 100
       const data = '01234auth@amt.intel.com'
-      const readIntSpy = spyOn(Common, 'ReadInt').mockReturnValue(18)
+      const readIntSpy = vi.spyOn(Common, 'ReadInt').mockReturnValue(18)
       const result = APFProcessor.serviceRequest(fakeCiraSocket, length, data)
       expect(sendServiceAcceptSpy).toHaveBeenCalled()
       expect(result).toBeGreaterThan(5)
@@ -794,7 +799,7 @@ describe('APFProcessor Tests', () => {
       const fakeCiraSocket = null
       const length = 13
       const data = ''
-      const readIntSpy = spyOn(Common, 'ReadInt').mockReturnValueOnce(2049)
+      const readIntSpy = vi.spyOn(Common, 'ReadInt').mockReturnValueOnce(2049)
       const result = APFProcessor.userAuthRequest(fakeCiraSocket, length, data)
       expect(result).toEqual(-1)
       expect(readIntSpy).toHaveBeenCalled()
@@ -804,7 +809,7 @@ describe('APFProcessor Tests', () => {
       const fakeCiraSocket = null
       const length = 5 + 10 - 1
       const data = ''
-      const readIntSpy = spyOn(Common, 'ReadInt').mockReturnValueOnce(10)
+      const readIntSpy = vi.spyOn(Common, 'ReadInt').mockReturnValueOnce(10)
       const result = APFProcessor.userAuthRequest(fakeCiraSocket, length, data)
       expect(result).toEqual(-1)
       expect(readIntSpy).toHaveBeenCalled()
@@ -814,7 +819,7 @@ describe('APFProcessor Tests', () => {
       const fakeCiraSocket = null
       const length = 13
       const data = ''
-      const readIntSpy = spyOn(Common, 'ReadInt').mockReturnValueOnce(10).mockReturnValueOnce(2049)
+      const readIntSpy = vi.spyOn(Common, 'ReadInt').mockReturnValueOnce(10).mockReturnValueOnce(2049)
       const result = APFProcessor.userAuthRequest(fakeCiraSocket, length, data)
       expect(result).toEqual(-1)
       expect(readIntSpy).toHaveBeenCalled()
@@ -824,7 +829,7 @@ describe('APFProcessor Tests', () => {
       const fakeCiraSocket = null
       const length = 9 + 10 + 10 - 1
       const data = ''
-      const readIntSpy = spyOn(Common, 'ReadInt').mockReturnValueOnce(10).mockReturnValueOnce(10)
+      const readIntSpy = vi.spyOn(Common, 'ReadInt').mockReturnValueOnce(10).mockReturnValueOnce(10)
       const result = APFProcessor.userAuthRequest(fakeCiraSocket, length, data)
       expect(result).toEqual(-1)
       expect(readIntSpy).toHaveBeenCalled()
@@ -834,7 +839,8 @@ describe('APFProcessor Tests', () => {
       const fakeCiraSocket = null
       const length = 13
       const data = ''
-      const readIntSpy = spyOn(Common, 'ReadInt')
+      const readIntSpy = vi
+        .spyOn(Common, 'ReadInt')
         .mockReturnValueOnce(10)
         .mockReturnValueOnce(10)
         .mockReturnValueOnce(2049)
@@ -847,7 +853,8 @@ describe('APFProcessor Tests', () => {
       const fakeCiraSocket = null
       const length = 13 + 10 + 10 + 10 - 1
       const data = ''
-      const readIntSpy = spyOn(Common, 'ReadInt')
+      const readIntSpy = vi
+        .spyOn(Common, 'ReadInt')
         .mockReturnValueOnce(10)
         .mockReturnValueOnce(10)
         .mockReturnValueOnce(10)
@@ -860,8 +867,8 @@ describe('APFProcessor Tests', () => {
     //   const fakeCiraSocket = null
     //   const length = 13 + 10 + 10 + 8
     //   const data = ''
-    //   const substringSpy = spyOn(String.prototype, 'substring').mockImplementation(() => 'password')
-    //   const readIntSpy = spyOn(Common, 'ReadInt')
+    //   const substringSpy = vi.spyOn(String.prototype, 'substring').mockImplementation(() => 'password')
+    //   const readIntSpy = vi.spyOn(Common, 'ReadInt')
     //     .mockReturnValueOnce(10)
     //     .mockReturnValueOnce(10)
     //     .mockReturnValueOnce(8)
@@ -876,8 +883,8 @@ describe('APFProcessor Tests', () => {
     //   const fakeCiraSocket = null
     //   const length = 13 + 10 + 10 + 8
     //   const data = ''
-    //   const substringSpy = spyOn(String.prototype, 'substring').mockImplementation(() => 'password')
-    //   const readIntSpy = spyOn(Common, 'ReadInt')
+    //   const substringSpy = vi.spyOn(String.prototype, 'substring').mockImplementation(() => 'password')
+    //   const readIntSpy = vi.spyOn(Common, 'ReadInt')
     //     .mockReturnValueOnce(10)
     //     .mockReturnValueOnce(10)
     //     .mockReturnValueOnce(10)
@@ -892,8 +899,8 @@ describe('APFProcessor Tests', () => {
     //   const fakeCiraSocket = null
     //   const length = 18 + 10 + 10 + 10 + 10 - 1
     //   const data = ''
-    //   const substringSpy = spyOn(String.prototype, 'substring').mockImplementation(() => 'password')
-    //   const readIntSpy = spyOn(Common, 'ReadInt')
+    //   const substringSpy = vi.spyOn(String.prototype, 'substring').mockImplementation(() => 'password')
+    //   const readIntSpy = vi.spyOn(Common, 'ReadInt')
     //     .mockReturnValueOnce(10)
     //     .mockReturnValueOnce(10)
     //     .mockReturnValueOnce(10)
@@ -908,13 +915,13 @@ describe('APFProcessor Tests', () => {
     //   const fakeCiraSocket = null
     //   const length = 18 + 10 + 10 + 10 + 10 + 1
     //   const data = ''
-    //   const substringSpy = spyOn(String.prototype, 'substring').mockImplementation(() => 'password')
-    //   const readIntSpy = spyOn(Common, 'ReadInt')
+    //   const substringSpy = vi.spyOn(String.prototype, 'substring').mockImplementation(() => 'password')
+    //   const readIntSpy = vi.spyOn(Common, 'ReadInt')
     //     .mockReturnValueOnce(10)
     //     .mockReturnValueOnce(10)
     //     .mockReturnValueOnce(10)
     //     .mockReturnValueOnce(10)
-    //   const emitSpy = spyOn(APFProcessor.APFEvents, 'emit')
+    //   const emitSpy = vi.spyOn(APFProcessor.APFEvents, 'emit')
     //   const result = APFProcessor.userAuthRequest(fakeCiraSocket, length, data)
     //   expect(result).toBeGreaterThan(18)
     //   expect(substringSpy).toHaveBeenCalled()
@@ -938,7 +945,7 @@ describe('APFProcessor Tests', () => {
       } as any
       const length = 93
       const data = ''
-      const emitSpy = spyOn(APFProcessor.APFEvents, 'emit')
+      const emitSpy = vi.spyOn(APFProcessor.APFEvents, 'emit')
       const result = APFProcessor.protocolVersion(fakeCiraSocket, length, data)
       expect(result).toEqual(93)
       expect(emitSpy).toHaveBeenCalled()
@@ -994,7 +1001,7 @@ describe('APFProcessor Tests', () => {
     it('should return 5 on happy path', () => {
       const fakeCiraSocket: CIRASocket = {
         tag: {},
-        write: jest.fn()
+        write: vi.fn()
       } as any
       const config = {
         common_name: 'localhost',
@@ -1068,7 +1075,7 @@ describe('APFProcessor Tests', () => {
 
       const length = 5
       const data = ''
-      const sendKeepAliveReplySpy = spyOn(APFProcessor, 'SendKeepAliveReply')
+      const sendKeepAliveReplySpy = vi.spyOn(APFProcessor, 'SendKeepAliveReply')
       const result = APFProcessor.keepAliveRequest(fakeCiraSocket, length, data)
       expect(result).toEqual(5)
       expect(sendKeepAliveReplySpy).toHaveBeenCalled()
@@ -1079,10 +1086,10 @@ describe('APFProcessor Tests', () => {
     let writeSpy
     let fakeCiraSocket: CIRASocket
     beforeEach(() => {
-      writeSpy = spyOn(APFProcessor, 'Write')
+      writeSpy = vi.spyOn(APFProcessor, 'Write')
       writeSpy.mockReset()
       fakeCiraSocket = {
-        write: jest.fn()
+        write: vi.fn()
       } as any
     })
     const cookie = 0
@@ -1234,7 +1241,7 @@ describe('APFProcessor Tests', () => {
     })
 
     it('should SendChannelData', () => {
-      const socketwriteSpy = spyOn(fakeCiraSocket, 'write')
+      const socketwriteSpy = vi.spyOn(fakeCiraSocket, 'write')
       APFProcessor.SendChannelData(fakeCiraSocket, channelid, Buffer.from(data))
       const dataExpected = Buffer.from(
         String.fromCharCode(APFProtocol.CHANNEL_DATA) +
@@ -1280,7 +1287,7 @@ describe('APFProcessor Tests', () => {
   // describe('Write', () => {
   //   it('should call write on CIRASocket', () => {
   //     const fakeCiraSocket1 = {
-  //       write: jest.fn()
+  //       write: vi.fn()
   //     } as any
   //     const data = ''
   //     const dataExpected = Buffer.from(data, 'binary')

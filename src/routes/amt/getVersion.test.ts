@@ -3,8 +3,9 @@
  * SPDX-License-Identifier: Apache-2.0
  **********************************************************************/
 
+import { vi, type MockInstance } from 'vitest'
 import { version } from './getVersion.js'
-import { createSpyObj } from '../../test/helper/jest.js'
+import { createSpyObj } from '../../test/helper/vitest.js'
 import {
   setupAndConfigurationServiceResponse,
   softwareIdentityResponse,
@@ -14,13 +15,11 @@ import { CIRAHandler } from '../../amt/CIRAHandler.js'
 import { DeviceAction } from '../../amt/DeviceAction.js'
 import { HttpHandler } from '../../amt/HttpHandler.js'
 import { messages } from '../../logging/index.js'
-import { type Spied, spyOn } from 'jest-mock'
-
 describe('version', () => {
   let resSpy
   let req
-  let setupAndConfigurationServiceSpy: Spied<any>
-  let softwareIdentitySpy: Spied<any>
+  let setupAndConfigurationServiceSpy: MockInstance
+  let softwareIdentitySpy: MockInstance
   beforeEach(() => {
     const handler = new CIRAHandler(new HttpHandler(), 'admin', 'P@ssw0rd')
     const device = new DeviceAction(handler, null)
@@ -38,8 +37,8 @@ describe('version', () => {
     resSpy.json.mockReturnThis()
     resSpy.send.mockReturnThis()
 
-    softwareIdentitySpy = spyOn(device, 'getSoftwareIdentity')
-    setupAndConfigurationServiceSpy = spyOn(device, 'getSetupAndConfigurationService')
+    softwareIdentitySpy = vi.spyOn(device, 'getSoftwareIdentity')
+    setupAndConfigurationServiceSpy = vi.spyOn(device, 'getSetupAndConfigurationService')
   })
 
   it('should get version', async () => {
