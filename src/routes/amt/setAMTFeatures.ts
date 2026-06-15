@@ -87,7 +87,7 @@ export async function setAMTFeatures(req: Request, res: Response): Promise<void>
       const platformEraseCaps = bootCaps.Body?.AMT_BootCapabilities?.PlatformErase ?? 0
       if (platformEraseCaps !== 0) {
         rpeDesired = !!payload.platformEraseEnabled
-        await req.deviceAction.setRPEEnabled(rpeDesired)
+        await req.deviceAction.setRPE(rpeDesired)
       }
     }
 

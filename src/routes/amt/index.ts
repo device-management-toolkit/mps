@@ -41,8 +41,8 @@ import { setKVMRedirectionSettingData } from './kvm/set.js'
 import { setLinkPreference } from './setLinkPreference.js'
 import { linkPreferenceValidator } from './linkPreferenceValidator.js'
 import { getBootCapabilities } from './getBootCapabilities.js'
-import { setRPEEnabled } from './setRPEEnabled.js'
-import { sendRemoteErase } from './sendRemoteErase.js'
+import { setRPE } from './setRPE.js'
+import { sendRPE } from './sendRPE.js'
 
 const amtRouter: Router = Router()
 
@@ -57,8 +57,8 @@ amtRouter.get('/power/state/:guid', ciraMiddleware, powerState)
 amtRouter.get('/features/:guid', ciraMiddleware, getAMTFeatures)
 amtRouter.post('/features/:guid', amtFeaturesValidator(), validateMiddleware, ciraMiddleware, setAMTFeatures)
 amtRouter.get('/boot/capabilities/:guid', ciraMiddleware, getBootCapabilities)
-amtRouter.post('/boot/rpe/:guid', ciraMiddleware, setRPEEnabled)
-amtRouter.post('/remoteErase/:guid', ciraMiddleware, sendRemoteErase)
+amtRouter.post('/boot/rpe/:guid', ciraMiddleware, setRPE)
+amtRouter.post('/rpe/:guid', ciraMiddleware, sendRPE)
 amtRouter.get('/version/:guid', ciraMiddleware, version)
 amtRouter.delete('/deactivate/:guid', ciraMiddleware, deactivate)
 amtRouter.get('/power/bootSources/:guid', ciraMiddleware, bootSources)

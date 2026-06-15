@@ -198,27 +198,27 @@ export class DeviceAction {
     return result.Envelope
   }
 
-  async setRPEEnabled(enabled: boolean): Promise<void> {
-    logger.silly(`setRPEEnabled ${messages.REQUEST}`)
+  async setRPE(enabled: boolean): Promise<void> {
+    logger.silly(`setRPE ${messages.REQUEST}`)
     const bootOptions = await this.getBootOptions()
     const current = bootOptions.AMT_BootSettingData
-    current.PlatformErase = enabled
+    current.RPE = enabled
     await this.setBootConfiguration(current)
-    logger.silly(`setRPEEnabled ${messages.COMPLETE}`)
+    logger.silly(`setRPE ${messages.COMPLETE}`)
   }
 
-  async sendRemoteErase(eraseMask: number): Promise<void> {
-    logger.silly(`sendRemoteErase ${messages.REQUEST}`)
+  async sendRPE(eraseMask: number): Promise<void> {
+    logger.silly(`sendRPE ${messages.REQUEST}`)
 
     // CSME sentinel bit: 0x10000 maps to ConfigurationDataReset, not a hardware erase target
     const CSME_BIT = 0x10000
     const csmeRequested = (eraseMask & CSME_BIT) !== 0
     const hwMask = eraseMask & ~CSME_BIT // strip the CSME bit for hardware TLV
 
-    // Step 1: GET current boot settings and verify RPEEnabled
+    // Step 1: GET current boot settings and verify RPE
     const bootOptions = await this.getBootOptions()
     const current = bootOptions.AMT_BootSettingData
-    if (!current.RPEEnabled) {
+    if (!current.RPE) {
       throw new Error('RPE is not enabled on this device')
     }
 
@@ -232,7 +232,7 @@ export class DeviceAction {
     const xmlRpeMode = this.cim.BootService.RequestStateChange(32770)
     const rscResult = await this.ciraHandler.Send(this.ciraSocket, xmlRpeMode)
     if (rscResult?.Envelope?.Body?.RequestStateChange_OUTPUT?.ReturnValue !== 0) {
-      logger.error(`sendRemoteErase RequestStateChange(32770) failed: ${JSON.stringify(rscResult?.Envelope?.Body)}`)
+      logger.error(`sendRPE RequestStateChange(32770) failed: ${JSON.stringify(rscResult?.Envelope?.Body)}`)
     }
 
     // Step 2: Build minimal PUT body — only writable fields, no read-only fields.
@@ -287,7 +287,7 @@ export class DeviceAction {
     // Step 5: Power Cycle Off Hard — S5→S0 required; warm reset keeps ME power rails active
     await this.sendPowerAction(5)
 
-    logger.silly(`sendRemoteErase ${messages.COMPLETE}`)
+    logger.silly(`sendRPE ${messages.COMPLETE}`)
   }
 
   async requestUserConsentCode(): Promise<Common.Models.Envelope<IPS.Models.StartOptIn_OUTPUT>> {

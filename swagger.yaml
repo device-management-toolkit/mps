@@ -299,6 +299,85 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/GetAMTFeaturesResponse'
+  /api/v1/amt/boot/rpe/{guid}:
+    post:
+      summary: Enable or Disable Remote Platform Erase (RPE)
+      description: |
+        Enables or disables the Remote Platform Erase feature on the specified AMT device.
+        RPE must be enabled before calling `POST /api/v1/amt/rpe/{guid}` to trigger an erase.
+        Returns 400 if the device does not support RPE.
+      tags:
+        - AMT
+      parameters:
+        - name: guid
+          in: path
+          description: GUID of device
+          example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SetRPERequest'
+      responses:
+        200:
+          description: 'RPE enabled/disabled successfully'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RPEStatusResponse'
+        400:
+          description: 'Device does not support Remote Platform Erase'
+        404:
+          description: 'Device not found/connected'
+        500:
+          description: 'Internal server error'
+  /api/v1/amt/rpe/{guid}:
+    post:
+      summary: Trigger Remote Platform Erase
+      description: |
+        Initiates a Remote Platform Erase on the specified AMT device.
+        RPE must be enabled on the device first via `POST /api/v1/amt/boot/rpe/{guid}`.
+
+        The `eraseMask` is a bitmask of erase targets to activate:
+        - `0x0001` — Non-volatile memory
+        - `0x0002` — Volatile memory
+        - `0x10000` — CSME unconfigure (cannot be combined with other bits)
+        - `0` — Platform erase without specific hardware target
+
+        Returns 400 if the device does not support RPE, if the requested mask is not supported, or if CSME is combined with other erase operations.
+      tags:
+        - AMT
+      parameters:
+        - name: guid
+          in: path
+          description: GUID of device
+          example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SendRPERequest'
+      responses:
+        200:
+          description: 'Remote Platform Erase initiated successfully'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RPEStatusResponse'
+        400:
+          description: 'Device does not support RPE, requested mask not supported, or invalid mask combination'
+        404:
+          description: 'Device not found/connected'
+        500:
+          description: 'Internal server error'
   /api/v1/amt/alarmOccurrences/{guid}:
     post:
       summary: Set new Alarm Clock Occurence
@@ -2434,7 +2513,9 @@ components:
           type: boolean
         winREBootSupported:
           type: boolean
-        remoteErase:
+        rpe:
+          type: boolean
+        rpeSupported:
           type: boolean
       example:
         userConsent: kvm
@@ -2447,7 +2528,8 @@ components:
         httpsBootSupported: true
         winREBootSupported: true
         localPBABootSupported: true
-        remoteErase: false
+        rpe: true
+        rpeSupported: true
 
     SetAlarmClockRequest:
       title: SetAlarmClockRequest
@@ -3536,3 +3618,40 @@ components:
         structuredBiosBootString:
           type: string
           example: ''
+    SetRPERequest:
+      title: SetRPERequest
+      required:
+        - enabled
+      properties:
+        enabled:
+          type: boolean
+          description: Set to true to enable RPE, false to disable
+      example:
+        enabled: true
+    SendRPERequest:
+      title: SendRPERequest
+      properties:
+        secureEraseAllSSDs:
+          type: boolean
+          description: 'Bit 2 (0x04) — Secure erase all SSDs'
+        tpmClear:
+          type: boolean
+          description: 'Bit 6 (0x40) — Clear TPM'
+        restoreBIOSToEOM:
+          type: boolean
+          description: 'Bit 26 (0x4000000) — Reload BIOS golden configuration'
+        unconfigureCSME:
+          type: boolean
+          description: 'CSME unconfigure — sets ConfigurationDataReset; cannot be combined with other erase operations'
+      example:
+        secureEraseAllSSDs: true
+        tpmClear: false
+        restoreBIOSToEOM: false
+        unconfigureCSME: false
+    RPEStatusResponse:
+      title: RPEStatusResponse
+      properties:
+        status:
+          type: string
+      example:
+        status: success

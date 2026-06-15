@@ -157,7 +157,7 @@ describe('get amt features', () => {
           InstanceID: 'Intel(r) AMT:BootSettingData 0',
           UseIDER: false,
           UseSOL: false,
-          PlatformErase: true
+          RPE: true
         }
       }
     })
@@ -176,9 +176,8 @@ describe('get amt features', () => {
       httpsBootSupported: true,
       winREBootSupported: true,
       localPBABootSupported: false,
-      rpeEnabled: true,
-      rpeSupported: true,
-      rpeCaps: 3
+      rpe: true,
+      rpeSupported: true
     })
     expect(mqttSpy).toHaveBeenCalledTimes(2)
   })
@@ -274,9 +273,8 @@ describe('get amt features', () => {
       httpsBootSupported: false,
       winREBootSupported: false,
       localPBABootSupported: false,
-      rpeEnabled: false,
-      rpeSupported: false,
-      rpeCaps: 0
+      rpe: false,
+      rpeSupported: false
     })
   })
 })

@@ -3285,7 +3285,7 @@
             "header": [],
             "body": {
               "mode": "raw",
-              "raw": "{\r\n    \"eraseMask\": 0\r\n}",
+              "raw": "{\r\n    \"secureEraseAllSSDs\": true,\r\n    \"tpmClear\": false,\r\n    \"restoreBIOSToEOM\": false,\r\n    \"unconfigureCSME\": false\r\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -3293,7 +3293,7 @@
               }
             },
             "url": {
-              "raw": "{{protocol}}://{{host}}/api/v1/amt/remoteErase/1",
+              "raw": "{{protocol}}://{{host}}/api/v1/amt/rpe/1",
               "protocol": "{{protocol}}",
               "host": [
                 "{{host}}"
@@ -3302,7 +3302,7 @@
                 "api",
                 "v1",
                 "amt",
-                "remoteErase",
+                "rpe",
                 "1"
               ]
             }

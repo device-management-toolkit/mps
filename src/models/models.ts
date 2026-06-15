@@ -227,3 +227,11 @@ export interface OCRProcessResult {
   HTTPSBootSupported: boolean
   OCR: boolean
 }
+
+// RPE = Remote Platform Erase
+export interface RPECapabilities {
+  secureEraseAllSSDs: boolean
+  tpmClear: boolean
+  restoreBIOSToEOM: boolean
+  unconfigureCSME: boolean
+}
