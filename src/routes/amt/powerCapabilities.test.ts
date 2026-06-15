@@ -94,7 +94,8 @@ describe('Power Capabilities', () => {
       'Power on to PXE': 401
     }
     versionResponse.CIM_SoftwareIdentity.responses = [
-      { InstanceID: 'AMT', IsEntity: 'true', VersionString: '9.0.0' }]
+      { InstanceID: 'AMT', IsEntity: 'true', VersionString: '9.0.0' }
+    ]
     vi.spyOn(device, 'getBootCapabilities').mockResolvedValue(powerCaps)
     swIdentitySpy.mockResolvedValue(softwareIdentityResponse.Envelope.Body)
     setupAndConfigSpy.mockResolvedValue(setupAndConfigurationServiceResponse.Envelope)

@@ -6,18 +6,18 @@
 import { ErrorResponse } from '../../utils/amtHelper.js'
 import { MqttProvider } from '../../utils/MqttProvider.js'
 import { getBootCapabilities } from './getBootCapabilities.js'
-import { createSpyObj } from '../../test/helper/jest.js'
+import { createSpyObj } from '../../test/helper/vitest.js'
 import { DeviceAction } from '../../amt/DeviceAction.js'
 import { CIRAHandler } from '../../amt/CIRAHandler.js'
 import { HttpHandler } from '../../amt/HttpHandler.js'
 import { messages } from '../../logging/index.js'
-import { type Spied, spyOn } from 'jest-mock'
+import { vi, type MockInstance } from 'vitest'
 
 describe('Get Boot Capabilities', () => {
   let req: any
   let resSpy: any
-  let mqttSpy: Spied<any>
-  let bootCapsSpy: Spied<any>
+  let mqttSpy: MockInstance
+  let bootCapsSpy: MockInstance
   let device: DeviceAction
 
   beforeEach(() => {
@@ -27,13 +27,18 @@ describe('Get Boot Capabilities', () => {
       params: { guid: '4c4c4544-004b-4210-8033-b6c04f504633' },
       deviceAction: device
     }
-    resSpy = createSpyObj('Response', ['status', 'json', 'end', 'send'])
+    resSpy = createSpyObj('Response', [
+      'status',
+      'json',
+      'end',
+      'send'
+    ])
     resSpy.status.mockReturnThis()
     resSpy.json.mockReturnThis()
     resSpy.send.mockReturnThis()
 
-    mqttSpy = spyOn(MqttProvider, 'publishEvent')
-    bootCapsSpy = spyOn(device, 'getBootCapabilities')
+    mqttSpy = vi.spyOn(MqttProvider, 'publishEvent')
+    bootCapsSpy = vi.spyOn(device, 'getBootCapabilities')
   })
 
   it('should return boot capabilities', async () => {

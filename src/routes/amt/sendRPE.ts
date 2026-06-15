@@ -15,10 +15,10 @@ export async function sendRPE(req: Request, res: Response): Promise<void> {
 
     const { secureEraseAllSSDs, tpmClear, restoreBIOSToEOM, unconfigureCSME } = req.body
     const mask =
-      (secureEraseAllSSDs ? 0x4       : 0) |
-      (tpmClear           ? 0x40      : 0) |
-      (restoreBIOSToEOM   ? 0x4000000 : 0) |
-      (unconfigureCSME    ? 0x10000   : 0)
+      (secureEraseAllSSDs ? 0x4 : 0) |
+      (tpmClear ? 0x40 : 0) |
+      (restoreBIOSToEOM ? 0x4000000 : 0) |
+      (unconfigureCSME ? 0x10000 : 0)
 
     MqttProvider.publishEvent('request', ['AMT_BootSettingData'], messages.AMT_FEATURES_SET_REQUESTED, guid)
 

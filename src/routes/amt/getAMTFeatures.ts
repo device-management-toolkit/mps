@@ -29,11 +29,11 @@ export async function getAMTFeatures(req: Request, res: Response): Promise<void>
     const ocrProcessResult = processOCRData(OCRData)
 
     const rpeCaps = OCRData.capabilities?.Body?.AMT_BootCapabilities?.PlatformErase ?? 0
-    const rpe = !!(OCRData.bootData?.AMT_BootSettingData?.PlatformErase)
+    const rpe = !!OCRData.bootData?.AMT_BootSettingData?.PlatformErase
     const rpeSupported = rpeCaps !== 0
 
     MqttProvider.publishEvent('success', ['AMT_GetFeatures'], messages.AMT_FEATURES_GET_SUCCESS, guid)
-      res
+    res
       .status(200)
       .json({
         userConsent,

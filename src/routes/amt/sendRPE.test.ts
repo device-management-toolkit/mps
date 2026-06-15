@@ -6,19 +6,19 @@
 import { ErrorResponse } from '../../utils/amtHelper.js'
 import { MqttProvider } from '../../utils/MqttProvider.js'
 import { sendRPE } from './sendRPE.js'
-import { createSpyObj } from '../../test/helper/jest.js'
+import { createSpyObj } from '../../test/helper/vitest.js'
 import { DeviceAction } from '../../amt/DeviceAction.js'
 import { CIRAHandler } from '../../amt/CIRAHandler.js'
 import { HttpHandler } from '../../amt/HttpHandler.js'
 import { messages } from '../../logging/index.js'
-import { type Spied, spyOn } from 'jest-mock'
+import { vi, type MockInstance } from 'vitest'
 
 describe('Send Remote Erase', () => {
   let req: any
   let resSpy: any
-  let mqttSpy: Spied<any>
-  let bootCapsSpy: Spied<any>
-  let sendEraseSpy: Spied<any>
+  let mqttSpy: MockInstance
+  let bootCapsSpy: MockInstance
+  let sendEraseSpy: MockInstance
   let device: DeviceAction
 
   beforeEach(() => {
@@ -29,14 +29,19 @@ describe('Send Remote Erase', () => {
       body: { secureEraseAllSSDs: true, tpmClear: false, restoreBIOSToEOM: false, unconfigureCSME: false },
       deviceAction: device
     }
-    resSpy = createSpyObj('Response', ['status', 'json', 'end', 'send'])
+    resSpy = createSpyObj('Response', [
+      'status',
+      'json',
+      'end',
+      'send'
+    ])
     resSpy.status.mockReturnThis()
     resSpy.json.mockReturnThis()
     resSpy.send.mockReturnThis()
 
-    mqttSpy = spyOn(MqttProvider, 'publishEvent')
-    bootCapsSpy = spyOn(device, 'getBootCapabilities')
-    sendEraseSpy = spyOn(device, 'sendRPE')
+    mqttSpy = vi.spyOn(MqttProvider, 'publishEvent')
+    bootCapsSpy = vi.spyOn(device, 'getBootCapabilities')
+    sendEraseSpy = vi.spyOn(device, 'sendRPE')
   })
 
   it('should send remote erase when device supports the requested mask', async () => {
@@ -75,7 +80,9 @@ describe('Send Remote Erase', () => {
     await sendRPE(req, resSpy)
     expect(sendEraseSpy).not.toHaveBeenCalled()
     expect(resSpy.status).toHaveBeenCalledWith(400)
-    expect(resSpy.json).toHaveBeenCalledWith(ErrorResponse(400, 'Requested erase capabilities are not supported by this device'))
+    expect(resSpy.json).toHaveBeenCalledWith(
+      ErrorResponse(400, 'Requested erase capabilities are not supported by this device')
+    )
   })
 
   it('should return 400 when CSME is combined with hardware erase bits', async () => {
@@ -85,7 +92,9 @@ describe('Send Remote Erase', () => {
     await sendRPE(req, resSpy)
     expect(sendEraseSpy).not.toHaveBeenCalled()
     expect(resSpy.status).toHaveBeenCalledWith(400)
-    expect(resSpy.json).toHaveBeenCalledWith(ErrorResponse(400, 'CSME unconfigure cannot be combined with other erase operations'))
+    expect(resSpy.json).toHaveBeenCalledWith(
+      ErrorResponse(400, 'CSME unconfigure cannot be combined with other erase operations')
+    )
   })
 
   it('should return 500 on unexpected error', async () => {

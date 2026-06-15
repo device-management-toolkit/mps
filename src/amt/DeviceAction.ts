@@ -262,15 +262,15 @@ export class DeviceAction {
       UseIDER: current.UseIDER,
       UseSOL: current.UseSOL,
       UseSafeMode: current.UseSafeMode,
-      UserPasswordBypass: current.UserPasswordBypass,
+      UserPasswordBypass: current.UserPasswordBypass
     }
 
     if (hwMask !== 0) {
       const buf = Buffer.alloc(12)
-      buf.writeUInt16LE(0x8086, 0)   // Intel vendor prefix
-      buf.writeUInt16LE(1, 2)        // ParameterTypeID = 1
-      buf.writeUInt32LE(4, 4)        // value length = 4 bytes
-      buf.writeUInt32LE(hwMask, 8)   // device bitmask
+      buf.writeUInt16LE(0x8086, 0) // Intel vendor prefix
+      buf.writeUInt16LE(1, 2) // ParameterTypeID = 1
+      buf.writeUInt32LE(4, 4) // value length = 4 bytes
+      buf.writeUInt32LE(hwMask, 8) // device bitmask
       putBody.UefiBootParametersArray = buf.toString('base64')
       putBody.UefiBootNumberOfParams = 1
     }

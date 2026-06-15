@@ -389,14 +389,18 @@ describe('Device Action Tests', () => {
       expect(result).toEqual(bootCapabilities.Envelope)
     })
     it('should set RPE enabled', async () => {
-      getSpy.mockResolvedValueOnce({ Envelope: { Body: { AMT_BootSettingData: { ElementName: 'test', RPESupported: true, RPE: false } } } })
+      getSpy.mockResolvedValueOnce({
+        Envelope: { Body: { AMT_BootSettingData: { ElementName: 'test', RPESupported: true, RPE: false } } }
+      })
       sendSpy.mockResolvedValueOnce({ Envelope: { Body: {} } })
       await device.setRPE(true)
       expect(getSpy).toHaveBeenCalled()
       expect(sendSpy).toHaveBeenCalled()
     })
     it('should send remote erase with non-zero mask', async () => {
-      getSpy.mockResolvedValueOnce({ Envelope: { Body: { AMT_BootSettingData: { ElementName: 'test', RPESupported: true, RPE: true } } } })
+      getSpy.mockResolvedValueOnce({
+        Envelope: { Body: { AMT_BootSettingData: { ElementName: 'test', RPESupported: true, RPE: true } } }
+      })
       getSpy.mockResolvedValueOnce({ Envelope: { Body: { RequestPowerStateChange_OUTPUT: { ReturnValue: 0 } } } })
       sendSpy.mockResolvedValueOnce({ Envelope: { Body: {} } }) // RequestStateChange(32770)
       sendSpy.mockResolvedValueOnce({ Envelope: { Body: {} } }) // Put(putBody)
@@ -406,7 +410,9 @@ describe('Device Action Tests', () => {
       expect(sendSpy).toHaveBeenCalled()
     })
     it('should send remote erase with zero mask sets PlatformErase to false', async () => {
-      getSpy.mockResolvedValueOnce({ Envelope: { Body: { AMT_BootSettingData: { ElementName: 'test', PlatformErase: true, RPEEnabled: true } } } })
+      getSpy.mockResolvedValueOnce({
+        Envelope: { Body: { AMT_BootSettingData: { ElementName: 'test', PlatformErase: true, RPE: true } } }
+      })
       getSpy.mockResolvedValueOnce({ Envelope: { Body: { RequestPowerStateChange_OUTPUT: { ReturnValue: 0 } } } })
       sendSpy.mockResolvedValueOnce({ Envelope: { Body: {} } }) // RequestStateChange(32770)
       sendSpy.mockResolvedValueOnce({ Envelope: { Body: {} } }) // Put(putBody)
