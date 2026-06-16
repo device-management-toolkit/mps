@@ -1098,6 +1098,95 @@ paths:
                 $ref: '#/components/schemas/DisconnectErrorResponse'
         500:
           description: 'Internal server error'
+  /api/v1/amt/networkSettings/wireless/profileSync/{guid}:
+    get:
+      summary: Get Wireless Profile Sync
+      description: |
+        Retrieve the AMT WiFi profile synchronization settings for a device,
+        including whether the device supports UEFI WiFi profile sharing.
+      tags:
+        - AMT
+      parameters:
+        - name: guid
+          in: path
+          description: GUID of device
+          example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: 'Wireless profile sync settings retrieved successfully'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WirelessProfileSyncResponse'
+        404:
+          description: 'Device not found or no WiFi port available'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DisconnectErrorResponse'
+        500:
+          description: 'Internal server error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    post:
+      summary: Set Wireless Profile Sync
+      description: |
+        Update the AMT WiFi profile synchronization settings for a device. When
+        UEFI profile sync is requested on a device that does not support it, the
+        entire request is rejected with 409 Conflict.
+      tags:
+        - AMT
+      parameters:
+        - name: guid
+          in: path
+          description: GUID of device
+          example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+          schema:
+            type: string
+      requestBody:
+        description: Requested profile sync settings
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WirelessProfileSyncRequest'
+      responses:
+        200:
+          description: 'Wireless profile sync settings updated successfully'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WirelessProfileSyncResponse'
+        400:
+          description: 'Validation error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        404:
+          description: 'Device not found or no WiFi port available'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DisconnectErrorResponse'
+        409:
+          description: 'UEFI WiFi profile sync is not supported on this device'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        500:
+          description: 'Internal server error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
   /api/v1/amt/screen/{guid}:
     put:
       summary: Put the changed settings for KVM in AMT
@@ -1796,6 +1885,40 @@ components:
           example: WifiEnabledS0SxAC
       required:
         - state
+    WirelessProfileSyncResponse:
+      title: WirelessProfileSyncResponse
+      type: object
+      properties:
+        localProfileSync:
+          type: boolean
+          description: Whether local WiFi profile synchronization is enabled
+          example: true
+        uefiProfileSync:
+          type: boolean
+          description: Whether UEFI WiFi profile sharing is enabled
+          example: false
+        uefiProfileSyncSupported:
+          type: boolean
+          description: Whether the device supports UEFI WiFi profile sharing
+          example: true
+      required:
+        - localProfileSync
+        - uefiProfileSync
+        - uefiProfileSyncSupported
+    WirelessProfileSyncRequest:
+      title: WirelessProfileSyncRequest
+      type: object
+      properties:
+        localProfileSync:
+          type: boolean
+          nullable: true
+          description: Enable or disable local WiFi profile synchronization. Omit or send null to leave the current setting unchanged.
+          example: true
+        uefiProfileSync:
+          type: boolean
+          nullable: true
+          description: Enable or disable UEFI WiFi profile sharing. Omit or send null to leave the current setting unchanged.
+          example: false
     AuditLogResponse:
       title: AuditLogResponse
       type: object

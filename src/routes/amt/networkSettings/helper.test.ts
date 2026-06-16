@@ -4,9 +4,12 @@
  **********************************************************************/
 
 import {
+  buildProfileSyncResponse,
+  buildWiFiPortConfigRequest,
   buildWiredSettingsRequest,
   findEthernetPort,
   hasWiFiPort,
+  isLocalProfileSyncEnabled,
   toWiredNetworkInfo,
   validateWiredNetworkConfig,
   WIRED_ETHERNET_INSTANCE_ID
@@ -173,6 +176,50 @@ describe('networkSettings helper', () => {
     it('returns false when no port is present', () => {
       expect(hasWiFiPort({})).toBe(false)
       expect(hasWiFiPort(undefined)).toBe(false)
+    })
+  })
+
+  describe('isLocalProfileSyncEnabled', () => {
+    it('treats any non-disabled state as enabled', () => {
+      expect(isLocalProfileSyncEnabled(3)).toBe(true)
+      expect(isLocalProfileSyncEnabled(1)).toBe(true)
+    })
+
+    it('treats disabled/unset states as not enabled', () => {
+      expect(isLocalProfileSyncEnabled(0)).toBe(false)
+      expect(isLocalProfileSyncEnabled(undefined)).toBe(false)
+      expect(isLocalProfileSyncEnabled(null)).toBe(false)
+    })
+  })
+
+  describe('buildProfileSyncResponse', () => {
+    it('maps the config service and UEFI support into the DTO', () => {
+      const result = buildProfileSyncResponse(
+        { localProfileSynchronizationEnabled: 3, UEFIWiFiProfileShareEnabled: 1 } as any,
+        true
+      )
+      expect(result).toEqual({ localProfileSync: true, uefiProfileSync: true, uefiProfileSyncSupported: true })
+    })
+
+    it('defaults to disabled when the config service is null', () => {
+      const result = buildProfileSyncResponse(null, false)
+      expect(result).toEqual({ localProfileSync: false, uefiProfileSync: false, uefiProfileSyncSupported: false })
+    })
+  })
+
+  describe('buildWiFiPortConfigRequest', () => {
+    it('copies existing fields and overrides only the sync states', () => {
+      const current = {
+        ElementName: 'svc',
+        Name: 'Intel(r) AMT WiFi Port Configuration Service',
+        localProfileSynchronizationEnabled: 0,
+        UEFIWiFiProfileShareEnabled: 0
+      } as any
+      const result = buildWiFiPortConfigRequest(current, 3, 1)
+      expect(result.ElementName).toBe('svc')
+      expect(result.Name).toBe('Intel(r) AMT WiFi Port Configuration Service')
+      expect(result.localProfileSynchronizationEnabled).toBe(3)
+      expect(result.UEFIWiFiProfileShareEnabled).toBe(1)
     })
   })
 })
