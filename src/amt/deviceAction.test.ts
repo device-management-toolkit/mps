@@ -381,6 +381,17 @@ describe('Device Action Tests', () => {
       const result = await device.getChip()
       expect(result).toEqual(chip.Envelope)
     })
+    it('should return null when enumerate call to getOpaqueManagementData fails', async () => {
+      enumerateSpy.mockResolvedValueOnce(null)
+      const result = await device.getOpaqueManagementData()
+      expect(result).toBe(null)
+    })
+    it('should get OpaqueManagementData', async () => {
+      enumerateSpy.mockResolvedValueOnce(enumerateResponse)
+      pullSpy.mockResolvedValue(mediaAccessDevice)
+      const result = await device.getOpaqueManagementData()
+      expect(result).toEqual(mediaAccessDevice.Envelope)
+    })
   })
   describe('power capabilities', () => {
     it('should get power capabilities', async () => {

@@ -301,6 +301,22 @@ export class DeviceAction {
     return pullResponse.Envelope
   }
 
+  async getOpaqueManagementData(): Promise<
+    Common.Models.Envelope<Common.Models.Pull<CIM.Models.OpaqueManagementData>>
+  > {
+    logger.silly(`getOpaqueManagementData ${messages.REQUEST}`)
+    let xmlRequestBody = this.cim.OpaqueManagementData.Enumerate()
+    const enumResponse = await this.ciraHandler.Enumerate(this.ciraSocket, xmlRequestBody)
+    if (enumResponse == null) {
+      logger.error(`getOpaqueManagementData failed. Reason: ${messages.ENUMERATION_RESPONSE_NULL}`)
+      return null
+    }
+    xmlRequestBody = this.cim.OpaqueManagementData.Pull(enumResponse.Envelope.Body.EnumerateResponse.EnumerationContext)
+    const pullResponse = await this.ciraHandler.Pull<CIM.Models.OpaqueManagementData>(this.ciraSocket, xmlRequestBody)
+    logger.silly(`getOpaqueManagementData ${messages.COMPLETE}`)
+    return pullResponse.Envelope
+  }
+
   async getPhysicalPackage(): Promise<Common.Models.Envelope<Common.Models.Pull<CIM.Models.PhysicalPackage>>> {
     logger.silly(`getPhysicalPackage ${messages.REQUEST}`)
     let xmlRequestBody = this.cim.PhysicalPackage.Enumerate()

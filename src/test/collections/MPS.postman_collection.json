@@ -2488,6 +2488,48 @@
           "response": []
         },
         {
+          "name": "Get Opaque Management Data",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 404\", function () {\r",
+                  "    pm.response.to.have.status(404);\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Device should not be found\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.error).to.eq(\"Device not found/connected. Please connect again using CIRA.\")\r",
+                  "    pm.expect(jsonData.errorDescription).to.eq(\"guid : 1\")\r",
+                  "});\r",
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{protocol}}://{{host}}/api/v1/amt/opaqueManagementData/1",
+              "protocol": "{{protocol}}",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "amt",
+                "opaqueManagementData",
+                "1"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
           "name": "Get Certificates",
           "event": [
             {

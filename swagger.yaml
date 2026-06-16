@@ -243,6 +243,31 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HardwareInfoResponse'
+  /api/v1/amt/opaqueManagementData/{guid}:
+    get:
+      summary: Return Opaque Management Data
+      description: Retrieves the CIM_OpaqueManagementData instances stored on the Intel┬« AMT device.
+      tags:
+        - AMT
+      parameters:
+        - name: guid
+          in: path
+          description: GUID of device
+          example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: 'Successful operation'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetOpaqueManagementDataResponse'
+        400:
+          description: 'Opaque management data get request failed'
+        500:
+          description: 'Internal Server Error'
   /api/v1/amt/features/{guid}:
     post:
       summary: Set Intel┬« AMT Features
@@ -2504,6 +2529,29 @@ components:
           Interval: PT10M
         StartTime:
           DateTime: 2024-12-31T23:59:00Z
+    GetOpaqueManagementDataResponse:
+      title: GetOpaqueManagementDataResponse
+      type: array
+      items:
+        type: object
+        properties:
+          InstanceID:
+            type: string
+            description: Opaquely and uniquely identifies an instance of this class within the instantiating namespace.
+          DataFormat:
+            type: string
+            description: Describes the format of the opaque management data.
+          DataSize:
+            type: string
+            description: The number of bytes of opaque management data in the instance.
+          MaxSize:
+            type: string
+            description: The maximum number of bytes of opaque management data that the instance may contain.
+      example:
+        - InstanceID: 'Intel(r) AMT:OPAQUE_MANAGEMENT_DATA 0'
+          DataFormat: '0'
+          DataSize: '16'
+          MaxSize: '4096'
     ErrorResponse:
       type: object
       properties:
