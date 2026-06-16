@@ -6,6 +6,7 @@
 import {
   buildWiredSettingsRequest,
   findEthernetPort,
+  hasWiFiPort,
   toWiredNetworkInfo,
   validateWiredNetworkConfig,
   WIRED_ETHERNET_INSTANCE_ID
@@ -153,6 +154,25 @@ describe('networkSettings helper', () => {
       expect(result.SharedStaticIp).toBe(true)
       expect(result).not.toHaveProperty('IPAddress')
       expect(result).not.toHaveProperty('SubnetMask')
+    })
+  })
+
+  describe('hasWiFiPort', () => {
+    it('returns true for a single port object', () => {
+      expect(hasWiFiPort({ CIM_WiFiPort: { InstanceID: 'x' } })).toBe(true)
+    })
+
+    it('returns true for a non-empty array of ports', () => {
+      expect(hasWiFiPort({ CIM_WiFiPort: [{ InstanceID: 'x' }] })).toBe(true)
+    })
+
+    it('returns false for an empty array', () => {
+      expect(hasWiFiPort({ CIM_WiFiPort: [] })).toBe(false)
+    })
+
+    it('returns false when no port is present', () => {
+      expect(hasWiFiPort({})).toBe(false)
+      expect(hasWiFiPort(undefined)).toBe(false)
     })
   })
 })

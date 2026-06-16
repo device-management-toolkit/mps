@@ -1024,6 +1024,80 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/amt/networkSettings/wireless/state/{guid}:
+    get:
+      summary: Get Wireless State
+      description: |
+        Retrieve the AMT WiFi radio state for a device. The state is returned as a
+        human-readable string for parity with the Console service.
+      tags:
+        - AMT
+      parameters:
+        - name: guid
+          in: path
+          description: GUID of device
+          example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: 'Wireless state retrieved successfully'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WirelessStateResponse'
+        404:
+          description: 'Device not found or no WiFi port available'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DisconnectErrorResponse'
+        500:
+          description: 'Internal server error'
+    post:
+      summary: Request Wireless State Change
+      description: |
+        Enable or disable the AMT WiFi radio for a device.
+
+        The `state` value is matched **case-insensitively** (e.g. `wifidisabled`,
+        `WIFIDISABLED`, and `WifiDisabled` are all accepted), matching the Console
+        service behavior. The response always echoes the state in its canonical
+        casing (`WifiDisabled`, `WifiEnabledS0`, or `WifiEnabledS0SxAC`).
+      tags:
+        - AMT
+      parameters:
+        - name: guid
+          in: path
+          description: GUID of device
+          example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+          schema:
+            type: string
+      requestBody:
+        description: Requested wireless state
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WirelessStateChangeRequest'
+      responses:
+        200:
+          description: 'Wireless state changed successfully'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WirelessStateResponse'
+        400:
+          description: 'Validation error - unsupported wireless state'
+        404:
+          description: 'Device not found or no WiFi port available'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DisconnectErrorResponse'
+        500:
+          description: 'Internal server error'
   /api/v1/amt/screen/{guid}:
     put:
       summary: Put the changed settings for KVM in AMT
@@ -1687,6 +1761,41 @@ components:
           example: 8.8.8.8
       required:
         - dhcpEnabled
+    WirelessStateResponse:
+      title: WirelessStateResponse
+      type: object
+      properties:
+        state:
+          type: string
+          description: |
+            Wireless state in its canonical casing. The response always echoes one
+            of the enum values exactly as listed, regardless of the casing used in
+            the request.
+          enum:
+            - WifiDisabled
+            - WifiEnabledS0
+            - WifiEnabledS0SxAC
+          example: WifiEnabledS0SxAC
+      required:
+        - state
+    WirelessStateChangeRequest:
+      title: WirelessStateChangeRequest
+      type: object
+      properties:
+        state:
+          type: string
+          description: |
+            Requested wireless state. Matched **case-insensitively**, so any casing
+            of the listed values is accepted (e.g. `wifidisabled` is equivalent to
+            `WifiDisabled`). The enum lists the canonical casing the response will
+            echo back.
+          enum:
+            - WifiDisabled
+            - WifiEnabledS0
+            - WifiEnabledS0SxAC
+          example: WifiEnabledS0SxAC
+      required:
+        - state
     AuditLogResponse:
       title: AuditLogResponse
       type: object
