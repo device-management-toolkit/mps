@@ -59,6 +59,8 @@ amtRouter.post('/features/:guid', amtFeaturesValidator(), validateMiddleware, ci
 amtRouter.get('/boot/capabilities/:guid', ciraMiddleware, getBootCapabilities)
 amtRouter.post('/boot/rpe/:guid', ciraMiddleware, setRPE)
 amtRouter.post('/rpe/:guid', ciraMiddleware, sendRPE)
+amtRouter.get('/boot/remoteErase/:guid', ciraMiddleware, getBootCapabilities)
+amtRouter.post('/boot/remoteErase/:guid', ciraMiddleware, sendRPE)
 amtRouter.get('/version/:guid', ciraMiddleware, version)
 amtRouter.delete('/deactivate/:guid', ciraMiddleware, deactivate)
 amtRouter.get('/power/bootSources/:guid', ciraMiddleware, bootSources)

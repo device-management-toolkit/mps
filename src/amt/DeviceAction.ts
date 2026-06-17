@@ -198,11 +198,11 @@ export class DeviceAction {
     return result.Envelope
   }
 
-  async setRPE(enabled: boolean): Promise<void> {
+  async setRPE(isEnabled: boolean): Promise<void> {
     logger.silly(`setRPE ${messages.REQUEST}`)
     const bootOptions = await this.getBootOptions()
     const current = bootOptions.AMT_BootSettingData
-    current.RPE = enabled
+    current.RPEEnabled = isEnabled
     await this.setBootConfiguration(current)
     logger.silly(`setRPE ${messages.COMPLETE}`)
   }
@@ -218,7 +218,7 @@ export class DeviceAction {
     // Step 1: GET current boot settings and verify RPE
     const bootOptions = await this.getBootOptions()
     const current = bootOptions.AMT_BootSettingData
-    if (!current.RPE) {
+    if (!current.RPEEnabled) {
       throw new Error('RPE is not enabled on this device')
     }
 

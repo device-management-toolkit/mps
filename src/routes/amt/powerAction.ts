@@ -187,6 +187,7 @@ export function setBootData(
   r.UseSafeMode = false
   r.UserPasswordBypass = false
   r.SecureErase = false
+  r.RPEEnabled = false
   // if (r.SecureErase) {
   //   r.SecureErase = action === 104 && amtPowerBootCapabilities.SecureErase === true
   // }
