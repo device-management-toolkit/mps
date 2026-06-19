@@ -40,6 +40,7 @@ import { getScreenSettingData } from './kvm/get.js'
 import { setKVMRedirectionSettingData } from './kvm/set.js'
 import { setLinkPreference } from './setLinkPreference.js'
 import { linkPreferenceValidator } from './linkPreferenceValidator.js'
+import { getNetworkSettings } from './networkSettings/getNetworkSettings.js'
 import { getWiredNetworkSettings } from './networkSettings/getWired.js'
 import { patchWiredNetworkSettings } from './networkSettings/patchWired.js'
 import { wiredNetworkValidator } from './networkSettings/wiredValidator.js'
@@ -88,6 +89,9 @@ amtRouter.post(
   ciraMiddleware,
   setLinkPreference
 )
+
+// Combined wired + wireless network settings
+amtRouter.get('/networkSettings/:guid', ciraMiddleware, getNetworkSettings)
 
 // Wired network settings
 amtRouter.get('/networkSettings/wired/:guid', ciraMiddleware, getWiredNetworkSettings)
