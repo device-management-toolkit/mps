@@ -704,6 +704,19 @@ export class DeviceAction {
     return pullResponse.Envelope
   }
 
+  async getIPSIEEE8021xSettings(): Promise<
+    Common.Models.Envelope<{ IPS_IEEE8021xSettings: IPS.Models.IEEE8021xSettings }>
+  > {
+    logger.silly(`getIPSIEEE8021xSettings ${messages.REQUEST}`)
+    const xmlRequestBody = this.ips.IEEE8021xSettings.Get()
+    const result = await this.ciraHandler.Get<{ IPS_IEEE8021xSettings: IPS.Models.IEEE8021xSettings }>(
+      this.ciraSocket,
+      xmlRequestBody
+    )
+    logger.silly(`getIPSIEEE8021xSettings ${messages.COMPLETE}`)
+    return result?.Envelope ?? null
+  }
+
   /**
    * Finds the first WiFi port by checking PhysicalConnectionType
    * @returns Object with instanceID and full port settings, or null if none found

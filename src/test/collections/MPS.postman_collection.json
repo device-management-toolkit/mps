@@ -3294,6 +3294,58 @@
           "response": []
         },
         {
+          "name": "Get Wired Network Settings",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 404\", function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});",
+                  "",
+                  "pm.test(\"Device should not be found\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.error).to.eq(\"Device not found/connected. Please connect again using CIRA.\")",
+                  "    pm.expect(jsonData.errorDescription).to.eq(\"guid : test-guid-123\")",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{protocol}}://{{host}}/api/v1/amt/networkSettings/wired/test-guid-123",
+              "protocol": "{{protocol}}",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "amt",
+                "networkSettings",
+                "wired",
+                "test-guid-123"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
           "name": "Deactivate device",
           "event": [
             {

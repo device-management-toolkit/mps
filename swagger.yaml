@@ -902,6 +902,38 @@ paths:
                 $ref: '#/components/schemas/DisconnectErrorResponse'
         500:
           description: 'Internal server error'
+  /api/v1/amt/networkSettings/wired/{guid}:
+    get:
+      summary: Get Wired Network Settings
+      description: |
+        Retrieve the AMT wired (LAN) network settings for a device, including IPv4
+        configuration, link state, and IPS 802.1X status. Enum fields are returned
+        as human-readable strings for parity with the Console service.
+      tags:
+        - AMT
+      parameters:
+        - name: guid
+          in: path
+          description: GUID of device
+          example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: 'Wired network settings retrieved successfully'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WiredNetworkInfo'
+        404:
+          description: 'Device not found or no wired network settings available'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DisconnectErrorResponse'
+        500:
+          description: 'Internal server error'
   /api/v1/amt/screen/{guid}:
     put:
       summary: Put the changed settings for KVM in AMT
@@ -1264,6 +1296,96 @@ components:
       scheme: bearer
       bearerFormat: JWT
   schemas:
+    IEEE8021xInfo:
+      title: IEEE8021xInfo
+      type: object
+      properties:
+        enabled:
+          type: string
+          description: 802.1X enablement state
+          example: Disabled
+        availableInS0:
+          type: boolean
+          example: true
+        pxeTimeout:
+          type: integer
+          example: 0
+    WiredNetworkInfo:
+      title: WiredNetworkInfo
+      type: object
+      properties:
+        elementName:
+          type: string
+          example: Intel(r) AMT Ethernet Port Settings
+        instanceID:
+          type: string
+          example: Intel(r) AMT Ethernet Port Settings 0
+        vlanTag:
+          type: integer
+          example: 0
+        sharedMAC:
+          type: boolean
+          example: true
+        macAddress:
+          type: string
+          example: a4-bb-6d-89-52-e4
+        linkIsUp:
+          type: boolean
+          example: true
+        linkPolicy:
+          type: array
+          items:
+            type: string
+          example: ['S0 AC', 'Sx AC']
+        linkPreference:
+          type: string
+          description: Present only when reported by the device
+          example: Management Engine
+        linkControl:
+          type: string
+          description: Present only when reported by the device
+          example: Management Engine
+        sharedStaticIP:
+          type: boolean
+          example: false
+        sharedDynamicIP:
+          type: boolean
+          example: true
+        ipSyncEnabled:
+          type: boolean
+          example: true
+        dhcpEnabled:
+          type: boolean
+          example: true
+        ipAddress:
+          type: string
+          example: 192.168.1.50
+        subnetMask:
+          type: string
+          example: 255.255.255.0
+        defaultGateway:
+          type: string
+          example: 192.168.1.1
+        primaryDNS:
+          type: string
+          example: 192.168.1.1
+        secondaryDNS:
+          type: string
+          example: ''
+        consoleTCPMaxRetransmissions:
+          type: integer
+          description: Present only when reported by the device
+        wlanLinkProtectionLevel:
+          type: string
+          description: Present only when reported by the device
+        physicalConnectionType:
+          type: string
+          example: Integrated LAN NIC
+        physicalNICMedium:
+          type: string
+          example: SMBUS
+        ieee8021x:
+          $ref: '#/components/schemas/IEEE8021xInfo'
     AuditLogResponse:
       title: AuditLogResponse
       type: object
