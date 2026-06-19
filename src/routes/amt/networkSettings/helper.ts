@@ -68,6 +68,17 @@ export interface WiredNetworkInfo extends NetworkInfo {
   ieee8021x: IEEE8021xInfo
 }
 
+export interface WiredNetworkConfigRequest {
+  dhcpEnabled?: boolean
+  ipSyncEnabled?: boolean
+  ipAddress?: string
+  subnetMask?: string
+  defaultGateway?: string
+  primaryDNS?: string
+  secondaryDNS?: string
+  ieee8021x?: unknown
+}
+
 function mapEnum(value: unknown, map: Record<number, string>): string {
   if (typeof value !== 'number') {
     return VALUE_NOT_FOUND
@@ -149,4 +160,124 @@ export function toWiredNetworkInfo(
       pxeTimeout: ieee8021x?.PxeTimeout ?? 0
     }
   }
+}
+
+function hasStaticIPSettings(req: WiredNetworkConfigRequest): boolean {
+  return (
+    Boolean(req.ipAddress) ||
+    Boolean(req.subnetMask) ||
+    Boolean(req.defaultGateway) ||
+    Boolean(req.primaryDNS) ||
+    Boolean(req.secondaryDNS)
+  )
+}
+
+/**
+ * Enforces the DHCP vs static-IP combination rules that cannot be expressed with
+ * field-level validators. Returns an error message string, or null if valid.
+ */
+export function validateWiredNetworkConfig(req: WiredNetworkConfigRequest): string | null {
+  const dhcpEnabled = req.dhcpEnabled === true
+  const ipSyncEnabled = req.ipSyncEnabled === true
+  const staticIPProvided = hasStaticIPSettings(req)
+
+  if (dhcpEnabled && staticIPProvided) {
+    return 'cannot specify static IP settings when DHCP is enabled'
+  }
+  if (ipSyncEnabled && staticIPProvided) {
+    return 'cannot specify static IP settings when IP sync is enabled'
+  }
+  if (!dhcpEnabled && !ipSyncEnabled && !staticIPProvided) {
+    return 'must enable DHCP, enable IP sync, or provide static IP settings'
+  }
+  if (!dhcpEnabled && staticIPProvided) {
+    const required = [
+      { value: req.ipAddress, name: 'ipAddress' },
+      { value: req.subnetMask, name: 'subnetMask' },
+      { value: req.defaultGateway, name: 'defaultGateway' },
+      { value: req.primaryDNS, name: 'primaryDNS' }
+    ]
+    for (const { value, name } of required) {
+      if (!value) {
+        return `${name} is required for static IP configuration`
+      }
+    }
+  }
+
+  return null
+}
+
+/**
+ * Builds an ethernet port settings Put request by overlaying the requested IPv4
+ * changes on top of the device's current wired settings.
+ */
+export function buildWiredSettingsRequest(
+  current: AMT.Models.EthernetPortSettings,
+  req: WiredNetworkConfigRequest
+): AMT.Models.EthernetPortSettings {
+  const settingsRequest: AMT.Models.EthernetPortSettings = {
+    ElementName: current.ElementName,
+    InstanceID: current.InstanceID,
+    SharedMAC: current.SharedMAC,
+    SharedStaticIp: current.SharedStaticIp,
+    IpSyncEnabled: current.IpSyncEnabled,
+    DHCPEnabled: current.DHCPEnabled,
+    IPAddress: current.IPAddress,
+    SubnetMask: current.SubnetMask,
+    DefaultGateway: current.DefaultGateway,
+    PrimaryDNS: current.PrimaryDNS,
+    SecondaryDNS: current.SecondaryDNS
+  }
+
+  if (req.dhcpEnabled === true) {
+    // DHCP mode: AMT acquires IP settings, host/ME stay in sync.
+    settingsRequest.DHCPEnabled = true
+    settingsRequest.IpSyncEnabled = true
+    settingsRequest.SharedStaticIp = false
+  } else {
+    // Static IP mode.
+    settingsRequest.DHCPEnabled = false
+
+    const ipSyncEnabled = req.ipSyncEnabled ?? current.IpSyncEnabled ?? false
+    // SharedStaticIp always follows IpSyncEnabled; the AMT firmware does not
+    // support sharing a static IP without host sync.
+    settingsRequest.IpSyncEnabled = ipSyncEnabled
+    settingsRequest.SharedStaticIp = ipSyncEnabled
+
+    settingsRequest.IPAddress = req.ipAddress ?? ''
+    settingsRequest.SubnetMask = req.subnetMask ?? ''
+    settingsRequest.DefaultGateway = req.defaultGateway ?? ''
+    settingsRequest.PrimaryDNS = req.primaryDNS ?? ''
+    settingsRequest.SecondaryDNS = req.secondaryDNS ?? ''
+  }
+
+  // When IP settings come from DHCP or are synced with the host, AMT rejects
+  // explicit IP fields, so they must be cleared.
+  if (settingsRequest.IpSyncEnabled === true || settingsRequest.DHCPEnabled === true) {
+    settingsRequest.IPAddress = ''
+    settingsRequest.SubnetMask = ''
+    settingsRequest.DefaultGateway = ''
+    settingsRequest.PrimaryDNS = ''
+    settingsRequest.SecondaryDNS = ''
+  }
+
+  // Mirror go-wsman's `omitempty`: the wsman-messages serializer emits empty
+  // strings as empty XML elements (e.g. <IPAddress></IPAddress>), which AMT
+  // treats as a no-op and silently keeps the previous static configuration
+  // (so switching back to DHCP appears to succeed but does not take effect).
+  // Drop empty IP fields entirely so they are omitted from the Put request.
+  const ipFields = [
+    'IPAddress',
+    'SubnetMask',
+    'DefaultGateway',
+    'PrimaryDNS',
+    'SecondaryDNS'
+  ] as const
+  for (const field of ipFields) {
+    if (!settingsRequest[field]) {
+      delete settingsRequest[field]
+    }
+  }
+
+  return settingsRequest
 }

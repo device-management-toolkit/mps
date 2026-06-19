@@ -3,7 +3,13 @@
  * SPDX-License-Identifier: Apache-2.0
  **********************************************************************/
 
-import { findEthernetPort, toWiredNetworkInfo, WIRED_ETHERNET_INSTANCE_ID } from './helper.js'
+import {
+  buildWiredSettingsRequest,
+  findEthernetPort,
+  toWiredNetworkInfo,
+  validateWiredNetworkConfig,
+  WIRED_ETHERNET_INSTANCE_ID
+} from './helper.js'
 
 describe('networkSettings helper', () => {
   describe('findEthernetPort', () => {
@@ -61,6 +67,92 @@ describe('networkSettings helper', () => {
       const info = toWiredNetworkInfo({ PhysicalConnectionType: 99 } as any, null)
       expect(info.physicalConnectionType).toBe('Value not found in map')
       expect(info.ieee8021x.enabled).toBe('Value not found in map')
+    })
+  })
+
+  describe('validateWiredNetworkConfig', () => {
+    it('rejects DHCP combined with static IP', () => {
+      expect(validateWiredNetworkConfig({ dhcpEnabled: true, ipAddress: '1.2.3.4' })).not.toBeNull()
+    })
+
+    it('rejects IP sync combined with static IP', () => {
+      expect(validateWiredNetworkConfig({ ipSyncEnabled: true, ipAddress: '1.2.3.4' })).not.toBeNull()
+    })
+
+    it('rejects empty configuration', () => {
+      expect(validateWiredNetworkConfig({})).not.toBeNull()
+    })
+
+    it('requires core static fields when DHCP and sync are off', () => {
+      expect(validateWiredNetworkConfig({ dhcpEnabled: false, ipAddress: '1.2.3.4' })).not.toBeNull()
+    })
+
+    it('accepts a valid static configuration', () => {
+      expect(
+        validateWiredNetworkConfig({
+          dhcpEnabled: false,
+          ipAddress: '1.2.3.4',
+          subnetMask: '255.255.255.0',
+          defaultGateway: '1.2.3.1',
+          primaryDNS: '1.2.3.1'
+        })
+      ).toBeNull()
+    })
+
+    it('accepts DHCP enabled', () => {
+      expect(validateWiredNetworkConfig({ dhcpEnabled: true })).toBeNull()
+    })
+  })
+
+  describe('buildWiredSettingsRequest', () => {
+    const current = {
+      ElementName: 'Intel(r) AMT Ethernet Port Settings',
+      InstanceID: 'Intel(r) AMT Ethernet Port Settings 0',
+      SharedMAC: true,
+      IpSyncEnabled: false,
+      DHCPEnabled: false,
+      IPAddress: '192.168.1.50',
+      SubnetMask: '255.255.255.0',
+      DefaultGateway: '192.168.1.1',
+      PrimaryDNS: '192.168.1.1',
+      SecondaryDNS: ''
+    } as any
+
+    it('omits IP fields and enables sync for DHCP', () => {
+      const result = buildWiredSettingsRequest(current, { dhcpEnabled: true })
+      expect(result.DHCPEnabled).toBe(true)
+      expect(result.IpSyncEnabled).toBe(true)
+      expect(result.SharedStaticIp).toBe(false)
+      // Empty IP fields are omitted so they are not serialized as empty XML
+      // elements (which AMT would treat as a no-op).
+      expect(result).not.toHaveProperty('IPAddress')
+      expect(result).not.toHaveProperty('SubnetMask')
+      expect(result).not.toHaveProperty('DefaultGateway')
+      expect(result).not.toHaveProperty('PrimaryDNS')
+      expect(result).not.toHaveProperty('SecondaryDNS')
+    })
+
+    it('applies static IP fields when DHCP and sync are off', () => {
+      const result = buildWiredSettingsRequest(current, {
+        dhcpEnabled: false,
+        ipSyncEnabled: false,
+        ipAddress: '10.0.0.5',
+        subnetMask: '255.255.255.0',
+        defaultGateway: '10.0.0.1',
+        primaryDNS: '10.0.0.1'
+      })
+      expect(result.DHCPEnabled).toBe(false)
+      expect(result.IpSyncEnabled).toBe(false)
+      expect(result.SharedStaticIp).toBe(false)
+      expect(result.IPAddress).toBe('10.0.0.5')
+    })
+
+    it('omits IP fields when ipSync is enabled', () => {
+      const result = buildWiredSettingsRequest(current, { dhcpEnabled: false, ipSyncEnabled: true })
+      expect(result.IpSyncEnabled).toBe(true)
+      expect(result.SharedStaticIp).toBe(true)
+      expect(result).not.toHaveProperty('IPAddress')
+      expect(result).not.toHaveProperty('SubnetMask')
     })
   })
 })
