@@ -1,3 +1,10 @@
+# [2.28.0](https://github.com/device-management-toolkit/mps/compare/v2.27.0...v2.28.0) (2026-06-19)
+
+
+### Features
+
+* **api:** add patch wired network settings endpoint ([#2535](https://github.com/device-management-toolkit/mps/issues/2535)) ([abf3985](https://github.com/device-management-toolkit/mps/commit/abf3985b9ca2f8c9450510ab7138a3695017725c))
+
 # [2.27.0](https://github.com/device-management-toolkit/mps/compare/v2.26.7...v2.27.0) (2026-06-19)
 
 
