@@ -115,6 +115,14 @@ describe('wired network settings - get', () => {
     } as any)
     await getWiredNetworkSettings(req, resSpy)
     expect(resSpy.status).toHaveBeenCalledWith(404)
+    const body = resSpy.json.mock.calls[0][0]
+    expect(typeof body.error).toBe('string')
+    expect(body).toEqual(
+      expect.objectContaining({
+        error: expect.any(String),
+        errorDescription: expect.stringContaining('Wired Network Settings not found')
+      })
+    )
   })
 
   it('should return 500 on unexpected exception', async () => {

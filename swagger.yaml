@@ -934,6 +934,63 @@ paths:
                 $ref: '#/components/schemas/DisconnectErrorResponse'
         500:
           description: 'Internal server error'
+    patch:
+      summary: Update Wired Network Settings
+      description: |
+        Update the AMT wired (LAN) IPv4 configuration for a device.
+
+        - **DHCP mode** (`dhcpEnabled: true`): AMT acquires its IP settings via DHCP
+          and synchronizes with the host. Static IP fields must not be provided.
+        - **IP sync mode** (`ipSyncEnabled: true`): AMT shares the host's IP settings.
+          Static IP fields must not be provided.
+        - **Static IP mode** (`dhcpEnabled: false`, `ipSyncEnabled: false`):
+          `ipAddress`, `subnetMask`, `defaultGateway`, and `primaryDNS` are required.
+
+        802.1X configuration is not yet supported and returns 501 if `ieee8021x` is provided.
+      tags:
+        - AMT
+      parameters:
+        - name: guid
+          in: path
+          description: GUID of device
+          example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+          schema:
+            type: string
+      requestBody:
+        description: Wired network configuration
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WiredNetworkConfigRequest'
+      responses:
+        204:
+          description: 'Wired network settings updated successfully'
+        400:
+          description: 'Validation error - invalid configuration combination'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        404:
+          description: 'Device not found or no wired network settings available'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        501:
+          description: '802.1X configuration is not yet supported'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        500:
+          description: 'Internal server error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
   /api/v1/amt/screen/{guid}:
     put:
       summary: Put the changed settings for KVM in AMT
@@ -1386,6 +1443,39 @@ components:
           example: SMBUS
         ieee8021x:
           $ref: '#/components/schemas/IEEE8021xInfo'
+    WiredNetworkConfigRequest:
+      title: WiredNetworkConfigRequest
+      type: object
+      properties:
+        dhcpEnabled:
+          type: boolean
+          description: When true, AMT acquires IP settings via DHCP
+          example: true
+        ipSyncEnabled:
+          type: boolean
+          description: When true, AMT shares the host's IP settings
+          example: false
+        ipAddress:
+          type: string
+          description: Required for static IP configuration
+          example: 192.168.1.50
+        subnetMask:
+          type: string
+          description: Required for static IP configuration
+          example: 255.255.255.0
+        defaultGateway:
+          type: string
+          description: Required for static IP configuration
+          example: 192.168.1.1
+        primaryDNS:
+          type: string
+          description: Required for static IP configuration
+          example: 192.168.1.1
+        secondaryDNS:
+          type: string
+          example: 8.8.8.8
+      required:
+        - dhcpEnabled
     AuditLogResponse:
       title: AuditLogResponse
       type: object

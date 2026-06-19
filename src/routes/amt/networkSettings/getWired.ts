@@ -25,7 +25,10 @@ export async function getWiredNetworkSettings(req: Request, res: Response): Prom
     if (wiredPort == null) {
       logger.error(`${messages.WIRED_NETWORK_SETTINGS_NOT_FOUND} for guid : ${guid}.`)
       MqttProvider.publishEvent('fail', ['AMT_EthernetPortSettings'], messages.WIRED_NETWORK_SETTINGS_NOT_FOUND, guid)
-      res.status(404).json(ErrorResponse(404, `${messages.WIRED_NETWORK_SETTINGS_NOT_FOUND} for guid : ${guid}.`))
+      res.status(404).json({
+        error: messages.WIRED_NETWORK_SETTINGS_NOT_FOUND,
+        errorDescription: `${messages.WIRED_NETWORK_SETTINGS_NOT_FOUND} for guid : ${guid}.`
+      })
       return
     }
 

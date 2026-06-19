@@ -704,6 +704,21 @@ export class DeviceAction {
     return pullResponse.Envelope
   }
 
+  async putEthernetPortSettings(
+    data: AMT.Models.EthernetPortSettings
+  ): Promise<(Common.Models.Envelope<AMT.Models.EthernetPortSettings> & { statusCode?: number }) | null> {
+    logger.silly(`putEthernetPortSettings ${messages.REQUEST}`)
+    const xmlRequestBody = this.amt.EthernetPortSettings.Put(data)
+    const result = await this.ciraHandler.Send(this.ciraSocket, xmlRequestBody)
+    logger.silly(`putEthernetPortSettings ${messages.COMPLETE}`)
+    if (result?.Envelope == null) {
+      return null
+    }
+    // Preserve the HTTP status code stamped by CIRAHandler.handleResult so callers
+    // can distinguish an AMT-applied change (200) from a WSMAN fault (non-200).
+    return { ...result.Envelope, statusCode: result.statusCode }
+  }
+
   async getIPSIEEE8021xSettings(): Promise<
     Common.Models.Envelope<{ IPS_IEEE8021xSettings: IPS.Models.IEEE8021xSettings }>
   > {
