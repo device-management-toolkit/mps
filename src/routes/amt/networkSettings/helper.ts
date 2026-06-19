@@ -3,10 +3,13 @@
  * SPDX-License-Identifier: Apache-2.0
  **********************************************************************/
 
-import { type AMT, type IPS } from '@device-management-toolkit/wsman-messages'
+import { type AMT, type CIM, type IPS } from '@device-management-toolkit/wsman-messages'
 
 // InstanceID substrings that identify the AMT ethernet port interfaces.
 export const WIRED_ETHERNET_INSTANCE_ID = 'Intel(r) AMT Ethernet Port Settings 0'
+export const WIRELESS_ETHERNET_INSTANCE_ID = 'Intel(r) AMT Ethernet Port Settings 1'
+
+const ENDPOINT_USER_SETTINGS = 'Endpoint User Settings'
 
 const VALUE_NOT_FOUND = 'Value not found in map'
 
@@ -16,6 +19,20 @@ const LINK_POLICY_TO_STRING: Record<number, string> = {
   14: 'Sx AC',
   16: 'S0 DC',
   224: 'Sx DC'
+}
+const LINK_PREFERENCE_TO_STRING: Record<number, string> = {
+  1: 'Management Engine',
+  2: 'Host'
+}
+const LINK_CONTROL_TO_STRING: Record<number, string> = {
+  1: 'Management Engine',
+  2: 'Host'
+}
+const WLAN_LINK_PROTECTION_LEVEL_TO_STRING: Record<number, string> = {
+  0: 'Override',
+  1: 'None',
+  2: 'Passive',
+  3: 'High'
 }
 const PHYSICAL_CONNECTION_TYPE_TO_STRING: Record<number, string> = {
   0: 'Integrated LAN NIC',
@@ -31,6 +48,29 @@ const IEEE8021X_ENABLED_TO_STRING: Record<number, string> = {
   2: 'EnabledWithCertificates',
   3: 'Disabled',
   6: 'EnabledWithoutCertificates'
+}
+const AUTHENTICATION_METHOD_TO_STRING: Record<number, string> = {
+  1: 'Other',
+  2: 'OpenSystem',
+  3: 'SharedKey',
+  4: 'WPAPSK',
+  5: 'WPAIEEE8021x',
+  6: 'WPA2PSK',
+  7: 'WPA2IEEE8021x',
+  32768: 'WPA3SAE',
+  32769: 'WPA3OWE'
+}
+const ENCRYPTION_METHOD_TO_STRING: Record<number, string> = {
+  1: 'Other',
+  2: 'WEP',
+  3: 'TKIP',
+  4: 'CCMP',
+  5: 'None'
+}
+const BSS_TYPE_TO_STRING: Record<number, string> = {
+  0: 'Unknown',
+  2: 'Independent',
+  3: 'Infrastructure'
 }
 
 export interface IEEE8021xInfo {
@@ -66,6 +106,50 @@ export interface NetworkInfo {
 
 export interface WiredNetworkInfo extends NetworkInfo {
   ieee8021x: IEEE8021xInfo
+}
+
+export interface WiFiNetwork {
+  elementName: string
+  ssid: string
+  authenticationMethod: string
+  encryptionMethod: string
+  priority: number
+  bsstype: string
+}
+
+export interface WirelessIEEE8021xSettings {
+  authenticationProtocol: number
+  roamingIdentity: string
+  serverCertificateName: string
+  serverCertificateNameComparison: number
+  username: string
+  domain: string
+}
+
+export interface WiFiPortConfigService {
+  requestedState: number
+  enabledState: number
+  healthState: number
+  elementName: string
+  systemCreationClassName: string
+  systemName: string
+  creationClassName: string
+  name: string
+  localProfileSynchronizationEnabled: number
+  lastConnectedSsidUnderMeControl: string
+  noHostCsmeSoftwarePolicy: number
+  uefiWiFiProfileShareEnabled: boolean
+}
+
+export interface WirelessNetworkInfo extends NetworkInfo {
+  wifiNetworks: WiFiNetwork[]
+  ieee8021xSettings: WirelessIEEE8021xSettings[]
+  wifiPortConfigService: WiFiPortConfigService
+}
+
+export interface NetworkSettings {
+  wired: WiredNetworkInfo | null
+  wireless: WirelessNetworkInfo | null
 }
 
 export interface WiredNetworkConfigRequest {
@@ -159,6 +243,99 @@ export function toWiredNetworkInfo(
       availableInS0: ieee8021x?.AvailableInS0 ?? false,
       pxeTimeout: ieee8021x?.PxeTimeout ?? 0
     }
+  }
+}
+
+/** Maps a single CIM_WiFiEndpointSettings instance into the WiFiNetwork DTO. */
+export function toWiFiNetwork(setting: CIM.Models.WiFiEndpointSettings): WiFiNetwork {
+  return {
+    elementName: setting.ElementName ?? '',
+    ssid: setting.SSID ?? '',
+    authenticationMethod: mapEnum(setting.AuthenticationMethod, AUTHENTICATION_METHOD_TO_STRING),
+    encryptionMethod: mapEnum(setting.EncryptionMethod, ENCRYPTION_METHOD_TO_STRING),
+    priority: setting.Priority ?? 0,
+    bsstype: mapEnum(setting.BSSType, BSS_TYPE_TO_STRING)
+  }
+}
+
+/**
+ * Builds the WiFiNetworks list from a CIM_WiFiEndpointSettings pull response.
+ * Mirrors Console: the user-managed "Endpoint User Settings" entry is excluded.
+ */
+export function toWiFiNetworks(items: unknown): WiFiNetwork[] {
+  const settings = (items as { CIM_WiFiEndpointSettings?: unknown })?.CIM_WiFiEndpointSettings
+  if (settings == null) {
+    return []
+  }
+  const list = (Array.isArray(settings) ? settings : [settings]) as CIM.Models.WiFiEndpointSettings[]
+  return list.filter((s) => s.ElementName !== ENDPOINT_USER_SETTINGS).map((s) => toWiFiNetwork(s))
+}
+
+/**
+ * Builds the IEEE8021xSettings list from a CIM_IEEE8021xSettings pull response.
+ * Non-secret fields are copied raw (no enum conversion). Credential-like fields
+ * (password, protectedAccessCredential, pacPassword, psk) are intentionally
+ * omitted so this read endpoint never echoes WiFi/802.1X secrets back to API
+ * consumers.
+ */
+export function toWirelessIEEE8021xSettings(items: unknown): WirelessIEEE8021xSettings[] {
+  const settings = (items as { CIM_IEEE8021xSettings?: unknown })?.CIM_IEEE8021xSettings
+  if (settings == null) {
+    return []
+  }
+  const list = (Array.isArray(settings) ? settings : [settings]) as CIM.Models.IEEE8021xSettings[]
+  return list.map((s) => ({
+    authenticationProtocol: s.AuthenticationProtocol ?? 0,
+    roamingIdentity: s.RoamingIdentity ?? '',
+    serverCertificateName: s.ServerCertificateName ?? '',
+    serverCertificateNameComparison: s.ServerCertificateNameComparison ?? 0,
+    username: s.Username ?? '',
+    domain: s.Domain ?? ''
+  }))
+}
+
+/**
+ * Maps AMT_WiFiPortConfigurationService into the DTO. Numeric state fields are
+ * copied raw (no enum conversion), matching Console.
+ */
+export function toWiFiPortConfigService(
+  service: AMT.Models.WiFiPortConfigurationService | null
+): WiFiPortConfigService {
+  return {
+    requestedState: service?.RequestedState ?? 0,
+    enabledState: service?.EnabledState ?? 0,
+    healthState: service?.HealthState ?? 0,
+    elementName: service?.ElementName ?? '',
+    systemCreationClassName: service?.SystemCreationClassName ?? '',
+    systemName: service?.SystemName ?? '',
+    creationClassName: service?.CreationClassName ?? '',
+    name: service?.Name ?? '',
+    localProfileSynchronizationEnabled: service?.localProfileSynchronizationEnabled ?? 0,
+    lastConnectedSsidUnderMeControl: service?.LastConnectedSsidUnderMeControl ?? '',
+    noHostCsmeSoftwarePolicy: service?.NoHostCsmeSoftwarePolicy ?? 0,
+    uefiWiFiProfileShareEnabled: Boolean(service?.UEFIWiFiProfileShareEnabled)
+  }
+}
+
+/**
+ * Converts the raw WSMAN wireless ethernet port plus WiFi-specific results into
+ * the wireless network DTO (matches Console's response shape).
+ */
+export function toWirelessNetworkInfo(
+  port: AMT.Models.EthernetPortSettings,
+  wifiNetworks: WiFiNetwork[],
+  ieee8021xSettings: WirelessIEEE8021xSettings[],
+  wifiPortConfigService: WiFiPortConfigService
+): WirelessNetworkInfo {
+  return {
+    ...toNetworkInfo(port),
+    // Console always sets these for the wireless interface (via enum String()).
+    linkPreference: mapEnum(port.LinkPreference, LINK_PREFERENCE_TO_STRING),
+    linkControl: mapEnum(port.LinkControl, LINK_CONTROL_TO_STRING),
+    wlanLinkProtectionLevel: mapEnum(port.WLANLinkProtectionLevel, WLAN_LINK_PROTECTION_LEVEL_TO_STRING),
+    wifiNetworks,
+    ieee8021xSettings,
+    wifiPortConfigService
   }
 }
 

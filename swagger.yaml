@@ -902,6 +902,39 @@ paths:
                 $ref: '#/components/schemas/DisconnectErrorResponse'
         500:
           description: 'Internal server error'
+  /api/v1/amt/networkSettings/{guid}:
+    get:
+      summary: Get Network Settings
+      description: |
+        Retrieve the combined AMT wired and wireless network settings for a device.
+        Either section is `null` when the corresponding interface is not present.
+        Enum fields are returned as human-readable strings for parity with the
+        Console service.
+      tags:
+        - AMT
+      parameters:
+        - name: guid
+          in: path
+          description: GUID of device
+          example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: 'Network settings retrieved successfully'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NetworkSettings'
+        404:
+          description: 'Device not found or no network settings available'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DisconnectErrorResponse'
+        500:
+          description: 'Internal server error'
   /api/v1/amt/networkSettings/wired/{guid}:
     get:
       summary: Get Wired Network Settings
@@ -1443,6 +1476,184 @@ components:
           example: SMBUS
         ieee8021x:
           $ref: '#/components/schemas/IEEE8021xInfo'
+    NetworkSettings:
+      title: NetworkSettings
+      type: object
+      required:
+        - wired
+        - wireless
+      properties:
+        wired:
+          nullable: true
+          allOf:
+            - $ref: '#/components/schemas/WiredNetworkInfo'
+        wireless:
+          nullable: true
+          allOf:
+            - $ref: '#/components/schemas/WirelessNetworkInfo'
+    WiFiNetwork:
+      title: WiFiNetwork
+      type: object
+      properties:
+        elementName:
+          type: string
+          example: home-ssid
+        ssid:
+          type: string
+          example: home-ssid
+        authenticationMethod:
+          type: string
+          example: WPA2PSK
+        encryptionMethod:
+          type: string
+          example: CCMP
+        priority:
+          type: integer
+          example: 1
+        bsstype:
+          type: string
+          example: Infrastructure
+    WirelessIEEE8021xSettings:
+      title: WirelessIEEE8021xSettings
+      type: object
+      properties:
+        authenticationProtocol:
+          type: integer
+          example: 0
+        roamingIdentity:
+          type: string
+        serverCertificateName:
+          type: string
+        serverCertificateNameComparison:
+          type: integer
+        username:
+          type: string
+          example: user1
+        domain:
+          type: string
+          example: example.com
+    WiFiPortConfigService:
+      title: WiFiPortConfigService
+      type: object
+      properties:
+        requestedState:
+          type: integer
+          example: 5
+        enabledState:
+          type: integer
+          example: 5
+        healthState:
+          type: integer
+          example: 5
+        elementName:
+          type: string
+          example: Intel(r) AMT WiFi Port Configuration Service
+        systemCreationClassName:
+          type: string
+          example: CIM_ComputerSystem
+        systemName:
+          type: string
+          example: Intel(r) AMT
+        creationClassName:
+          type: string
+          example: AMT_WiFiPortConfigurationService
+        name:
+          type: string
+          example: Intel(r) AMT WiFi Port Configuration Service
+        localProfileSynchronizationEnabled:
+          type: integer
+          example: 1
+        lastConnectedSsidUnderMeControl:
+          type: string
+          example: home-ssid
+        noHostCsmeSoftwarePolicy:
+          type: integer
+          example: 0
+        uefiWiFiProfileShareEnabled:
+          type: boolean
+          example: true
+    WirelessNetworkInfo:
+      title: WirelessNetworkInfo
+      type: object
+      properties:
+        elementName:
+          type: string
+          example: Intel(r) AMT Ethernet Port Settings
+        instanceID:
+          type: string
+          example: Intel(r) AMT Ethernet Port Settings 1
+        vlanTag:
+          type: integer
+          example: 0
+        sharedMAC:
+          type: boolean
+          example: true
+        macAddress:
+          type: string
+          example: 00-00-00-00-00-00
+        linkIsUp:
+          type: boolean
+          example: false
+        linkPolicy:
+          type: array
+          items:
+            type: string
+          example: ['S0 AC']
+        linkPreference:
+          type: string
+          example: Management Engine
+        linkControl:
+          type: string
+          example: Host
+        sharedStaticIP:
+          type: boolean
+          example: false
+        sharedDynamicIP:
+          type: boolean
+          example: true
+        ipSyncEnabled:
+          type: boolean
+          example: true
+        dhcpEnabled:
+          type: boolean
+          example: true
+        ipAddress:
+          type: string
+          example: 192.168.1.80
+        subnetMask:
+          type: string
+          example: 255.255.255.0
+        defaultGateway:
+          type: string
+          example: 192.168.1.1
+        primaryDNS:
+          type: string
+          example: 192.168.1.1
+        secondaryDNS:
+          type: string
+          example: ''
+        consoleTCPMaxRetransmissions:
+          type: integer
+          description: Present only when reported by the device
+        wlanLinkProtectionLevel:
+          type: string
+          example: High
+        physicalConnectionType:
+          type: string
+          example: Wireless LAN
+        physicalNICMedium:
+          type: string
+          example: SMBUS
+        wifiNetworks:
+          type: array
+          items:
+            $ref: '#/components/schemas/WiFiNetwork'
+        ieee8021xSettings:
+          type: array
+          items:
+            $ref: '#/components/schemas/WirelessIEEE8021xSettings'
+        wifiPortConfigService:
+          $ref: '#/components/schemas/WiFiPortConfigService'
     WiredNetworkConfigRequest:
       title: WiredNetworkConfigRequest
       type: object
