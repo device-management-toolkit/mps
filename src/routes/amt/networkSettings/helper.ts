@@ -9,9 +9,7 @@ import { type AMT, type CIM, type IPS } from '@device-management-toolkit/wsman-m
 export const WIRED_ETHERNET_INSTANCE_ID = 'Intel(r) AMT Ethernet Port Settings 0'
 export const WIRELESS_ETHERNET_INSTANCE_ID = 'Intel(r) AMT Ethernet Port Settings 1'
 
-const ENDPOINT_USER_SETTINGS = 'Endpoint User Settings'
-
-const VALUE_NOT_FOUND = 'Value not found in map'
+const INSTANCE_ID_PREFIX_USER_SETTINGS = 'Intel(r) AMT:WiFi Endpoint User Settings'
 
 // Enum -> string maps mirror go-wsman-messages so MPS responses match Console.
 const LINK_POLICY_TO_STRING: Record<number, string> = {
@@ -49,7 +47,7 @@ const IEEE8021X_ENABLED_TO_STRING: Record<number, string> = {
   3: 'Disabled',
   6: 'EnabledWithoutCertificates'
 }
-const AUTHENTICATION_METHOD_TO_STRING: Record<number, string> = {
+export const AUTHENTICATION_METHOD_TO_STRING: Record<number, string> = {
   1: 'Other',
   2: 'OpenSystem',
   3: 'SharedKey',
@@ -60,7 +58,7 @@ const AUTHENTICATION_METHOD_TO_STRING: Record<number, string> = {
   32768: 'WPA3SAE',
   32769: 'WPA3OWE'
 }
-const ENCRYPTION_METHOD_TO_STRING: Record<number, string> = {
+export const ENCRYPTION_METHOD_TO_STRING: Record<number, string> = {
   1: 'Other',
   2: 'WEP',
   3: 'TKIP',
@@ -163,11 +161,16 @@ export interface WiredNetworkConfigRequest {
   ieee8021x?: unknown
 }
 
-function mapEnum(value: unknown, map: Record<number, string>): string {
+export const asArray = <T>(value: T | T[] | undefined | null): T[] => {
+  if (value == null) return []
+  return Array.isArray(value) ? value : [value]
+}
+
+export function mapEnum(value: unknown, map: Record<number, string>): string  | null {
   if (typeof value !== 'number') {
-    return VALUE_NOT_FOUND
+    return null
   }
-  return map[value] ?? VALUE_NOT_FOUND
+  return map[value] ?? null
 }
 
 function mapLinkPolicy(linkPolicy: unknown): string[] {
@@ -175,7 +178,7 @@ function mapLinkPolicy(linkPolicy: unknown): string[] {
     return []
   }
   const values = Array.isArray(linkPolicy) ? linkPolicy : [linkPolicy]
-  return values.map((value) => mapEnum(value, LINK_POLICY_TO_STRING))
+  return values.map((value) => mapEnum(value, LINK_POLICY_TO_STRING) ?? 'Unknown')
 }
 
 /**
@@ -216,8 +219,8 @@ function toNetworkInfo(port: AMT.Models.EthernetPortSettings): NetworkInfo {
     defaultGateway: port.DefaultGateway ?? '',
     primaryDNS: port.PrimaryDNS ?? '',
     secondaryDNS: port.SecondaryDNS ?? '',
-    physicalConnectionType: mapEnum(port.PhysicalConnectionType, PHYSICAL_CONNECTION_TYPE_TO_STRING),
-    physicalNICMedium: mapEnum(port.PhysicalNicMedium, PHYSICAL_NIC_MEDIUM_TO_STRING)
+    physicalConnectionType: mapEnum(port.PhysicalConnectionType, PHYSICAL_CONNECTION_TYPE_TO_STRING) ?? '',
+    physicalNICMedium: mapEnum(port.PhysicalNicMedium, PHYSICAL_NIC_MEDIUM_TO_STRING) ?? ''
   }
 
   // omitempty: Console omits ConsoleTCPMaxRetransmissions when it is zero/unset.
@@ -239,36 +242,48 @@ export function toWiredNetworkInfo(
   return {
     ...toNetworkInfo(port),
     ieee8021x: {
-      enabled: mapEnum(ieee8021x?.Enabled, IEEE8021X_ENABLED_TO_STRING),
+      enabled: mapEnum(ieee8021x?.Enabled, IEEE8021X_ENABLED_TO_STRING) ?? '',
       availableInS0: ieee8021x?.AvailableInS0 ?? false,
       pxeTimeout: ieee8021x?.PxeTimeout ?? 0
     }
   }
 }
 
-/** Maps a single CIM_WiFiEndpointSettings instance into the WiFiNetwork DTO. */
-export function toWiFiNetwork(setting: CIM.Models.WiFiEndpointSettings): WiFiNetwork {
-  return {
-    elementName: setting.ElementName ?? '',
-    ssid: setting.SSID ?? '',
-    authenticationMethod: mapEnum(setting.AuthenticationMethod, AUTHENTICATION_METHOD_TO_STRING),
-    encryptionMethod: mapEnum(setting.EncryptionMethod, ENCRYPTION_METHOD_TO_STRING),
-    priority: setting.Priority ?? 0,
-    bsstype: mapEnum(setting.BSSType, BSS_TYPE_TO_STRING)
-  }
-}
+export const isUserSettingsInstanceID = (instanceID: string): boolean =>
+  instanceID.startsWith(INSTANCE_ID_PREFIX_USER_SETTINGS)
+
+/**
+ * Extracts the wireless endpoint settings from a CIM_WiFiEndpointSettings pull response,
+ * skipping empty and user-managed instances.
+ */
+export const extractWirelessSettings = (items: unknown): CIM.Models.WiFiEndpointSettings[] =>
+  asArray<CIM.Models.WiFiEndpointSettings>(
+    (items as { CIM_WiFiEndpointSettings?: CIM.Models.WiFiEndpointSettings | CIM.Models.WiFiEndpointSettings[] })
+      ?.CIM_WiFiEndpointSettings
+  ).filter((setting) => setting?.InstanceID && !isUserSettingsInstanceID(setting.InstanceID))
+
+/**
+ * Extracts CIM_IEEE8021xSettings from a pull response and normalizes to an array.
+ */
+export const extractIEEE8021xSettings = (items: unknown): CIM.Models.IEEE8021xSettings[] =>
+  asArray<CIM.Models.IEEE8021xSettings>(
+    (items as { CIM_IEEE8021xSettings?: CIM.Models.IEEE8021xSettings | CIM.Models.IEEE8021xSettings[] })
+      ?.CIM_IEEE8021xSettings
+  )
 
 /**
  * Builds the WiFiNetworks list from a CIM_WiFiEndpointSettings pull response.
  * Mirrors Console: the user-managed "Endpoint User Settings" entry is excluded.
  */
 export function toWiFiNetworks(items: unknown): WiFiNetwork[] {
-  const settings = (items as { CIM_WiFiEndpointSettings?: unknown })?.CIM_WiFiEndpointSettings
-  if (settings == null) {
-    return []
-  }
-  const list = (Array.isArray(settings) ? settings : [settings]) as CIM.Models.WiFiEndpointSettings[]
-  return list.filter((s) => s.ElementName !== ENDPOINT_USER_SETTINGS).map((s) => toWiFiNetwork(s))
+  return extractWirelessSettings(items).map((s) => ({
+    elementName: s.ElementName ?? '',
+    ssid: s.SSID ?? '',
+    authenticationMethod: mapEnum(s.AuthenticationMethod, AUTHENTICATION_METHOD_TO_STRING) ?? '',
+    encryptionMethod: mapEnum(s.EncryptionMethod, ENCRYPTION_METHOD_TO_STRING) ?? '',
+    priority: s.Priority ?? 0,
+    bsstype: mapEnum(s.BSSType, BSS_TYPE_TO_STRING) ?? ''
+  }))
 }
 
 /**
@@ -279,12 +294,7 @@ export function toWiFiNetworks(items: unknown): WiFiNetwork[] {
  * consumers.
  */
 export function toWirelessIEEE8021xSettings(items: unknown): WirelessIEEE8021xSettings[] {
-  const settings = (items as { CIM_IEEE8021xSettings?: unknown })?.CIM_IEEE8021xSettings
-  if (settings == null) {
-    return []
-  }
-  const list = (Array.isArray(settings) ? settings : [settings]) as CIM.Models.IEEE8021xSettings[]
-  return list.map((s) => ({
+  return extractIEEE8021xSettings(items).map((s) => ({
     authenticationProtocol: s.AuthenticationProtocol ?? 0,
     roamingIdentity: s.RoamingIdentity ?? '',
     serverCertificateName: s.ServerCertificateName ?? '',
@@ -330,9 +340,9 @@ export function toWirelessNetworkInfo(
   return {
     ...toNetworkInfo(port),
     // Console always sets these for the wireless interface (via enum String()).
-    linkPreference: mapEnum(port.LinkPreference, LINK_PREFERENCE_TO_STRING),
-    linkControl: mapEnum(port.LinkControl, LINK_CONTROL_TO_STRING),
-    wlanLinkProtectionLevel: mapEnum(port.WLANLinkProtectionLevel, WLAN_LINK_PROTECTION_LEVEL_TO_STRING),
+    linkPreference: mapEnum(port.LinkPreference, LINK_PREFERENCE_TO_STRING) ?? '',
+    linkControl: mapEnum(port.LinkControl, LINK_CONTROL_TO_STRING) ?? '',
+    wlanLinkProtectionLevel: mapEnum(port.WLANLinkProtectionLevel, WLAN_LINK_PROTECTION_LEVEL_TO_STRING) ?? '',
     wifiNetworks,
     ieee8021xSettings,
     wifiPortConfigService

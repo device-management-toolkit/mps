@@ -90,7 +90,7 @@ const wifiEndpointResponse = {
           },
           {
             ElementName: 'Endpoint User Settings',
-            InstanceID: 'Intel(r) Wireless Endpoint User Settings'
+            InstanceID: 'Intel(r) AMT:WiFi Endpoint User Settings'
           }
         ]
       }

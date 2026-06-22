@@ -50,6 +50,7 @@ import { wirelessStateValidator } from './networkSettings/wirelessStateValidator
 import { getWirelessProfileSync } from './networkSettings/getWirelessProfileSync.js'
 import { setWirelessProfileSync } from './networkSettings/setWirelessProfileSync.js'
 import { wirelessProfileSyncValidator } from './networkSettings/wirelessProfileSyncValidator.js'
+import { getWirelessProfiles } from './networkSettings/getWirelessProfiles.js'
 
 const amtRouter: Router = Router()
 
@@ -128,5 +129,8 @@ amtRouter.post(
   ciraMiddleware,
   setWirelessProfileSync
 )
+
+// Wireless profile settings (per-device)
+amtRouter.get('/networkSettings/wireless/profile/:guid', ciraMiddleware, getWirelessProfiles)
 
 export default amtRouter

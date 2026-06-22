@@ -1187,6 +1187,47 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/amt/networkSettings/wireless/profile/{guid}:
+    get:
+      summary: Get Wireless Profiles
+      description: |
+        Retrieve the list of AMT wireless (WiFi) profiles configured on a device.
+        Secrets (passwords, certificates, and private keys) are intentionally omitted.
+
+        Only the `authenticationMethod` and `encryptionMethod` enum fields are
+        returned as human-readable strings. All other numeric fields (e.g.
+        `priority`, `ieee8021x.authenticationProtocol`) remain integers.
+      tags:
+        - AMT
+      parameters:
+        - name: guid
+          in: path
+          description: GUID of device
+          example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: 'Wireless profiles retrieved successfully'
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/WirelessProfileResponse'
+        404:
+          description: 'Device not found'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DisconnectErrorResponse'
+        500:
+          description: 'Internal server error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
   /api/v1/amt/screen/{guid}:
     put:
       summary: Put the changed settings for KVM in AMT
@@ -1919,6 +1960,38 @@ components:
           nullable: true
           description: Enable or disable UEFI WiFi profile sharing. Omit or send null to leave the current setting unchanged.
           example: false
+    WirelessProfileIEEE8021xResponse:
+      title: WirelessProfileIEEE8021xResponse
+      type: object
+      properties:
+        username:
+          type: string
+          example: user1
+        authenticationProtocol:
+          type: integer
+          example: 0
+    WirelessProfileResponse:
+      title: WirelessProfileResponse
+      type: object
+      description: Sanitized wireless profile (secrets omitted)
+      properties:
+        profileName:
+          type: string
+          example: home
+        ssid:
+          type: string
+          example: home-ssid
+        authenticationMethod:
+          type: string
+          example: WPA2PSK
+        encryptionMethod:
+          type: string
+          example: CCMP
+        priority:
+          type: integer
+          example: 1
+        ieee8021x:
+          $ref: '#/components/schemas/WirelessProfileIEEE8021xResponse'
     AuditLogResponse:
       title: AuditLogResponse
       type: object
