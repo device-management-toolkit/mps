@@ -7,7 +7,7 @@ import { type Response, type Request } from 'express'
 import { logger, messages } from '../../../logging/index.js'
 import { ErrorResponse } from '../../../utils/amtHelper.js'
 import { MqttProvider } from '../../../utils/MqttProvider.js'
-import { findWiFiPortEnabledState, wirelessStateToString } from './helper.js'
+import { findWiFiPortEnabledState, mapEnum, WIRELESS_STATE_VALUE_TO_STRING } from './helper.js'
 
 export async function getWirelessState(req: Request, res: Response): Promise<void> {
   const guid: string = req.params.guid
@@ -27,7 +27,7 @@ export async function getWirelessState(req: Request, res: Response): Promise<voi
       return
     }
 
-    const state = wirelessStateToString(enabledState)
+    const state = mapEnum(enabledState, WIRELESS_STATE_VALUE_TO_STRING)
     if (state == null) {
       logger.error(`${messages.WIRELESS_STATE_UNSUPPORTED}: ${enabledState} for guid : ${guid}.`)
       MqttProvider.publishEvent('fail', ['CIM_WiFiPort'], messages.WIRELESS_STATE_UNSUPPORTED, guid)

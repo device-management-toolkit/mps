@@ -4,13 +4,13 @@
  **********************************************************************/
 
 import { check } from 'express-validator'
-import { parseWirelessState } from './helper.js'
+import { mapEnumReverse, WIRELESS_STATE_VALUE_TO_STRING } from './helper.js'
 
 export const wirelessStateValidator = (): any => [
   check('state')
     .exists()
     .withMessage('state is required')
     .bail()
-    .custom((value) => parseWirelessState(value) != null)
+    .custom((value) => mapEnumReverse(value, WIRELESS_STATE_VALUE_TO_STRING) != null)
     .withMessage('state must be one of WifiDisabled, WifiEnabledS0, WifiEnabledS0SxAC')
 ]
