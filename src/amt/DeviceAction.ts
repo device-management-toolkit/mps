@@ -857,6 +857,44 @@ export class DeviceAction {
   }
 
   /**
+   * Updates an existing WiFi profile via AMT_WiFiPortConfigurationService.UpdateWiFiSettings.
+   * The profile to update is identified by wifiEndpointSettings.InstanceID (the profile name
+   * cannot be changed).
+   * @returns the UpdateWiFiSettings ReturnValue (0 = success), or null when no response.
+   */
+  async updateWiFiSettings(
+    wifiEndpointSettings: CIM.Models.WiFiEndpointSettings,
+    ieee8021xSettings?: CIM.Models.IEEE8021xSettings,
+    clientCredential?: string,
+    caCredential?: string
+  ): Promise<number | null> {
+    logger.silly(`updateWiFiSettings ${messages.REQUEST}`)
+    const xmlRequestBody = this.amt.WiFiPortConfigurationService.UpdateWiFiSettings(
+      wifiEndpointSettings,
+      ieee8021xSettings,
+      clientCredential,
+      caCredential
+    )
+    const result = await this.ciraHandler.Send(this.ciraSocket, xmlRequestBody)
+    logger.silly(`updateWiFiSettings ${messages.COMPLETE}`)
+    const body = result?.Envelope?.Body as { UpdateWiFiSettings_OUTPUT?: { ReturnValue?: number } } | null
+    return body?.UpdateWiFiSettings_OUTPUT?.ReturnValue ?? null
+  }
+
+  /**
+   * Deletes a WiFi profile identified by its CIM_WiFiEndpointSettings InstanceID.
+   * @returns true when the delete request was accepted by the device.
+   */
+  async deleteWiFiEndpointSettings(instanceID: string): Promise<boolean> {
+    logger.silly(`deleteWiFiEndpointSettings ${messages.REQUEST}`)
+    const selector: Selector = { name: 'InstanceID', value: instanceID }
+    const xmlRequestBody = this.cim.WiFiEndpointSettings.Delete(selector)
+    const result = await this.ciraHandler.Delete(this.ciraSocket, xmlRequestBody)
+    logger.silly(`deleteWiFiEndpointSettings ${messages.COMPLETE}`)
+    return result != null
+  }
+
+  /**
    * Finds the first WiFi port by checking PhysicalConnectionType
    * @returns Object with instanceID and full port settings, or null if none found
    */

@@ -21,8 +21,7 @@ export const RESOURCE_CIM_IEEE8021X_SETTINGS = 'CIM_IEEE8021xSettings'
 export const MAX_WIRELESS_PROFILE_PRIORITY = 255
 export const MAX_WIRELESS_PROFILES = 8
 
-export const ieee8021xInstanceID = (profileName: string): string =>
-  `Intel(r) AMT:IEEE 802.1x Settings ${profileName}`
+export const ieee8021xInstanceID = (profileName: string): string => `Intel(r) AMT:IEEE 802.1x Settings ${profileName}`
 export const wifiEndpointInstanceID = (profileName: string): string =>
   `Intel(r) AMT:WiFi Endpoint Settings ${profileName}`
 

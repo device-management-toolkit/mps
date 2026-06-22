@@ -860,6 +860,52 @@ describe('Device Action Tests', () => {
     })
   })
 
+  describe('updateWiFiSettings', () => {
+    const wifiEndpointSettings = {
+      ElementName: 'home',
+      InstanceID: 'Intel(r) AMT:WiFi Endpoint Settings home',
+      AuthenticationMethod: 4,
+      EncryptionMethod: 4,
+      SSID: 'home-ssid',
+      Priority: 1,
+      PSKPassPhrase: 'P@ssw0rd'
+    } as unknown as CIM.Models.WiFiEndpointSettings
+
+    it('should return the ReturnValue on success', async () => {
+      sendSpy.mockResolvedValue({ Envelope: { Body: { UpdateWiFiSettings_OUTPUT: { ReturnValue: 0 } } } })
+      const result = await device.updateWiFiSettings(wifiEndpointSettings)
+      expect(result).toBe(0)
+      expect(sendSpy).toHaveBeenCalled()
+    })
+
+    it('should return null when send response is null', async () => {
+      sendSpy.mockResolvedValue(null)
+      const result = await device.updateWiFiSettings(wifiEndpointSettings)
+      expect(result).toBeNull()
+    })
+
+    it('should return null when UpdateWiFiSettings_OUTPUT is missing', async () => {
+      sendSpy.mockResolvedValue({ Envelope: { Body: {} } })
+      const result = await device.updateWiFiSettings(wifiEndpointSettings)
+      expect(result).toBeNull()
+    })
+  })
+
+  describe('deleteWiFiEndpointSettings', () => {
+    it('should return true when delete response is present', async () => {
+      deleteSpy.mockResolvedValue({ Envelope: { Body: {} } })
+      const result = await device.deleteWiFiEndpointSettings('Intel(r) AMT:WiFi Endpoint Settings home')
+      expect(result).toBe(true)
+      expect(deleteSpy).toHaveBeenCalled()
+    })
+
+    it('should return false when delete response is null', async () => {
+      deleteSpy.mockResolvedValue(null)
+      const result = await device.deleteWiFiEndpointSettings('Intel(r) AMT:WiFi Endpoint Settings home')
+      expect(result).toBe(false)
+    })
+  })
+
   describe('addPrivateKey', () => {
     it('should return the created key handle when present', async () => {
       sendSpy.mockResolvedValue({
