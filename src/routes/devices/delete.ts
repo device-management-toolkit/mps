@@ -15,24 +15,12 @@ export async function deleteDevice(req: Request, res: Response): Promise<void> {
     const device = await req.db.devices.getById(guid, tenantId)
     const isSecretToBeDeleted = req.query.isSecretToBeDeleted ?? 'false'
 
-    if (device == null && isSecretToBeDeleted === 'false') {
-      // Not in db and ignore vault
+    if (device == null) {
       res
         .status(404)
         .json({ error: 'NOT FOUND', message: `Device ID ${guid} not found` })
         .end()
-    } else if (device == null && isSecretToBeDeleted === 'true') {
-      // Device not in db but in vault
-      vaultResults = await deleteSecrets(req, guid)
-      if (vaultResults) {
-        res.status(204).end()
-      } else {
-        res
-          .status(404)
-          .json({ error: 'NOT FOUND', message: `Device ID ${guid} not found` })
-          .end()
-      }
-    } else if (device != null && isSecretToBeDeleted === 'true') {
+    } else if (isSecretToBeDeleted === 'true') {
       // In db and delete vault
       dbResults = await req.db.devices.delete(guid, tenantId)
       vaultResults = await deleteSecrets(req, guid)
@@ -44,7 +32,7 @@ export async function deleteDevice(req: Request, res: Response): Promise<void> {
           .json({ error: 'NOT FOUND', message: `Device ID ${guid} not found` })
           .end()
       }
-    } else if (device != null && isSecretToBeDeleted === 'false') {
+    } else {
       // In db and ignore vault
       dbResults = await req.db.devices.delete(guid, tenantId)
       if (dbResults) {
