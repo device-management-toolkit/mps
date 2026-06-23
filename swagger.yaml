@@ -243,6 +243,288 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HardwareInfoResponse'
+  /api/v1/amt/opaqueManagementDataService/read/{guid}:
+    post:
+      summary: Read Opaque Management Data
+      description: Invokes CIM_OpaqueManagementDataService.Read to read octets from a data block.
+      tags:
+        - AMT
+      parameters:
+        - name: guid
+          in: path
+          description: GUID of device
+          example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - Handle
+              properties:
+                Handle: { type: string, description: InstanceID of the data block }
+                Length: { type: integer }
+                Offset: { type: integer }
+                LockToken: { type: string }
+      responses:
+        200:
+          description: 'Successful operation'
+        400:
+          description: 'Opaque management data service request failed'
+        500:
+          description: 'Internal Server Error'
+  /api/v1/amt/opaqueManagementDataService/write/{guid}:
+    post:
+      summary: Write Opaque Management Data
+      description: Invokes CIM_OpaqueManagementDataService.Write to write octets to a data block.
+      tags:
+        - AMT
+      parameters:
+        - name: guid
+          in: path
+          description: GUID of device
+          example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - Handle
+                - Data
+              properties:
+                Handle: { type: string, description: InstanceID of the data block }
+                Data: { type: string, description: OctetString (base64) data to write }
+                Length: { type: integer }
+                Offset: { type: integer }
+                Truncate: { type: boolean }
+                LockToken: { type: string }
+      responses:
+        200:
+          description: 'Successful operation'
+        400:
+          description: 'Opaque management data service request failed'
+        500:
+          description: 'Internal Server Error'
+  /api/v1/amt/opaqueManagementDataService/create/{guid}:
+    post:
+      summary: Create Opaque Management Data
+      description: Invokes CIM_OpaqueManagementDataService.Create to allocate a new data block.
+      tags:
+        - AMT
+      parameters:
+        - name: guid
+          in: path
+          description: GUID of device
+          example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                DataFormat: { type: string }
+                ElementName: { type: string }
+                MaxSize: { type: integer }
+                BasedOnExtent: { type: string, description: DeviceID of the CIM_StorageExtent }
+                Owner: { type: string, description: InstanceID of the owning CIM_Identity }
+      responses:
+        200:
+          description: 'Successful operation'
+        400:
+          description: 'Opaque management data service request failed'
+        500:
+          description: 'Internal Server Error'
+  /api/v1/amt/opaqueManagementDataService/lock/{guid}:
+    post:
+      summary: Lock Opaque Management Data
+      description: Invokes CIM_OpaqueManagementDataService.Lock to acquire or release a lock on a data block.
+      tags:
+        - AMT
+      parameters:
+        - name: guid
+          in: path
+          description: GUID of device
+          example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - Handle
+                - Lock
+              properties:
+                Handle: { type: string, description: InstanceID of the data block }
+                Lock: { type: boolean, description: true to acquire, false to release }
+                LockToken: { type: string }
+      responses:
+        200:
+          description: 'Successful operation'
+        400:
+          description: 'Opaque management data service request failed'
+        500:
+          description: 'Internal Server Error'
+  /api/v1/amt/opaqueManagementDataService/assignAccess/{guid}:
+    post:
+      summary: Assign Access to Opaque Management Data
+      description: Invokes CIM_OpaqueManagementDataService.AssignAccess to grant an identity access to a data block.
+      tags:
+        - AMT
+      parameters:
+        - name: guid
+          in: path
+          description: GUID of device
+          example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - Handle
+                - Identity
+                - Activities
+              properties:
+                Handle: { type: string, description: InstanceID of the data block }
+                Identity: { type: string, description: InstanceID of the CIM_Identity }
+                Activities:
+                  type: array
+                  description: 'uint16 activities. 5 = Read, 6 = Write'
+                  items: { type: integer }
+      responses:
+        200:
+          description: 'Successful operation'
+        400:
+          description: 'Opaque management data service request failed'
+        500:
+          description: 'Internal Server Error'
+  /api/v1/amt/opaqueManagementDataService/reassignOwnership/{guid}:
+    post:
+      summary: Reassign Ownership of Opaque Management Data
+      description: Invokes CIM_OpaqueManagementDataService.ReassignOwnership to transfer ownership of a data block.
+      tags:
+        - AMT
+      parameters:
+        - name: guid
+          in: path
+          description: GUID of device
+          example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - Handle
+                - NewOwner
+              properties:
+                Handle: { type: string, description: InstanceID of the data block }
+                NewOwner: { type: string, description: InstanceID of the new owning CIM_Identity }
+      responses:
+        200:
+          description: 'Successful operation'
+        400:
+          description: 'Opaque management data service request failed'
+        500:
+          description: 'Internal Server Error'
+  /api/v1/amt/opaqueManagementDataService/exportToURI/{guid}:
+    post:
+      summary: Export Opaque Management Data to URI
+      description: Invokes CIM_OpaqueManagementDataService.ExportToURI to export a data block to an external URI.
+      tags:
+        - AMT
+      parameters:
+        - name: guid
+          in: path
+          description: GUID of device
+          example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - Handle
+                - ExportURI
+              properties:
+                Handle: { type: string, description: InstanceID of the data block }
+                ExportURI: { type: string }
+                Length: { type: integer }
+                Offset: { type: integer }
+                LockToken: { type: string }
+      responses:
+        200:
+          description: 'Successful operation'
+        400:
+          description: 'Opaque management data service request failed'
+        500:
+          description: 'Internal Server Error'
+  /api/v1/amt/opaqueManagementDataService/importFromURI/{guid}:
+    post:
+      summary: Import Opaque Management Data from URI
+      description: Invokes CIM_OpaqueManagementDataService.ImportFromURI to import data from an external URI into a data block.
+      tags:
+        - AMT
+      parameters:
+        - name: guid
+          in: path
+          description: GUID of device
+          example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - Handle
+                - ImportURI
+              properties:
+                Handle: { type: string, description: InstanceID of the data block }
+                ImportURI: { type: string }
+                Length: { type: integer }
+                Offset: { type: integer }
+                Truncate: { type: boolean }
+                LockToken: { type: string }
+      responses:
+        200:
+          description: 'Successful operation'
+        400:
+          description: 'Opaque management data service request failed'
+        500:
+          description: 'Internal Server Error'
   /api/v1/amt/features/{guid}:
     post:
       summary: Set Intel┬« AMT Features

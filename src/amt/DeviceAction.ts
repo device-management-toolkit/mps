@@ -841,4 +841,72 @@ export class DeviceAction {
 
     return returnValue ?? -1
   }
+
+  // CIM_OpaqueManagementDataService method invocations. Each returns the parsed
+  // response Envelope; route handlers read the relevant <Method>_OUTPUT element.
+  async readOpaqueManagementData(data: CIM.Models.OpaqueManagementDataService.Read): Promise<any> {
+    logger.silly(`readOpaqueManagementData ${messages.REQUEST}`)
+    const xmlRequestBody = this.cim.OpaqueManagementDataService.Read(data)
+    const result = await this.ciraHandler.Get<any>(this.ciraSocket, xmlRequestBody)
+    logger.silly(`readOpaqueManagementData ${messages.COMPLETE}`)
+    return result?.Envelope
+  }
+
+  async writeOpaqueManagementData(data: CIM.Models.OpaqueManagementDataService.Write): Promise<any> {
+    logger.silly(`writeOpaqueManagementData ${messages.REQUEST}`)
+    const xmlRequestBody = this.cim.OpaqueManagementDataService.Write(data)
+    const result = await this.ciraHandler.Get<any>(this.ciraSocket, xmlRequestBody)
+    logger.silly(`writeOpaqueManagementData ${messages.COMPLETE}`)
+    return result?.Envelope
+  }
+
+  async createOpaqueManagementData(data: CIM.Models.OpaqueManagementDataService.Create): Promise<any> {
+    logger.silly(`createOpaqueManagementData ${messages.REQUEST}`)
+    const xmlRequestBody = this.cim.OpaqueManagementDataService.Create(data)
+    const result = await this.ciraHandler.Get<any>(this.ciraSocket, xmlRequestBody)
+    logger.silly(`createOpaqueManagementData ${messages.COMPLETE}`)
+    return result?.Envelope
+  }
+
+  async lockOpaqueManagementData(data: CIM.Models.OpaqueManagementDataService.Lock): Promise<any> {
+    logger.silly(`lockOpaqueManagementData ${messages.REQUEST}`)
+    const xmlRequestBody = this.cim.OpaqueManagementDataService.Lock(data)
+    const result = await this.ciraHandler.Get<any>(this.ciraSocket, xmlRequestBody)
+    logger.silly(`lockOpaqueManagementData ${messages.COMPLETE}`)
+    return result?.Envelope
+  }
+
+  async assignAccessOpaqueManagementData(data: CIM.Models.OpaqueManagementDataService.AssignAccess): Promise<any> {
+    logger.silly(`assignAccessOpaqueManagementData ${messages.REQUEST}`)
+    const xmlRequestBody = this.cim.OpaqueManagementDataService.AssignAccess(data)
+    const result = await this.ciraHandler.Get<any>(this.ciraSocket, xmlRequestBody)
+    logger.silly(`assignAccessOpaqueManagementData ${messages.COMPLETE}`)
+    return result?.Envelope
+  }
+
+  async reassignOwnershipOpaqueManagementData(
+    data: CIM.Models.OpaqueManagementDataService.ReassignOwnership
+  ): Promise<any> {
+    logger.silly(`reassignOwnershipOpaqueManagementData ${messages.REQUEST}`)
+    const xmlRequestBody = this.cim.OpaqueManagementDataService.ReassignOwnership(data)
+    const result = await this.ciraHandler.Get<any>(this.ciraSocket, xmlRequestBody)
+    logger.silly(`reassignOwnershipOpaqueManagementData ${messages.COMPLETE}`)
+    return result?.Envelope
+  }
+
+  async exportOpaqueManagementDataToURI(data: CIM.Models.OpaqueManagementDataService.ExportToURI): Promise<any> {
+    logger.silly(`exportOpaqueManagementDataToURI ${messages.REQUEST}`)
+    const xmlRequestBody = this.cim.OpaqueManagementDataService.ExportToURI(data)
+    const result = await this.ciraHandler.Get<any>(this.ciraSocket, xmlRequestBody)
+    logger.silly(`exportOpaqueManagementDataToURI ${messages.COMPLETE}`)
+    return result?.Envelope
+  }
+
+  async importOpaqueManagementDataFromURI(data: CIM.Models.OpaqueManagementDataService.ImportFromURI): Promise<any> {
+    logger.silly(`importOpaqueManagementDataFromURI ${messages.REQUEST}`)
+    const xmlRequestBody = this.cim.OpaqueManagementDataService.ImportFromURI(data)
+    const result = await this.ciraHandler.Get<any>(this.ciraSocket, xmlRequestBody)
+    logger.silly(`importOpaqueManagementDataFromURI ${messages.COMPLETE}`)
+    return result?.Envelope
+  }
 }

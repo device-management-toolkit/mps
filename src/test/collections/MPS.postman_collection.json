@@ -3191,6 +3191,422 @@
           "response": []
         },
         {
+          "name": "Read Opaque Management Data",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 404\", function () {\r",
+                  "    pm.response.to.have.status(404);\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Device should not be found\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.error).to.eq(\"Device not found/connected. Please connect again using CIRA.\")\r",
+                  "    pm.expect(jsonData.errorDescription).to.eq(\"guid : 1\")\r",
+                  "});\r",
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"Handle\": \"1\",\r\n    \"Length\": 16,\r\n    \"Offset\": 0\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{protocol}}://{{host}}/api/v1/amt/opaqueManagementDataService/read/1",
+              "protocol": "{{protocol}}",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "amt",
+                "opaqueManagementDataService",
+                "read",
+                "1"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Write Opaque Management Data",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 404\", function () {\r",
+                  "    pm.response.to.have.status(404);\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Device should not be found\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.error).to.eq(\"Device not found/connected. Please connect again using CIRA.\")\r",
+                  "    pm.expect(jsonData.errorDescription).to.eq(\"guid : 1\")\r",
+                  "});\r",
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"Handle\": \"1\",\r\n    \"Data\": \"AAECAwQF\",\r\n    \"Offset\": 0\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{protocol}}://{{host}}/api/v1/amt/opaqueManagementDataService/write/1",
+              "protocol": "{{protocol}}",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "amt",
+                "opaqueManagementDataService",
+                "write",
+                "1"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Opaque Management Data",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 404\", function () {\r",
+                  "    pm.response.to.have.status(404);\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Device should not be found\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.error).to.eq(\"Device not found/connected. Please connect again using CIRA.\")\r",
+                  "    pm.expect(jsonData.errorDescription).to.eq(\"guid : 1\")\r",
+                  "});\r",
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"ElementName\": \"block\",\r\n    \"MaxSize\": 4096\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{protocol}}://{{host}}/api/v1/amt/opaqueManagementDataService/create/1",
+              "protocol": "{{protocol}}",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "amt",
+                "opaqueManagementDataService",
+                "create",
+                "1"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Lock Opaque Management Data",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 404\", function () {\r",
+                  "    pm.response.to.have.status(404);\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Device should not be found\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.error).to.eq(\"Device not found/connected. Please connect again using CIRA.\")\r",
+                  "    pm.expect(jsonData.errorDescription).to.eq(\"guid : 1\")\r",
+                  "});\r",
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"Handle\": \"1\",\r\n    \"Lock\": true\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{protocol}}://{{host}}/api/v1/amt/opaqueManagementDataService/lock/1",
+              "protocol": "{{protocol}}",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "amt",
+                "opaqueManagementDataService",
+                "lock",
+                "1"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Assign Access Opaque Management Data",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 404\", function () {\r",
+                  "    pm.response.to.have.status(404);\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Device should not be found\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.error).to.eq(\"Device not found/connected. Please connect again using CIRA.\")\r",
+                  "    pm.expect(jsonData.errorDescription).to.eq(\"guid : 1\")\r",
+                  "});\r",
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"Handle\": \"1\",\r\n    \"Identity\": \"AdminAcl\",\r\n    \"Activities\": [5, 6]\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{protocol}}://{{host}}/api/v1/amt/opaqueManagementDataService/assignAccess/1",
+              "protocol": "{{protocol}}",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "amt",
+                "opaqueManagementDataService",
+                "assignAccess",
+                "1"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Reassign Ownership Opaque Management Data",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 404\", function () {\r",
+                  "    pm.response.to.have.status(404);\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Device should not be found\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.error).to.eq(\"Device not found/connected. Please connect again using CIRA.\")\r",
+                  "    pm.expect(jsonData.errorDescription).to.eq(\"guid : 1\")\r",
+                  "});\r",
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"Handle\": \"1\",\r\n    \"NewOwner\": \"User2\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{protocol}}://{{host}}/api/v1/amt/opaqueManagementDataService/reassignOwnership/1",
+              "protocol": "{{protocol}}",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "amt",
+                "opaqueManagementDataService",
+                "reassignOwnership",
+                "1"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Export Opaque Management Data To URI",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 404\", function () {\r",
+                  "    pm.response.to.have.status(404);\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Device should not be found\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.error).to.eq(\"Device not found/connected. Please connect again using CIRA.\")\r",
+                  "    pm.expect(jsonData.errorDescription).to.eq(\"guid : 1\")\r",
+                  "});\r",
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"Handle\": \"1\",\r\n    \"ExportURI\": \"https://example.com/blob\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{protocol}}://{{host}}/api/v1/amt/opaqueManagementDataService/exportToURI/1",
+              "protocol": "{{protocol}}",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "amt",
+                "opaqueManagementDataService",
+                "exportToURI",
+                "1"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Import Opaque Management Data From URI",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 404\", function () {\r",
+                  "    pm.response.to.have.status(404);\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Device should not be found\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.error).to.eq(\"Device not found/connected. Please connect again using CIRA.\")\r",
+                  "    pm.expect(jsonData.errorDescription).to.eq(\"guid : 1\")\r",
+                  "});\r",
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"Handle\": \"1\",\r\n    \"ImportURI\": \"https://example.com/blob\",\r\n    \"Truncate\": false\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{protocol}}://{{host}}/api/v1/amt/opaqueManagementDataService/importFromURI/1",
+              "protocol": "{{protocol}}",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "amt",
+                "opaqueManagementDataService",
+                "importFromURI",
+                "1"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
           "name": "Get Version",
           "event": [
             {

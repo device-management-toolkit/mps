@@ -44,6 +44,26 @@ import { getNetworkSettings } from './networkSettings/getNetworkSettings.js'
 import { getWiredNetworkSettings } from './networkSettings/getWired.js'
 import { patchWiredNetworkSettings } from './networkSettings/patchWired.js'
 import { wiredNetworkValidator } from './networkSettings/wiredValidator.js'
+import {
+  readOpaqueManagementData,
+  writeOpaqueManagementData,
+  createOpaqueManagementData,
+  lockOpaqueManagementData,
+  assignAccessOpaqueManagementData,
+  reassignOwnershipOpaqueManagementData,
+  exportOpaqueManagementDataToURI,
+  importOpaqueManagementDataFromURI
+} from './opaqueManagementDataService.js'
+import {
+  readOpaqueManagementDataValidator,
+  writeOpaqueManagementDataValidator,
+  createOpaqueManagementDataValidator,
+  lockOpaqueManagementDataValidator,
+  assignAccessOpaqueManagementDataValidator,
+  reassignOwnershipOpaqueManagementDataValidator,
+  exportOpaqueManagementDataToURIValidator,
+  importOpaqueManagementDataFromURIValidator
+} from './opaqueManagementDataServiceValidator.js'
 
 const amtRouter: Router = Router()
 
@@ -101,6 +121,64 @@ amtRouter.patch(
   validateMiddleware,
   ciraMiddleware,
   patchWiredNetworkSettings
+)
+
+// CIM_OpaqueManagementDataService - one path per method
+amtRouter.post(
+  '/opaqueManagementDataService/read/:guid',
+  readOpaqueManagementDataValidator(),
+  validateMiddleware,
+  ciraMiddleware,
+  readOpaqueManagementData
+)
+amtRouter.post(
+  '/opaqueManagementDataService/write/:guid',
+  writeOpaqueManagementDataValidator(),
+  validateMiddleware,
+  ciraMiddleware,
+  writeOpaqueManagementData
+)
+amtRouter.post(
+  '/opaqueManagementDataService/create/:guid',
+  createOpaqueManagementDataValidator(),
+  validateMiddleware,
+  ciraMiddleware,
+  createOpaqueManagementData
+)
+amtRouter.post(
+  '/opaqueManagementDataService/lock/:guid',
+  lockOpaqueManagementDataValidator(),
+  validateMiddleware,
+  ciraMiddleware,
+  lockOpaqueManagementData
+)
+amtRouter.post(
+  '/opaqueManagementDataService/assignAccess/:guid',
+  assignAccessOpaqueManagementDataValidator(),
+  validateMiddleware,
+  ciraMiddleware,
+  assignAccessOpaqueManagementData
+)
+amtRouter.post(
+  '/opaqueManagementDataService/reassignOwnership/:guid',
+  reassignOwnershipOpaqueManagementDataValidator(),
+  validateMiddleware,
+  ciraMiddleware,
+  reassignOwnershipOpaqueManagementData
+)
+amtRouter.post(
+  '/opaqueManagementDataService/exportToURI/:guid',
+  exportOpaqueManagementDataToURIValidator(),
+  validateMiddleware,
+  ciraMiddleware,
+  exportOpaqueManagementDataToURI
+)
+amtRouter.post(
+  '/opaqueManagementDataService/importFromURI/:guid',
+  importOpaqueManagementDataFromURIValidator(),
+  validateMiddleware,
+  ciraMiddleware,
+  importOpaqueManagementDataFromURI
 )
 
 export default amtRouter

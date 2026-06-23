@@ -208,5 +208,9 @@ export enum messages {
   WINDOW_ADJUST_NO_CHANNEL_ID = 'MPS Error in CHANNEL_WINDOW_ADJUST: Unable to find channelId',
   XML_PARSE_FAILED = 'Failed to parse XML',
   KVM_GET_EXCEPTION = 'Exception during get KVM display setting data',
-  KVM_SET_EXCEPTION = 'Exception during set KVM display setting data'
+  KVM_SET_EXCEPTION = 'Exception during set KVM display setting data',
+  OPAQUE_MANAGEMENT_DATA_SERVICE_REQUESTED = 'Opaque management data service request',
+  OPAQUE_MANAGEMENT_DATA_SERVICE_REQUEST_FAILED = 'Opaque management data service request failed',
+  OPAQUE_MANAGEMENT_DATA_SERVICE_SUCCESS = 'Opaque management data service request completed',
+  OPAQUE_MANAGEMENT_DATA_SERVICE_EXCEPTION = 'Exception during opaque management data service request'
 }
