@@ -841,4 +841,25 @@ export class DeviceAction {
 
     return returnValue ?? -1
   }
+
+  async getOpaqueManagementDataOwner(): Promise<
+    Common.Models.Envelope<Common.Models.Pull<CIM.Models.OpaqueManagementDataOwner>>
+  > {
+    logger.silly(`getOpaqueManagementDataOwner ${messages.REQUEST}`)
+    let xmlRequestBody = this.cim.OpaqueManagementDataOwner.Enumerate()
+    const enumResponse = await this.ciraHandler.Enumerate(this.ciraSocket, xmlRequestBody)
+    if (enumResponse == null) {
+      logger.error(`getOpaqueManagementDataOwner failed. Reason: ${messages.ENUMERATION_RESPONSE_NULL}`)
+      return null
+    }
+    xmlRequestBody = this.cim.OpaqueManagementDataOwner.Pull(
+      enumResponse.Envelope.Body.EnumerateResponse.EnumerationContext
+    )
+    const pullResponse = await this.ciraHandler.Pull<CIM.Models.OpaqueManagementDataOwner>(
+      this.ciraSocket,
+      xmlRequestBody
+    )
+    logger.silly(`getOpaqueManagementDataOwner ${messages.COMPLETE}`)
+    return pullResponse.Envelope
+  }
 }

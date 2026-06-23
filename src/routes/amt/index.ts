@@ -44,6 +44,7 @@ import { getNetworkSettings } from './networkSettings/getNetworkSettings.js'
 import { getWiredNetworkSettings } from './networkSettings/getWired.js'
 import { patchWiredNetworkSettings } from './networkSettings/patchWired.js'
 import { wiredNetworkValidator } from './networkSettings/wiredValidator.js'
+import { getOpaqueManagementDataOwner } from './getOpaqueManagementDataOwner.js'
 
 const amtRouter: Router = Router()
 
@@ -51,6 +52,7 @@ amtRouter.get('/log/audit/:guid', auditLogValidator(), validateMiddleware, ciraM
 amtRouter.get('/log/event/:guid', ciraMiddleware, eventLog)
 amtRouter.get('/generalSettings/:guid', ciraMiddleware, generalSettings)
 amtRouter.get('/hardwareInfo/:guid', ciraMiddleware, hardwareInfo)
+amtRouter.get('/opaqueManagementDataOwner/:guid', ciraMiddleware, getOpaqueManagementDataOwner)
 amtRouter.post('/power/action/:guid', powerActionValidator(), validateMiddleware, ciraMiddleware, powerAction)
 amtRouter.post('/power/bootOptions/:guid', bootOptionsValidator(), validateMiddleware, ciraMiddleware, bootOptions)
 amtRouter.get('/power/capabilities/:guid', ciraMiddleware, powerCapabilities)
