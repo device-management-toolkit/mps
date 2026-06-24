@@ -1,0 +1,158 @@
+/*********************************************************************
+ * Copyright (c) Intel Corporation 2025
+ * SPDX-License-Identifier: Apache-2.0
+ **********************************************************************/
+
+import {
+  buildWiredSettingsRequest,
+  findEthernetPort,
+  toWiredNetworkInfo,
+  validateWiredNetworkConfig,
+  WIRED_ETHERNET_INSTANCE_ID
+} from './helper.js'
+
+describe('networkSettings helper', () => {
+  describe('findEthernetPort', () => {
+    it('finds the wired port from an array', () => {
+      const items = {
+        AMT_EthernetPortSettings: [
+          { InstanceID: 'Intel(r) AMT Ethernet Port Settings 1' },
+          { InstanceID: 'Intel(r) AMT Ethernet Port Settings 0' }
+        ]
+      }
+      expect(findEthernetPort(items, WIRED_ETHERNET_INSTANCE_ID)?.InstanceID).toBe(
+        'Intel(r) AMT Ethernet Port Settings 0'
+      )
+    })
+
+    it('finds the wired port from a single object', () => {
+      const items = { AMT_EthernetPortSettings: { InstanceID: 'Intel(r) AMT Ethernet Port Settings 0' } }
+      expect(findEthernetPort(items, WIRED_ETHERNET_INSTANCE_ID)).not.toBeNull()
+    })
+
+    it('returns null when no port matches', () => {
+      const items = { AMT_EthernetPortSettings: { InstanceID: 'Intel(r) AMT Ethernet Port Settings 1' } }
+      expect(findEthernetPort(items, WIRED_ETHERNET_INSTANCE_ID)).toBeNull()
+    })
+
+    it('returns null when items are missing', () => {
+      expect(findEthernetPort(undefined, WIRED_ETHERNET_INSTANCE_ID)).toBeNull()
+    })
+  })
+
+  describe('toWiredNetworkInfo', () => {
+    it('maps enum and boolean fields and omits absent optional fields', () => {
+      const info = toWiredNetworkInfo(
+        {
+          ElementName: 'Intel(r) AMT Ethernet Port Settings',
+          InstanceID: 'Intel(r) AMT Ethernet Port Settings 0',
+          MACAddress: 'aa-bb',
+          LinkIsUp: true,
+          LinkPolicy: 16,
+          DHCPEnabled: false,
+          PhysicalConnectionType: 0,
+          PhysicalNicMedium: 1
+        } as any,
+        { Enabled: 6, AvailableInS0: false, PxeTimeout: 120 } as any
+      )
+      expect(info.linkPolicy).toEqual(['S0 DC'])
+      expect(info.physicalConnectionType).toBe('Integrated LAN NIC')
+      expect(info.physicalNICMedium).toBe('PCIe')
+      expect(info.ieee8021x).toEqual({ enabled: 'EnabledWithoutCertificates', availableInS0: false, pxeTimeout: 120 })
+      expect(info.linkPreference).toBeUndefined()
+      expect(info.wlanLinkProtectionLevel).toBeUndefined()
+    })
+
+    it('maps unknown enum values to a not-found marker', () => {
+      const info = toWiredNetworkInfo({ PhysicalConnectionType: 99 } as any, null)
+      expect(info.physicalConnectionType).toBe('Value not found in map')
+      expect(info.ieee8021x.enabled).toBe('Value not found in map')
+    })
+  })
+
+  describe('validateWiredNetworkConfig', () => {
+    it('rejects DHCP combined with static IP', () => {
+      expect(validateWiredNetworkConfig({ dhcpEnabled: true, ipAddress: '1.2.3.4' })).not.toBeNull()
+    })
+
+    it('rejects IP sync combined with static IP', () => {
+      expect(validateWiredNetworkConfig({ ipSyncEnabled: true, ipAddress: '1.2.3.4' })).not.toBeNull()
+    })
+
+    it('rejects empty configuration', () => {
+      expect(validateWiredNetworkConfig({})).not.toBeNull()
+    })
+
+    it('requires core static fields when DHCP and sync are off', () => {
+      expect(validateWiredNetworkConfig({ dhcpEnabled: false, ipAddress: '1.2.3.4' })).not.toBeNull()
+    })
+
+    it('accepts a valid static configuration', () => {
+      expect(
+        validateWiredNetworkConfig({
+          dhcpEnabled: false,
+          ipAddress: '1.2.3.4',
+          subnetMask: '255.255.255.0',
+          defaultGateway: '1.2.3.1',
+          primaryDNS: '1.2.3.1'
+        })
+      ).toBeNull()
+    })
+
+    it('accepts DHCP enabled', () => {
+      expect(validateWiredNetworkConfig({ dhcpEnabled: true })).toBeNull()
+    })
+  })
+
+  describe('buildWiredSettingsRequest', () => {
+    const current = {
+      ElementName: 'Intel(r) AMT Ethernet Port Settings',
+      InstanceID: 'Intel(r) AMT Ethernet Port Settings 0',
+      SharedMAC: true,
+      IpSyncEnabled: false,
+      DHCPEnabled: false,
+      IPAddress: '192.168.1.50',
+      SubnetMask: '255.255.255.0',
+      DefaultGateway: '192.168.1.1',
+      PrimaryDNS: '192.168.1.1',
+      SecondaryDNS: ''
+    } as any
+
+    it('omits IP fields and enables sync for DHCP', () => {
+      const result = buildWiredSettingsRequest(current, { dhcpEnabled: true })
+      expect(result.DHCPEnabled).toBe(true)
+      expect(result.IpSyncEnabled).toBe(true)
+      expect(result.SharedStaticIp).toBe(false)
+      // Empty IP fields are omitted so they are not serialized as empty XML
+      // elements (which AMT would treat as a no-op).
+      expect(result).not.toHaveProperty('IPAddress')
+      expect(result).not.toHaveProperty('SubnetMask')
+      expect(result).not.toHaveProperty('DefaultGateway')
+      expect(result).not.toHaveProperty('PrimaryDNS')
+      expect(result).not.toHaveProperty('SecondaryDNS')
+    })
+
+    it('applies static IP fields when DHCP and sync are off', () => {
+      const result = buildWiredSettingsRequest(current, {
+        dhcpEnabled: false,
+        ipSyncEnabled: false,
+        ipAddress: '10.0.0.5',
+        subnetMask: '255.255.255.0',
+        defaultGateway: '10.0.0.1',
+        primaryDNS: '10.0.0.1'
+      })
+      expect(result.DHCPEnabled).toBe(false)
+      expect(result.IpSyncEnabled).toBe(false)
+      expect(result.SharedStaticIp).toBe(false)
+      expect(result.IPAddress).toBe('10.0.0.5')
+    })
+
+    it('omits IP fields when ipSync is enabled', () => {
+      const result = buildWiredSettingsRequest(current, { dhcpEnabled: false, ipSyncEnabled: true })
+      expect(result.IpSyncEnabled).toBe(true)
+      expect(result.SharedStaticIp).toBe(true)
+      expect(result).not.toHaveProperty('IPAddress')
+      expect(result).not.toHaveProperty('SubnetMask')
+    })
+  })
+})

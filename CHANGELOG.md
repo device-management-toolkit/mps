@@ -1,3 +1,24 @@
+# [2.29.0](https://github.com/device-management-toolkit/mps/compare/v2.28.0...v2.29.0) (2026-06-19)
+
+
+### Features
+
+* **api:** add combined network settings endpoint ([#2536](https://github.com/device-management-toolkit/mps/issues/2536)) ([2abcac7](https://github.com/device-management-toolkit/mps/commit/2abcac72a95ee16f632fb8f464ae276610b8a9b9))
+
+# [2.28.0](https://github.com/device-management-toolkit/mps/compare/v2.27.0...v2.28.0) (2026-06-19)
+
+
+### Features
+
+* **api:** add patch wired network settings endpoint ([#2535](https://github.com/device-management-toolkit/mps/issues/2535)) ([abf3985](https://github.com/device-management-toolkit/mps/commit/abf3985b9ca2f8c9450510ab7138a3695017725c))
+
+# [2.27.0](https://github.com/device-management-toolkit/mps/compare/v2.26.7...v2.27.0) (2026-06-19)
+
+
+### Features
+
+* **api:** add get wired network settings endpoint ([#2534](https://github.com/device-management-toolkit/mps/issues/2534)) ([d082a38](https://github.com/device-management-toolkit/mps/commit/d082a38c8010d2a8b12b5da990525ddd9630e27f))
+
 ## [2.26.7](https://github.com/device-management-toolkit/mps/compare/v2.26.6...v2.26.7) (2026-06-03)
 
 ## [2.26.6](https://github.com/device-management-toolkit/mps/compare/v2.26.5...v2.26.6) (2026-05-20)

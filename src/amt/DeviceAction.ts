@@ -704,6 +704,76 @@ export class DeviceAction {
     return pullResponse.Envelope
   }
 
+  async putEthernetPortSettings(
+    data: AMT.Models.EthernetPortSettings
+  ): Promise<(Common.Models.Envelope<AMT.Models.EthernetPortSettings> & { statusCode?: number }) | null> {
+    logger.silly(`putEthernetPortSettings ${messages.REQUEST}`)
+    const xmlRequestBody = this.amt.EthernetPortSettings.Put(data)
+    const result = await this.ciraHandler.Send(this.ciraSocket, xmlRequestBody)
+    logger.silly(`putEthernetPortSettings ${messages.COMPLETE}`)
+    if (result?.Envelope == null) {
+      return null
+    }
+    // Preserve the HTTP status code stamped by CIRAHandler.handleResult so callers
+    // can distinguish an AMT-applied change (200) from a WSMAN fault (non-200).
+    return { ...result.Envelope, statusCode: result.statusCode }
+  }
+
+  async getIPSIEEE8021xSettings(): Promise<
+    Common.Models.Envelope<{ IPS_IEEE8021xSettings: IPS.Models.IEEE8021xSettings }>
+  > {
+    logger.silly(`getIPSIEEE8021xSettings ${messages.REQUEST}`)
+    const xmlRequestBody = this.ips.IEEE8021xSettings.Get()
+    const result = await this.ciraHandler.Get<{ IPS_IEEE8021xSettings: IPS.Models.IEEE8021xSettings }>(
+      this.ciraSocket,
+      xmlRequestBody
+    )
+    logger.silly(`getIPSIEEE8021xSettings ${messages.COMPLETE}`)
+    return result?.Envelope ?? null
+  }
+
+  async getWiFiEndpointSettings(): Promise<
+    Common.Models.Envelope<Common.Models.Pull<CIM.Models.WiFiEndpointSettings>>
+  > {
+    logger.silly(`getWiFiEndpointSettings ${messages.REQUEST}`)
+    let xmlRequestBody = this.cim.WiFiEndpointSettings.Enumerate()
+    const enumResponse = await this.ciraHandler.Enumerate(this.ciraSocket, xmlRequestBody)
+    if (enumResponse == null) {
+      logger.error(`getWiFiEndpointSettings failed. Reason: ${messages.ENUMERATION_RESPONSE_NULL}`)
+      return null
+    }
+    xmlRequestBody = this.cim.WiFiEndpointSettings.Pull(enumResponse.Envelope.Body.EnumerateResponse.EnumerationContext)
+    const pullResponse = await this.ciraHandler.Pull<CIM.Models.WiFiEndpointSettings>(this.ciraSocket, xmlRequestBody)
+    logger.silly(`getWiFiEndpointSettings ${messages.COMPLETE}`)
+    return pullResponse.Envelope
+  }
+
+  async getCIMIEEE8021xSettings(): Promise<Common.Models.Envelope<Common.Models.Pull<CIM.Models.IEEE8021xSettings>>> {
+    logger.silly(`getCIMIEEE8021xSettings ${messages.REQUEST}`)
+    let xmlRequestBody = this.cim.IEEE8021xSettings.Enumerate()
+    const enumResponse = await this.ciraHandler.Enumerate(this.ciraSocket, xmlRequestBody)
+    if (enumResponse == null) {
+      logger.error(`getCIMIEEE8021xSettings failed. Reason: ${messages.ENUMERATION_RESPONSE_NULL}`)
+      return null
+    }
+    xmlRequestBody = this.cim.IEEE8021xSettings.Pull(enumResponse.Envelope.Body.EnumerateResponse.EnumerationContext)
+    const pullResponse = await this.ciraHandler.Pull<CIM.Models.IEEE8021xSettings>(this.ciraSocket, xmlRequestBody)
+    logger.silly(`getCIMIEEE8021xSettings ${messages.COMPLETE}`)
+    return pullResponse.Envelope
+  }
+
+  async getWiFiPortConfigurationService(): Promise<
+    Common.Models.Envelope<{ AMT_WiFiPortConfigurationService: AMT.Models.WiFiPortConfigurationService }>
+  > {
+    logger.silly(`getWiFiPortConfigurationService ${messages.REQUEST}`)
+    const xmlRequestBody = this.amt.WiFiPortConfigurationService.Get()
+    const result = await this.ciraHandler.Get<{
+      AMT_WiFiPortConfigurationService: AMT.Models.WiFiPortConfigurationService
+    }>(this.ciraSocket, xmlRequestBody)
+    logger.silly(`getWiFiPortConfigurationService ${messages.COMPLETE}`)
+    return result?.Envelope ?? null
+  }
+
   /**
    * Finds the first WiFi port by checking PhysicalConnectionType
    * @returns Object with instanceID and full port settings, or null if none found

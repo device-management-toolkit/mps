@@ -26,6 +26,7 @@ export const HTTPErrorTable = {
   },
   408: 'Timeout Error',
   500: 'Internal Server Error',
+  501: 'Not Implemented',
   601: 'WSMAN Parsing Error',
   602: 'Unable to parse HTTP response header',
   603: 'Unexpected HTTP enum response',
