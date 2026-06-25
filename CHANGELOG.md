@@ -1,3 +1,10 @@
+# [2.30.0](https://github.com/device-management-toolkit/mps/compare/v2.29.0...v2.30.0) (2026-06-25)
+
+
+### Features
+
+* **api:** add wireless radio state endpoints ([#2539](https://github.com/device-management-toolkit/mps/issues/2539)) ([266e2e6](https://github.com/device-management-toolkit/mps/commit/266e2e630b1e64202c16af211c53c00da45fcbd1))
+
 # [2.29.0](https://github.com/device-management-toolkit/mps/compare/v2.28.0...v2.29.0) (2026-06-19)
 
 
