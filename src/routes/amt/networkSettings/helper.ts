@@ -458,3 +458,57 @@ export function buildWiredSettingsRequest(
 
   return settingsRequest
 }
+
+// WiFi radio state values mirror go-wsman-messages CIM_WiFiPort
+// EnabledState/RequestedState (and the strings the Sample Web UI sends/receives).
+export const WIRELESS_STATE_VALUE_TO_STRING: Record<number, string> = {
+  3: 'WifiDisabled',
+  32768: 'WifiEnabledS0',
+  32769: 'WifiEnabledS0SxAC'
+}
+
+const WIRELESS_STATE_STRING_TO_VALUE: Record<string, number> = {
+  WIFIDISABLED: 3,
+  WIFIENABLEDS0: 32768,
+  WIFIENABLEDS0SXAC: 32769
+}
+
+/** Returns the canonical WiFi state string for an EnabledState/RequestedState value, or null. */
+export function wirelessStateToString(value: number | undefined | null): string | null {
+  if (value == null) {
+    return null
+  }
+  return WIRELESS_STATE_VALUE_TO_STRING[value] ?? null
+}
+
+/**
+ * Parses a WiFi state string (case-insensitive, matching Console) into its
+ * RequestedState numeric value, or null when unsupported.
+ */
+export function parseWirelessState(state: unknown): number | null {
+  if (typeof state !== 'string') {
+    return null
+  }
+  const value = WIRELESS_STATE_STRING_TO_VALUE[state.toUpperCase()]
+  return value ?? null
+}
+
+/** Extracts the first CIM_WiFiPort EnabledState from a pull response, or null when no port exists. */
+export function findWiFiPortEnabledState(items: unknown): number | null {
+  const ports = (items as { CIM_WiFiPort?: unknown })?.CIM_WiFiPort
+  if (ports == null) {
+    return null
+  }
+  const port = Array.isArray(ports) ? ports[0] : ports
+  const enabledState = (port as { EnabledState?: number })?.EnabledState
+  return enabledState ?? null
+}
+
+/** Returns true when the pull response contains at least one CIM_WiFiPort. */
+export function hasWiFiPort(items: unknown): boolean {
+  const ports = (items as { CIM_WiFiPort?: unknown })?.CIM_WiFiPort
+  if (ports == null) {
+    return false
+  }
+  return Array.isArray(ports) ? ports.length > 0 : true
+}

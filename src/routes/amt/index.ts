@@ -44,6 +44,9 @@ import { getNetworkSettings } from './networkSettings/getNetworkSettings.js'
 import { getWiredNetworkSettings } from './networkSettings/getWired.js'
 import { patchWiredNetworkSettings } from './networkSettings/patchWired.js'
 import { wiredNetworkValidator } from './networkSettings/wiredValidator.js'
+import { getWirelessState } from './networkSettings/getWirelessState.js'
+import { requestWirelessStateChange } from './networkSettings/requestWirelessStateChange.js'
+import { wirelessStateValidator } from './networkSettings/wirelessStateValidator.js'
 
 const amtRouter: Router = Router()
 
@@ -101,6 +104,16 @@ amtRouter.patch(
   validateMiddleware,
   ciraMiddleware,
   patchWiredNetworkSettings
+)
+
+// Wireless radio state
+amtRouter.get('/networkSettings/wireless/state/:guid', ciraMiddleware, getWirelessState)
+amtRouter.post(
+  '/networkSettings/wireless/state/:guid',
+  wirelessStateValidator(),
+  validateMiddleware,
+  ciraMiddleware,
+  requestWirelessStateChange
 )
 
 export default amtRouter
