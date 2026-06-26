@@ -512,3 +512,53 @@ export function hasWiFiPort(items: unknown): boolean {
   }
   return Array.isArray(ports) ? ports.length > 0 : true
 }
+
+// LocalProfileSynchronizationEnabled values (AMT_WiFiPortConfigurationService).
+// The wsman-messages TS type permits 0 | 3; UnrestrictedSync (3) is the enabled
+// value used across the DMT TS/RPC stack (matches RPS), 0 disables local sync.
+export const LOCAL_SYNC_DISABLED = 0
+export const LOCAL_PROFILE_SYNC_ENABLED = 3
+
+export interface WirelessProfileSyncRequest {
+  localProfileSync?: boolean
+  uefiProfileSync?: boolean
+}
+
+export interface WirelessProfileSyncResponse {
+  localProfileSync: boolean
+  uefiProfileSync: boolean
+  uefiProfileSyncSupported: boolean
+}
+
+/** Local profile sync is considered enabled for any non-disabled state. */
+export function isLocalProfileSyncEnabled(state: number | undefined | null): boolean {
+  return state != null && state !== LOCAL_SYNC_DISABLED
+}
+
+/** Maps the current WiFi port configuration plus UEFI support into the profile-sync DTO. */
+export function buildProfileSyncResponse(
+  service: AMT.Models.WiFiPortConfigurationService | null,
+  uefiSupported: boolean
+): WirelessProfileSyncResponse {
+  return {
+    localProfileSync: isLocalProfileSyncEnabled(service?.localProfileSynchronizationEnabled),
+    uefiProfileSync: Boolean(service?.UEFIWiFiProfileShareEnabled),
+    uefiProfileSyncSupported: uefiSupported
+  }
+}
+
+/**
+ * Builds the AMT_WiFiPortConfigurationService Put payload, copying all fields from
+ * the current configuration and overriding only the local/UEFI sync states.
+ */
+export function buildWiFiPortConfigRequest(
+  current: AMT.Models.WiFiPortConfigurationService,
+  localSyncState: AMT.Types.WiFiPortConfigurationService.localProfileSynchronizationEnabled,
+  uefiWiFiSyncState: AMT.Types.WiFiPortConfigurationService.UEFIWiFiProfileShareEnabled
+): AMT.Models.WiFiPortConfigurationService {
+  return {
+    ...current,
+    localProfileSynchronizationEnabled: localSyncState,
+    UEFIWiFiProfileShareEnabled: uefiWiFiSyncState
+  }
+}

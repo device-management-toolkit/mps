@@ -774,6 +774,26 @@ export class DeviceAction {
     return result?.Envelope ?? null
   }
 
+  async putWiFiPortConfigurationService(
+    data: AMT.Models.WiFiPortConfigurationService
+  ): Promise<
+    | (Common.Models.Envelope<{ AMT_WiFiPortConfigurationService: AMT.Models.WiFiPortConfigurationService }> & {
+        statusCode?: number
+      })
+    | null
+  > {
+    logger.silly(`putWiFiPortConfigurationService ${messages.REQUEST}`)
+    const xmlRequestBody = this.amt.WiFiPortConfigurationService.Put(data)
+    const result = await this.ciraHandler.Send(this.ciraSocket, xmlRequestBody)
+    logger.silly(`putWiFiPortConfigurationService ${messages.COMPLETE}`)
+    if (result?.Envelope == null) {
+      return null
+    }
+    // Preserve the HTTP status code stamped by CIRAHandler.handleResult so callers
+    // can distinguish an AMT-applied change (200) from a WSMAN fault (non-200).
+    return { ...result.Envelope, statusCode: result.statusCode }
+  }
+
   async getWiFiPortState(): Promise<Common.Models.Envelope<Common.Models.Pull<CIM.Models.WiFiPort>>> {
     logger.silly(`getWiFiPortState ${messages.REQUEST}`)
     let xmlRequestBody = this.cim.WiFiPort.Enumerate()

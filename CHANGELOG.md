@@ -1,3 +1,10 @@
+# [2.31.0](https://github.com/device-management-toolkit/mps/compare/v2.30.0...v2.31.0) (2026-06-26)
+
+
+### Features
+
+* **api:** add wireless profile sync endpoints ([#2540](https://github.com/device-management-toolkit/mps/issues/2540)) ([fead077](https://github.com/device-management-toolkit/mps/commit/fead0772579b449eb0b5899e4786e5e7c753ec1e))
+
 # [2.30.0](https://github.com/device-management-toolkit/mps/compare/v2.29.0...v2.30.0) (2026-06-25)
 
 
