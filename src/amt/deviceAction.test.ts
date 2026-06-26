@@ -767,4 +767,49 @@ describe('Device Action Tests', () => {
       expect(getSpy).toHaveBeenCalled()
     })
   })
+
+  describe('putWiFiPortConfigurationService', () => {
+    const wifiPortConfig = {
+      ElementName: 'Intel(r) AMT WiFi Port Configuration Service',
+      Name: 'Intel(r) AMT WiFi Port Configuration Service',
+      localProfileSynchronizationEnabled: 3,
+      UEFIWiFiProfileShareEnabled: 0
+    } as any
+
+    it('should return null when Send returns null', async () => {
+      sendSpy.mockResolvedValueOnce(null)
+      const result = await device.putWiFiPortConfigurationService(wifiPortConfig)
+      expect(sendSpy).toHaveBeenCalled()
+      expect(result).toBeNull()
+    })
+
+    it('should return null when the response has no Envelope', async () => {
+      sendSpy.mockResolvedValueOnce({ statusCode: 200 } as any)
+      const result = await device.putWiFiPortConfigurationService(wifiPortConfig)
+      expect(result).toBeNull()
+    })
+
+    it('should return the envelope and preserve the HTTP status code on success', async () => {
+      sendSpy.mockResolvedValueOnce({
+        Envelope: { Body: { AMT_WiFiPortConfigurationService: wifiPortConfig } },
+        statusCode: 200
+      } as any)
+      const result = await device.putWiFiPortConfigurationService(wifiPortConfig)
+      expect(sendSpy).toHaveBeenCalled()
+      expect(result).toEqual({
+        Body: { AMT_WiFiPortConfigurationService: wifiPortConfig },
+        statusCode: 200
+      })
+    })
+
+    it('should preserve a non-200 status code stamped on a WSMAN fault', async () => {
+      sendSpy.mockResolvedValueOnce({
+        Envelope: { Body: { Fault: { Reason: { Text: 'Invalid value' } } } },
+        statusCode: 400
+      } as any)
+      const result = await device.putWiFiPortConfigurationService(wifiPortConfig)
+      expect(result?.statusCode).toBe(400)
+      expect((result?.Body as any)?.Fault?.Reason?.Text).toBe('Invalid value')
+    })
+  })
 })
