@@ -207,7 +207,7 @@ export class DeviceAction {
     logger.silly(`setRPE ${messages.COMPLETE}`)
   }
 
-  async sendRPE(eraseMask: number): Promise<void> {
+  async sendRPE(eraseMask: number, powerType: number): Promise<void> {
     logger.silly(`sendRPE ${messages.REQUEST}`)
 
     // CSME sentinel bit: 0x10000 maps to ConfigurationDataReset, not a hardware erase target
@@ -285,7 +285,10 @@ export class DeviceAction {
     await this.forceBootMode(1)
 
     // Step 5: Power Cycle Off Hard — S5→S0 required; warm reset keeps ME power rails active
-    await this.sendPowerAction(5)
+    const powerStateResult = await this.getPowerState()
+    const currentState = powerStateResult?.PullResponse?.Items?.CIM_AssociatedPowerManagementService?.PowerState
+    const action = currentState === "8" ? 2 : 5
+    await this.sendPowerAction(action as CIM.Types.PowerManagementService.PowerState)
 
     logger.silly(`sendRPE ${messages.COMPLETE}`)
   }

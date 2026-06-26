@@ -13,7 +13,7 @@ export async function sendRPE(req: Request, res: Response): Promise<void> {
   try {
     const guid: string = req.params.guid
 
-    const { secureEraseAllSSDs, tpmClear, restoreBIOSToEOM, unconfigureCSME } = req.body
+    const { secureEraseAllSSDs, tpmClear, restoreBIOSToEOM, unconfigureCSME, powerType } = req.body
     const mask =
       (secureEraseAllSSDs ? 0x4 : 0) |
       (tpmClear ? 0x40 : 0) |
@@ -38,7 +38,7 @@ export async function sendRPE(req: Request, res: Response): Promise<void> {
       throw new MPSValidationError('CSME unconfigure cannot be combined with other erase operations', 400)
     }
 
-    await req.deviceAction.sendRPE(mask)
+    await req.deviceAction.sendRPE(mask, powerType)
 
     MqttProvider.publishEvent('success', ['AMT_BootSettingData'], messages.AMT_FEATURES_SET_SUCCESS, guid)
     res.status(200).json({ status: 'success' }).end()
