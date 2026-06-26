@@ -774,6 +774,28 @@ export class DeviceAction {
     return result?.Envelope ?? null
   }
 
+  async getWiFiPortState(): Promise<Common.Models.Envelope<Common.Models.Pull<CIM.Models.WiFiPort>>> {
+    logger.silly(`getWiFiPortState ${messages.REQUEST}`)
+    let xmlRequestBody = this.cim.WiFiPort.Enumerate()
+    const enumResponse = await this.ciraHandler.Enumerate(this.ciraSocket, xmlRequestBody)
+    if (enumResponse == null) {
+      logger.error(`getWiFiPortState failed. Reason: ${messages.ENUMERATION_RESPONSE_NULL}`)
+      return null
+    }
+    xmlRequestBody = this.cim.WiFiPort.Pull(enumResponse.Envelope.Body.EnumerateResponse.EnumerationContext)
+    const pullResponse = await this.ciraHandler.Pull<CIM.Models.WiFiPort>(this.ciraSocket, xmlRequestBody)
+    logger.silly(`getWiFiPortState ${messages.COMPLETE}`)
+    return pullResponse.Envelope
+  }
+
+  async wiFiRequestStateChange(requestedState: CIM.Types.WiFiPort.RequestedState): Promise<any> {
+    logger.silly(`wiFiRequestStateChange ${messages.REQUEST}`)
+    const xmlRequestBody = this.cim.WiFiPort.RequestStateChange(requestedState)
+    const result = await this.ciraHandler.Send(this.ciraSocket, xmlRequestBody)
+    logger.silly(`wiFiRequestStateChange ${messages.COMPLETE}`)
+    return result?.Envelope?.Body ?? null
+  }
+
   /**
    * Finds the first WiFi port by checking PhysicalConnectionType
    * @returns Object with instanceID and full port settings, or null if none found
