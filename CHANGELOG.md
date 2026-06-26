@@ -1,3 +1,10 @@
+# [2.32.0](https://github.com/device-management-toolkit/mps/compare/v2.31.0...v2.32.0) (2026-06-26)
+
+
+### Features
+
+* **api:** add get wireless profiles endpoint ([#2541](https://github.com/device-management-toolkit/mps/issues/2541)) ([117d97d](https://github.com/device-management-toolkit/mps/commit/117d97d80d0646dd2e4f39d276c911be3ff5d877))
+
 # [2.31.0](https://github.com/device-management-toolkit/mps/compare/v2.30.0...v2.31.0) (2026-06-26)
 
 
