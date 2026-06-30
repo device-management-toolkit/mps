@@ -63,7 +63,7 @@ export async function setWirelessProfileSync(req: Request, res: Response): Promi
       return
     }
 
-    const capabilities = await req.deviceAction.getPowerCapabilities()
+    const capabilities = await req.deviceAction.getBootCapabilities()
     const uefiSupported = Boolean(capabilities?.Body?.AMT_BootCapabilities?.UEFIWiFiCoExistenceAndProfileShare)
 
     // Reject the whole request when UEFI profile sync is requested but unsupported.

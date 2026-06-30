@@ -38,7 +38,7 @@ export async function getWirelessProfileSync(req: Request, res: Response): Promi
     const configResponse = await req.deviceAction.getWiFiPortConfigurationService()
     const config = configResponse?.Body?.AMT_WiFiPortConfigurationService ?? null
 
-    const capabilities = await req.deviceAction.getPowerCapabilities()
+    const capabilities = await req.deviceAction.getBootCapabilities()
     const uefiSupported = Boolean(capabilities?.Body?.AMT_BootCapabilities?.UEFIWiFiCoExistenceAndProfileShare)
 
     MqttProvider.publishEvent(
