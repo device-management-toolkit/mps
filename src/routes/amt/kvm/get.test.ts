@@ -59,8 +59,7 @@ describe('getScreenSettingData', () => {
   it('should return mapped settings if KVM data exists', async () => {
     const screenData = {
       IPS_ScreenSettingDataItems: [
-        { IsActive: [true], UpperLeftX: [1], UpperLeftY: [2], ResolutionX: [3], ResolutionY: [4] }
-      ]
+        { IsActive: [true], UpperLeftX: [1], UpperLeftY: [2], ResolutionX: [3], ResolutionY: [4] }]
     }
     const kvmData = { IPS_KVMRedirectionSettingData: { DefaultScreen: 0 } }
     req.deviceAction.getScreenSettingData.mockResolvedValue(screenData)

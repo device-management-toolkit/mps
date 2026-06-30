@@ -382,6 +382,7 @@ describe('Device Action Tests', () => {
       expect(result).toEqual(chip.Envelope)
     })
   })
+
   describe('boot capabilities and RPE', () => {
     it('should get boot capabilities', async () => {
       getSpy.mockResolvedValueOnce(bootCapabilities)

@@ -67,7 +67,7 @@ describe('Power Capabilities', () => {
       'Reset to PXE': 400,
       'Power on to PXE': 401
     }
-    vi.spyOn(device, 'getBootCapabilities').mockResolvedValue(powerCaps)
+    vi.spyOn(device, 'getPowerCapabilities').mockResolvedValue(powerCaps)
     swIdentitySpy.mockResolvedValue(softwareIdentityResponse.Envelope.Body)
     setupAndConfigSpy.mockResolvedValue(setupAndConfigurationServiceResponse.Envelope)
     await powerCapabilities(req as any, resSpy)
@@ -96,7 +96,7 @@ describe('Power Capabilities', () => {
     versionResponse.CIM_SoftwareIdentity.responses = [
       { InstanceID: 'AMT', IsEntity: 'true', VersionString: '9.0.0' }
     ]
-    vi.spyOn(device, 'getBootCapabilities').mockResolvedValue(powerCaps)
+    vi.spyOn(device, 'getPowerCapabilities').mockResolvedValue(powerCaps)
     swIdentitySpy.mockResolvedValue(softwareIdentityResponse.Envelope.Body)
     setupAndConfigSpy.mockResolvedValue(setupAndConfigurationServiceResponse.Envelope)
     await powerCapabilities(req as any, resSpy)
@@ -140,7 +140,7 @@ describe('Power Capabilities', () => {
     expect(mqttSpy).toHaveBeenCalled()
   })
   it('Should handle error', async () => {
-    vi.spyOn(device, 'getBootCapabilities').mockResolvedValue(null)
+    vi.spyOn(device, 'getPowerCapabilities').mockResolvedValue(null)
     swIdentitySpy.mockResolvedValue(softwareIdentityResponse.Envelope.Body)
     setupAndConfigSpy.mockResolvedValue(setupAndConfigurationServiceResponse.Envelope)
     await powerCapabilities(req as any, resSpy)
