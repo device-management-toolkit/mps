@@ -176,7 +176,7 @@ describe('get amt features', () => {
       httpsBootSupported: true,
       winREBootSupported: true,
       localPBABootSupported: false,
-      rpe: false,
+      rpe: true,
       rpeSupported: true
     })
     expect(mqttSpy).toHaveBeenCalledTimes(2)

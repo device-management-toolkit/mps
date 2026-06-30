@@ -20,7 +20,7 @@ export async function getBootCapabilities(req: Request, res: Response): Promise<
     MqttProvider.publishEvent('request', ['AMT_BootCapabilities'], messages.POWER_CAPABILITIES_REQUESTED, guid)
 
     const result = await req.deviceAction.getBootCapabilities()
-  const capabilities = parsePlatformEraseCapabilities(result.Body?.AMT_BootCapabilities?.PlatformErase ?? 0)
+    const capabilities = parsePlatformEraseCapabilities(result.Body?.AMT_BootCapabilities?.PlatformErase ?? 0)
 
     MqttProvider.publishEvent('success', ['AMT_BootCapabilities'], messages.POWER_CAPABILITIES_SUCCESS, guid)
     res.status(200).json(capabilities).end()

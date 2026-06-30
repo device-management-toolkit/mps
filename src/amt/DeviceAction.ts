@@ -202,7 +202,7 @@ export class DeviceAction {
     logger.silly(`setRPE ${messages.REQUEST}`)
     const bootOptions = await this.getBootOptions()
     const current = bootOptions.AMT_BootSettingData
-    current.RPEEnabled = isEnabled
+    ;(current as any).RPE = isEnabled
     await this.setBootConfiguration(current)
     logger.silly(`setRPE ${messages.COMPLETE}`)
   }
@@ -218,7 +218,8 @@ export class DeviceAction {
     // Step 1: GET current boot settings and verify RPE
     const bootOptions = await this.getBootOptions()
     const current = bootOptions.AMT_BootSettingData
-    if (!current.RPEEnabled) {
+    const rpeEnabled = (current as any).RPE ?? current.RPEEnabled ?? current.PlatformErase
+    if (!rpeEnabled) {
       throw new Error('RPE is not enabled on this device')
     }
 
@@ -287,7 +288,7 @@ export class DeviceAction {
     // Step 5: Power Cycle Off Hard — S5→S0 required; warm reset keeps ME power rails active
     const powerStateResult = await this.getPowerState()
     const currentState = powerStateResult?.PullResponse?.Items?.CIM_AssociatedPowerManagementService?.PowerState
-    const action = currentState === "8" ? 2 : 5
+    const action = currentState === '8' ? 2 : 5
     await this.sendPowerAction(action as CIM.Types.PowerManagementService.PowerState)
 
     logger.silly(`sendRPE ${messages.COMPLETE}`)
