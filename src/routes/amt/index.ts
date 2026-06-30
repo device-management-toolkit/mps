@@ -43,6 +43,17 @@ import { linkPreferenceValidator } from './linkPreferenceValidator.js'
 import { getBootCapabilities } from './getBootCapabilities.js'
 import { setRPE } from './setRPE.js'
 import { sendRPE } from './sendRPE.js'
+import { getNetworkSettings } from './networkSettings/getNetworkSettings.js'
+import { getWiredNetworkSettings } from './networkSettings/getWired.js'
+import { patchWiredNetworkSettings } from './networkSettings/patchWired.js'
+import { wiredNetworkValidator } from './networkSettings/wiredValidator.js'
+import { getWirelessState } from './networkSettings/getWirelessState.js'
+import { requestWirelessStateChange } from './networkSettings/requestWirelessStateChange.js'
+import { wirelessStateValidator } from './networkSettings/wirelessStateValidator.js'
+import { getWirelessProfileSync } from './networkSettings/getWirelessProfileSync.js'
+import { setWirelessProfileSync } from './networkSettings/setWirelessProfileSync.js'
+import { wirelessProfileSyncValidator } from './networkSettings/wirelessProfileSyncValidator.js'
+import { getWirelessProfiles } from './networkSettings/getWirelessProfiles.js'
 
 const amtRouter: Router = Router()
 
@@ -93,5 +104,41 @@ amtRouter.post(
   ciraMiddleware,
   setLinkPreference
 )
+
+// Combined wired + wireless network settings
+amtRouter.get('/networkSettings/:guid', ciraMiddleware, getNetworkSettings)
+
+// Wired network settings
+amtRouter.get('/networkSettings/wired/:guid', ciraMiddleware, getWiredNetworkSettings)
+amtRouter.patch(
+  '/networkSettings/wired/:guid',
+  wiredNetworkValidator(),
+  validateMiddleware,
+  ciraMiddleware,
+  patchWiredNetworkSettings
+)
+
+// Wireless radio state
+amtRouter.get('/networkSettings/wireless/state/:guid', ciraMiddleware, getWirelessState)
+amtRouter.post(
+  '/networkSettings/wireless/state/:guid',
+  wirelessStateValidator(),
+  validateMiddleware,
+  ciraMiddleware,
+  requestWirelessStateChange
+)
+
+// Wireless profile sync
+amtRouter.get('/networkSettings/wireless/profileSync/:guid', ciraMiddleware, getWirelessProfileSync)
+amtRouter.post(
+  '/networkSettings/wireless/profileSync/:guid',
+  wirelessProfileSyncValidator(),
+  validateMiddleware,
+  ciraMiddleware,
+  setWirelessProfileSync
+)
+
+// Wireless profile settings (per-device)
+amtRouter.get('/networkSettings/wireless/profile/:guid', ciraMiddleware, getWirelessProfiles)
 
 export default amtRouter

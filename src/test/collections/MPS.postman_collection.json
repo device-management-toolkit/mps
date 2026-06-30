@@ -3413,6 +3413,453 @@
           "response": []
         },
         {
+          "name": "Get Network Settings",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 404\", function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});",
+                  "",
+                  "pm.test(\"Device should not be found\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.error).to.eq(\"Device not found/connected. Please connect again using CIRA.\")",
+                  "    pm.expect(jsonData.errorDescription).to.eq(\"guid : test-guid-123\")",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{protocol}}://{{host}}/api/v1/amt/networkSettings/test-guid-123",
+              "protocol": "{{protocol}}",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "amt",
+                "networkSettings",
+                "test-guid-123"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Wired Network Settings",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 404\", function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});",
+                  "",
+                  "pm.test(\"Device should not be found\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.error).to.eq(\"Device not found/connected. Please connect again using CIRA.\")",
+                  "    pm.expect(jsonData.errorDescription).to.eq(\"guid : test-guid-123\")",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{protocol}}://{{host}}/api/v1/amt/networkSettings/wired/test-guid-123",
+              "protocol": "{{protocol}}",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "amt",
+                "networkSettings",
+                "wired",
+                "test-guid-123"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Patch Wired Network Settings",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 404\", function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});",
+                  "",
+                  "pm.test(\"Device should not be found\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.error).to.eq(\"Device not found/connected. Please connect again using CIRA.\")",
+                  "    pm.expect(jsonData.errorDescription).to.eq(\"guid : test-guid-123\")",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"dhcpEnabled\": true\n}"
+            },
+            "url": {
+              "raw": "{{protocol}}://{{host}}/api/v1/amt/networkSettings/wired/test-guid-123",
+              "protocol": "{{protocol}}",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "amt",
+                "networkSettings",
+                "wired",
+                "test-guid-123"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Wireless State",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 404\", function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});",
+                  "",
+                  "pm.test(\"Device should not be found\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.error).to.eq(\"Device not found/connected. Please connect again using CIRA.\")",
+                  "    pm.expect(jsonData.errorDescription).to.eq(\"guid : test-guid-123\")",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{protocol}}://{{host}}/api/v1/amt/networkSettings/wireless/state/test-guid-123",
+              "protocol": "{{protocol}}",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "amt",
+                "networkSettings",
+                "wireless",
+                "state",
+                "test-guid-123"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Request Wireless State Change",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 404\", function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});",
+                  "",
+                  "pm.test(\"Device should not be found\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.error).to.eq(\"Device not found/connected. Please connect again using CIRA.\")",
+                  "    pm.expect(jsonData.errorDescription).to.eq(\"guid : test-guid-123\")",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"state\": \"WifiEnabledS0SxAC\"\n}"
+            },
+            "url": {
+              "raw": "{{protocol}}://{{host}}/api/v1/amt/networkSettings/wireless/state/test-guid-123",
+              "protocol": "{{protocol}}",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "amt",
+                "networkSettings",
+                "wireless",
+                "state",
+                "test-guid-123"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Wireless Profile Sync",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 404\", function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});",
+                  "",
+                  "pm.test(\"Device should not be found\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.error).to.eq(\"Device not found/connected. Please connect again using CIRA.\")",
+                  "    pm.expect(jsonData.errorDescription).to.eq(\"guid : test-guid-123\")",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{protocol}}://{{host}}/api/v1/amt/networkSettings/wireless/profileSync/test-guid-123",
+              "protocol": "{{protocol}}",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "amt",
+                "networkSettings",
+                "wireless",
+                "profileSync",
+                "test-guid-123"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Set Wireless Profile Sync",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 404\", function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});",
+                  "",
+                  "pm.test(\"Device should not be found\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.error).to.eq(\"Device not found/connected. Please connect again using CIRA.\")",
+                  "    pm.expect(jsonData.errorDescription).to.eq(\"guid : test-guid-123\")",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"localProfileSync\": true,\n  \"uefiProfileSync\": false\n}"
+            },
+            "url": {
+              "raw": "{{protocol}}://{{host}}/api/v1/amt/networkSettings/wireless/profileSync/test-guid-123",
+              "protocol": "{{protocol}}",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "amt",
+                "networkSettings",
+                "wireless",
+                "profileSync",
+                "test-guid-123"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Wireless Profiles",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 404\", function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});",
+                  "",
+                  "pm.test(\"Device should not be found\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.error).to.eq(\"Device not found/connected. Please connect again using CIRA.\")",
+                  "    pm.expect(jsonData.errorDescription).to.eq(\"guid : test-guid-123\")",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{protocol}}://{{host}}/api/v1/amt/networkSettings/wireless/profile/test-guid-123",
+              "protocol": "{{protocol}}",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "amt",
+                "networkSettings",
+                "wireless",
+                "profile",
+                "test-guid-123"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
           "name": "Deactivate device",
           "event": [
             {
