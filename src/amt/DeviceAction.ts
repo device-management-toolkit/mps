@@ -198,6 +198,11 @@ export class DeviceAction {
     return result.Envelope
   }
 
+  // Backward-compatible alias. Prefer getBootCapabilities for new code.
+  async getPowerCapabilities(): Promise<Common.Models.Envelope<AMT.Models.BootCapabilities>> {
+    return await this.getBootCapabilities()
+  }
+
   async setRPE(isEnabled: boolean): Promise<void> {
     logger.silly(`setRPE ${messages.REQUEST}`)
     const bootOptions = await this.getBootOptions()
@@ -726,7 +731,7 @@ export class DeviceAction {
   async getOCRData(): Promise<OCRData> {
     const bootService = await this.getBootService()
     const bootSourceSettings = await this.getBootSourceSetting()
-    const capabilities = await this.getBootCapabilities()
+    const capabilities = await this.getPowerCapabilities()
     const bootData = await this.getBootSettingData()
 
     return {

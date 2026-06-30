@@ -46,7 +46,7 @@ describe('Get Boot Capabilities', () => {
       IDER: true,
       SOL: true,
       BIOSSetup: true,
-      PlatformErase: 3
+      PlatformErase: 0x10044
     }
     bootCapsSpy.mockResolvedValue({
       Body: { AMT_BootCapabilities: bootCaps }
@@ -54,7 +54,12 @@ describe('Get Boot Capabilities', () => {
 
     await getBootCapabilities(req, resSpy)
     expect(resSpy.status).toHaveBeenCalledWith(200)
-    expect(resSpy.json).toHaveBeenCalledWith(bootCaps)
+    expect(resSpy.json).toHaveBeenCalledWith({
+      secureEraseAllSSDs: true,
+      tpmClear: true,
+      restoreBIOSToEOM: false,
+      unconfigureCSME: true
+    })
     expect(resSpy.end).toHaveBeenCalled()
     expect(mqttSpy).toHaveBeenCalledTimes(2)
   })

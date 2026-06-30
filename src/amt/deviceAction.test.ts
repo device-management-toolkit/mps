@@ -401,6 +401,8 @@ describe('Device Action Tests', () => {
       getSpy.mockResolvedValueOnce({
         Envelope: { Body: { AMT_BootSettingData: { ElementName: 'test', RPESupported: true, RPE: true } } }
       })
+      enumerateSpy.mockResolvedValueOnce(enumerateResponse)
+      pullSpy.mockResolvedValueOnce(serviceAvailableToElement)
       getSpy.mockResolvedValueOnce({ Envelope: { Body: { RequestPowerStateChange_OUTPUT: { ReturnValue: 0 } } } })
       sendSpy.mockResolvedValueOnce({ Envelope: { Body: {} } }) // RequestStateChange(32770)
       sendSpy.mockResolvedValueOnce({ Envelope: { Body: {} } }) // Put(putBody)
@@ -413,6 +415,8 @@ describe('Device Action Tests', () => {
       getSpy.mockResolvedValueOnce({
         Envelope: { Body: { AMT_BootSettingData: { ElementName: 'test', PlatformErase: true, RPE: true } } }
       })
+      enumerateSpy.mockResolvedValueOnce(enumerateResponse)
+      pullSpy.mockResolvedValueOnce(serviceAvailableToElement)
       getSpy.mockResolvedValueOnce({ Envelope: { Body: { RequestPowerStateChange_OUTPUT: { ReturnValue: 0 } } } })
       sendSpy.mockResolvedValueOnce({ Envelope: { Body: {} } }) // RequestStateChange(32770)
       sendSpy.mockResolvedValueOnce({ Envelope: { Body: {} } }) // Put(putBody)

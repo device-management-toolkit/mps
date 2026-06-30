@@ -49,7 +49,7 @@ describe('Send Remote Erase', () => {
     sendEraseSpy.mockResolvedValue(undefined)
 
     await sendRPE(req, resSpy)
-    expect(sendEraseSpy).toHaveBeenCalledWith(0x4)
+    expect(sendEraseSpy).toHaveBeenCalledWith(0x4, undefined)
     expect(resSpy.status).toHaveBeenCalledWith(200)
     expect(resSpy.json).toHaveBeenCalledWith({ status: 'success' })
   })
@@ -60,7 +60,7 @@ describe('Send Remote Erase', () => {
     sendEraseSpy.mockResolvedValue(undefined)
 
     await sendRPE(req, resSpy)
-    expect(sendEraseSpy).toHaveBeenCalledWith(0)
+    expect(sendEraseSpy).toHaveBeenCalledWith(0, undefined)
     expect(resSpy.status).toHaveBeenCalledWith(200)
   })
 
