@@ -1,3 +1,10 @@
+## [2.32.1](https://github.com/device-management-toolkit/mps/compare/v2.32.0...v2.32.1) (2026-07-01)
+
+
+### Bug Fixes
+
+* **api:** never delete Vault secrets on a null device lookup ([#2542](https://github.com/device-management-toolkit/mps/issues/2542)) ([78b2f4d](https://github.com/device-management-toolkit/mps/commit/78b2f4d1a364e97e544a9bbcc919c48bfd9d8476))
+
 # [2.32.0](https://github.com/device-management-toolkit/mps/compare/v2.31.0...v2.32.0) (2026-06-26)
 
 
