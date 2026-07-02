@@ -40,6 +40,9 @@ import { getScreenSettingData } from './kvm/get.js'
 import { setKVMRedirectionSettingData } from './kvm/set.js'
 import { setLinkPreference } from './setLinkPreference.js'
 import { linkPreferenceValidator } from './linkPreferenceValidator.js'
+import { getBootCapabilities } from './getBootCapabilities.js'
+import { setRPE } from './setRPE.js'
+import { sendRPE } from './sendRPE.js'
 import { getNetworkSettings } from './networkSettings/getNetworkSettings.js'
 import { getWiredNetworkSettings } from './networkSettings/getWired.js'
 import { patchWiredNetworkSettings } from './networkSettings/patchWired.js'
@@ -66,6 +69,11 @@ amtRouter.get('/power/capabilities/:guid', ciraMiddleware, powerCapabilities)
 amtRouter.get('/power/state/:guid', ciraMiddleware, powerState)
 amtRouter.get('/features/:guid', ciraMiddleware, getAMTFeatures)
 amtRouter.post('/features/:guid', amtFeaturesValidator(), validateMiddleware, ciraMiddleware, setAMTFeatures)
+amtRouter.get('/boot/capabilities/:guid', ciraMiddleware, getBootCapabilities)
+amtRouter.post('/boot/rpe/:guid', ciraMiddleware, setRPE)
+amtRouter.post('/rpe/:guid', ciraMiddleware, sendRPE)
+amtRouter.get('/boot/remoteErase/:guid', ciraMiddleware, getBootCapabilities)
+amtRouter.post('/boot/remoteErase/:guid', ciraMiddleware, sendRPE)
 amtRouter.get('/version/:guid', ciraMiddleware, version)
 amtRouter.delete('/deactivate/:guid', ciraMiddleware, deactivate)
 amtRouter.get('/power/bootSources/:guid', ciraMiddleware, bootSources)

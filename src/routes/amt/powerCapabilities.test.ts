@@ -94,7 +94,8 @@ describe('Power Capabilities', () => {
       'Power on to PXE': 401
     }
     versionResponse.CIM_SoftwareIdentity.responses = [
-      { InstanceID: 'AMT', IsEntity: 'true', VersionString: '9.0.0' }]
+      { InstanceID: 'AMT', IsEntity: 'true', VersionString: '9.0.0' }
+    ]
     vi.spyOn(device, 'getPowerCapabilities').mockResolvedValue(powerCaps)
     swIdentitySpy.mockResolvedValue(softwareIdentityResponse.Envelope.Body)
     setupAndConfigSpy.mockResolvedValue(setupAndConfigurationServiceResponse.Envelope)
@@ -129,7 +130,7 @@ describe('Power Capabilities', () => {
     powerCaps.Body.AMT_BootCapabilities.BIOSSetup = true
     powerCaps.Body.AMT_BootCapabilities.SecureErase = true
     powerCaps.Body.AMT_BootCapabilities.ForceDiagnosticBoot = true
-    vi.spyOn(device, 'getPowerCapabilities').mockResolvedValue(powerCaps)
+    vi.spyOn(device, 'getBootCapabilities').mockResolvedValue(powerCaps)
     swIdentitySpy.mockResolvedValue(softwareIdentityResponse.Envelope.Body)
     setupAndConfigSpy.mockResolvedValue(setupAndConfigurationServiceResponse.Envelope)
     await powerCapabilities(req as any, resSpy)
