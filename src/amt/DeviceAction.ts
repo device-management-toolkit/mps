@@ -816,6 +816,46 @@ export class DeviceAction {
     return result?.Envelope?.Body ?? null
   }
 
+  async addWiFiSettings(
+    wifiEndpointSettings: CIM.Models.WiFiEndpointSettings,
+    ieee8021xSettings?: CIM.Models.IEEE8021xSettings,
+    clientCredential?: string,
+    caCredential?: string
+  ): Promise<number | null> {
+    logger.silly(`addWiFiSettings ${messages.REQUEST}`)
+    const selector: Selector = { name: 'Name', value: 'WiFi Endpoint 0' }
+    const xmlRequestBody = this.amt.WiFiPortConfigurationService.AddWiFiSettings(
+      wifiEndpointSettings,
+      selector,
+      ieee8021xSettings,
+      clientCredential,
+      caCredential
+    )
+    const result = await this.ciraHandler.Send(this.ciraSocket, xmlRequestBody)
+    logger.silly(`addWiFiSettings ${messages.COMPLETE}`)
+    const body = result?.Envelope?.Body as { AddWiFiSettings_OUTPUT?: { ReturnValue?: number } } | null
+    return body?.AddWiFiSettings_OUTPUT?.ReturnValue ?? null
+  }
+
+  async addPrivateKey(keyBlob: string): Promise<string | null> {
+    logger.silly(`addPrivateKey ${messages.REQUEST}`)
+    const xmlRequestBody = this.amt.PublicKeyManagementService.AddKey(keyBlob)
+    const result = await this.ciraHandler.Send(this.ciraSocket, xmlRequestBody)
+    if (result == null) {
+      logger.error(`addPrivateKey failed. Reason: ${messages.RESPONSE_NULL}`)
+      return null
+    }
+    logger.silly(`addPrivateKey ${messages.COMPLETE}`)
+    const handle = result.Envelope?.Body?.AddKey_OUTPUT?.CreatedKey?.ReferenceParameters?.SelectorSet?.Selector
+    if (handle != null) {
+      return handle
+    }
+    if (result.statusCode === 200) {
+      return ''
+    }
+    return null
+  }
+
   /**
    * Finds the first WiFi port by checking PhysicalConnectionType
    * @returns Object with instanceID and full port settings, or null if none found

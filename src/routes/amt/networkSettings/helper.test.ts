@@ -21,7 +21,8 @@ import {
   toWiFiNetworks,
   toWiFiPortConfigService,
   toWirelessIEEE8021xSettings,
-  toWirelessNetworkInfo
+  toWirelessNetworkInfo,
+  mapEnumReverse
 } from './helper.js'
 
 describe('networkSettings helper', () => {
@@ -581,6 +582,17 @@ describe('extractIEEE8021xSettings', () => {
       expect(result.linkPreference).toBe('')
       expect(result.linkControl).toBe('')
       expect(result.wlanLinkProtectionLevel).toBe('')
+    })
+  })
+
+  describe('mapEnumReverse', () => {
+    it('maps strings to enum values case-insensitively', () => {
+      expect(mapEnumReverse('Two', { 1: 'one', 2: 'two' })).toBe(2)
+    })
+
+    it('returns null for non-string values and unknown strings', () => {
+      expect(mapEnumReverse(2 as any, { 1: 'one', 2: 'two' })).toBeNull()
+      expect(mapEnumReverse('three', { 1: 'one', 2: 'two' })).toBeNull()
     })
   })
 })
