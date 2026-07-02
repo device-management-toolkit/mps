@@ -52,7 +52,9 @@ import { setWirelessProfileSync } from './networkSettings/setWirelessProfileSync
 import { wirelessProfileSyncValidator } from './networkSettings/wirelessProfileSyncValidator.js'
 import { getWirelessProfiles } from './networkSettings/getWirelessProfiles.js'
 import { addWirelessProfile } from './networkSettings/addWirelessProfile.js'
-import { wirelessProfileValidator } from './networkSettings/wirelessProfileValidator.js'
+import { updateWirelessProfile } from './networkSettings/updateWirelessProfile.js'
+import { deleteWirelessProfile } from './networkSettings/deleteWirelessProfile.js'
+import { wirelessProfileValidator, wirelessProfileDeleteValidator } from './networkSettings/wirelessProfileValidator.js'
 
 const amtRouter: Router = Router()
 
@@ -140,6 +142,20 @@ amtRouter.post(
   validateMiddleware,
   ciraMiddleware,
   addWirelessProfile
+)
+amtRouter.patch(
+  '/networkSettings/wireless/profile/:guid',
+  wirelessProfileValidator(),
+  validateMiddleware,
+  ciraMiddleware,
+  updateWirelessProfile
+)
+amtRouter.delete(
+  '/networkSettings/wireless/profile/:guid/:profileName',
+  wirelessProfileDeleteValidator(),
+  validateMiddleware,
+  ciraMiddleware,
+  deleteWirelessProfile
 )
 
 export default amtRouter
