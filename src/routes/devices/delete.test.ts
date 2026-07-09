@@ -76,24 +76,57 @@ describe('delete', () => {
     expect(endSpy).toHaveBeenCalled()
   })
 
-  it('should set status to 204 when device does not exist in db and deleteSecrets is true', async () => {
+  it('should return 404 and NOT delete secrets when device does not exist, even for the blank tenant', async () => {
+    // Null lookup must never purge the GUID-keyed secret (cross-tenant safe).
+    req.tenantId = '' // blank/root tenant — must still be blocked
     req.db.devices.getById = vi.fn().mockReturnValue(null)
     req.db.devices.delete = vi.fn().mockReturnValue(0)
-    req.secrets.deleteSecretAtPath = vi.fn().mockReturnValue(true)
+    req.secrets.deleteSecretAtPath = vi.fn().mockResolvedValue(true)
 
     req.query.isSecretToBeDeleted = 'true'
 
     await deleteDevice(req, res as any)
-    expect(statusSpy).toHaveBeenCalledWith(204)
+
+    expect(req.secrets.deleteSecretAtPath).not.toHaveBeenCalled()
+    expect(statusSpy).toHaveBeenCalledWith(404)
+    expect(jsonSpy).toHaveBeenCalledWith({ error: 'NOT FOUND', message: `Device ID ${req.params.guid} not found` })
     expect(endSpy).toHaveBeenCalled()
   })
 
-  it('should return 404 when device or secrets deletion fails', async () => {
+  it('should not delete secrets cross-tenant and return 404 when device is null for a scoped tenant', async () => {
+    // Isolated request with its own nested mocks (no shared-fixture spread).
+    const getById = vi.fn().mockReturnValue(null)
+    const deleteSecretAtPath = vi.fn().mockResolvedValue(true)
+    const scopedReq = {
+      params: { guid: '11111111-1111-1111-1111-111111111111' },
+      tenantId: 'tenantB',
+      query: { isSecretToBeDeleted: 'true' },
+      db: { devices: { getById, delete: vi.fn().mockReturnValue(0) } },
+      secrets: { deleteSecretAtPath }
+    } as any
+
+    await deleteDevice(scopedReq, res as any)
+
+    // Lookup must be scoped to the caller's tenant, and Vault must be untouched.
+    expect(getById).toHaveBeenCalledWith(scopedReq.params.guid, 'tenantB')
+    expect(deleteSecretAtPath).not.toHaveBeenCalled()
+    expect(statusSpy).toHaveBeenCalledWith(404)
+    expect(jsonSpy).toHaveBeenCalledWith({
+      error: 'NOT FOUND',
+      message: `Device ID ${scopedReq.params.guid} not found`
+    })
+    expect(endSpy).toHaveBeenCalled()
+  })
+
+  it('should return 404 when device exists but secrets deletion fails', async () => {
+    // Existing device so deleteSecrets is actually invoked and then rejects.
+    req.db.devices.getById = vi.fn().mockReturnValue({})
+    req.db.devices.delete = vi.fn().mockReturnValue({})
     req.secrets.deleteSecretAtPath = vi.fn<any>().mockRejectedValue(new Error())
-    req.db.devices.getById = vi.fn().mockReturnValue(null)
     req.query.isSecretToBeDeleted = 'true'
     await deleteDevice(req, res as any)
 
+    expect(req.secrets.deleteSecretAtPath).toHaveBeenCalled()
     expect(statusSpy).toHaveBeenCalledWith(404)
     expect(jsonSpy).toHaveBeenCalledWith({ error: 'NOT FOUND', message: `Device ID ${req.params.guid} not found` })
     expect(endSpy).toHaveBeenCalled()

@@ -1,3 +1,19 @@
+# [2.33.0](https://github.com/device-management-toolkit/mps/compare/v2.32.2...v2.33.0) (2026-07-02)
+
+
+### Features
+
+* **api:** add wireless profile creation endpoint ([#2545](https://github.com/device-management-toolkit/mps/issues/2545)) ([d85ad1b](https://github.com/device-management-toolkit/mps/commit/d85ad1b44b3b681491eeea4c8086b7641df1b836)), closes [#2525](https://github.com/device-management-toolkit/mps/issues/2525)
+
+## [2.32.2](https://github.com/device-management-toolkit/mps/compare/v2.32.1...v2.32.2) (2026-07-01)
+
+## [2.32.1](https://github.com/device-management-toolkit/mps/compare/v2.32.0...v2.32.1) (2026-07-01)
+
+
+### Bug Fixes
+
+* **api:** never delete Vault secrets on a null device lookup ([#2542](https://github.com/device-management-toolkit/mps/issues/2542)) ([78b2f4d](https://github.com/device-management-toolkit/mps/commit/78b2f4d1a364e97e544a9bbcc919c48bfd9d8476))
+
 # [2.32.0](https://github.com/device-management-toolkit/mps/compare/v2.31.0...v2.32.0) (2026-06-26)
 
 

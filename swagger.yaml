@@ -1228,6 +1228,56 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+    post:
+      summary: Add Wireless Profile
+      description: |
+        Create a new AMT wireless (WiFi) profile on a device. PSK profiles require a
+        `password`; IEEE 802.1x profiles require an `ieee8021x` object (and must not
+        include a top-level `password`).
+      tags:
+        - AMT
+      parameters:
+        - name: guid
+          in: path
+          description: GUID of device
+          example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+          schema:
+            type: string
+      requestBody:
+        description: Wireless profile configuration
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WirelessProfileRequest'
+      responses:
+        204:
+          description: 'Wireless profile added successfully'
+        400:
+          description: 'Validation error - invalid wireless profile'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        404:
+          description: 'Device not found or no WiFi port available'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DisconnectErrorResponse'
+        409:
+          description: 'A profile with the same name or priority already exists, or the device already has the maximum of 8 wireless profiles'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        500:
+          description: 'Internal server error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
   /api/v1/amt/screen/{guid}:
     put:
       summary: Put the changed settings for KVM in AMT
@@ -1992,6 +2042,67 @@ components:
           example: 1
         ieee8021x:
           $ref: '#/components/schemas/WirelessProfileIEEE8021xResponse'
+    WirelessProfileIEEE8021xRequest:
+      title: WirelessProfileIEEE8021xRequest
+      type: object
+      properties:
+        username:
+          type: string
+          example: user1
+        password:
+          type: string
+        authenticationProtocol:
+          type: integer
+          description: 0 = EAP-TLS, 2 = PEAP
+          example: 0
+        clientCert:
+          type: string
+          description: Base64-encoded client certificate (PEM body)
+        privateKey:
+          type: string
+          description: Base64-encoded private key (DER)
+        caCert:
+          type: string
+          description: Base64-encoded trusted root certificate (PEM body)
+      required:
+        - username
+        - authenticationProtocol
+    WirelessProfileRequest:
+      title: WirelessProfileRequest
+      type: object
+      properties:
+        profileName:
+          type: string
+          description: Alphanumeric profile name (also used as the WiFi InstanceID)
+          example: home
+        ssid:
+          type: string
+          example: home-ssid
+        priority:
+          type: integer
+          description: Profile priority between 1 and 255
+          example: 1
+        authenticationMethod:
+          type: string
+          description: One of WPAPSK, WPA2PSK, WPAIEEE8021x, WPA2IEEE8021x
+          example: WPA2PSK
+        encryptionMethod:
+          type: string
+          description: One of TKIP, CCMP
+          example: CCMP
+        password:
+          type: string
+          description: Required for PSK profiles; must be omitted for 802.1x profiles
+        ieee8021x:
+          allOf:
+            - $ref: '#/components/schemas/WirelessProfileIEEE8021xRequest'
+          description: Required for 802.1x profiles; must be omitted for PSK profiles
+      required:
+        - profileName
+        - ssid
+        - priority
+        - authenticationMethod
+        - encryptionMethod
     AuditLogResponse:
       title: AuditLogResponse
       type: object
