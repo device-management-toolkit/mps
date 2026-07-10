@@ -10,13 +10,21 @@ import {
   asArray,
   extractIEEE8021xSettings,
   extractWirelessSettings,
-  mapEnum
+  mapEnum,
+  mapEnumReverse
 } from './helper.js'
+import { type DeviceAction } from '../../../amt/DeviceAction.js'
+import { type Certificates } from '../../../models/models.js'
 
 export const RESOURCE_CIM_WIFI_ENDPOINT_SETTINGS = 'CIM_WiFiEndpointSettings'
 export const RESOURCE_CIM_IEEE8021X_SETTINGS = 'CIM_IEEE8021xSettings'
+export const MAX_WIRELESS_PROFILE_PRIORITY = 255
+export const MAX_WIRELESS_PROFILES = 8
 
-export const ieee8021xInstanceID = (profileName: string): string => `Intel(r) AMT:IEEE 802.1x Settings ${profileName}`
+export const ieee8021xInstanceID = (profileName: string): string =>
+  `Intel(r) AMT:IEEE 802.1x Settings ${profileName}`
+export const wifiEndpointInstanceID = (profileName: string): string =>
+  `Intel(r) AMT:WiFi Endpoint Settings ${profileName}`
 
 export interface WirelessProfileIEEE8021xResponse {
   username: string
@@ -30,6 +38,37 @@ export interface WirelessProfileResponse {
   encryptionMethod: string
   priority: number
   ieee8021x?: WirelessProfileIEEE8021xResponse
+}
+
+export interface WirelessProfileIEEE8021xRequest {
+  username?: string
+  password?: string
+  authenticationProtocol?: number
+  clientCert?: string
+  privateKey?: string
+  caCert?: string
+}
+
+export interface WirelessProfileConfigRequest {
+  profileName?: string
+  ssid?: string
+  priority?: number
+  authenticationMethod?: string
+  encryptionMethod?: string
+  password?: string
+  ieee8021x?: WirelessProfileIEEE8021xRequest
+}
+
+export interface IEEE8021xCertHandles {
+  clientCertHandle: string
+  rootCertHandle: string
+}
+
+export interface PreparedWirelessProfile {
+  wifiRequest: CIM.Models.WiFiEndpointSettings
+  ieee8021xRequest: CIM.Models.IEEE8021xSettings
+  certHandles: IEEE8021xCertHandles
+  needsPauseBeforeApply: boolean
 }
 
 // Loosely-typed WSMAN association shapes. CIM.Models.Dependency types Antecedent/
@@ -183,3 +222,264 @@ export const buildWirelessProfileResponses = (
     return response
   })
 }
+
+const isPSKAuthenticationMethod = (authMethod: number): boolean => {
+  const wpapsk = mapEnumReverse('WPAPSK', AUTHENTICATION_METHOD_TO_STRING)
+  const wpa2psk = mapEnumReverse('WPA2PSK', AUTHENTICATION_METHOD_TO_STRING)
+  return authMethod === wpapsk || authMethod === wpa2psk
+}
+
+const isIEEE8021xAuthenticationMethod = (authMethod: number): boolean => {
+  const wpaieee8021x = mapEnumReverse('WPAIEEE8021X', AUTHENTICATION_METHOD_TO_STRING)
+  const wpa2ieee8021x = mapEnumReverse('WPA2IEEE8021X', AUTHENTICATION_METHOD_TO_STRING)
+  return authMethod === wpaieee8021x || authMethod === wpa2ieee8021x
+}
+
+const reAlphaNumProfileName = /^[a-zA-Z0-9]+$/
+
+export const validateWirelessProfileConfig = (profile: WirelessProfileConfigRequest): string | null => {
+  if (profile == null) {
+    return 'wireless profile payload is required'
+  }
+
+  if (!profile.profileName || !reAlphaNumProfileName.test(profile.profileName)) {
+    return 'profileName is required and must be alphanumeric'
+  }
+
+  if (!profile.ssid) {
+    return 'ssid is required'
+  }
+
+  if (profile.priority == null || profile.priority <= 0 || profile.priority > MAX_WIRELESS_PROFILE_PRIORITY) {
+    return `priority is required and must be between 1 and ${MAX_WIRELESS_PROFILE_PRIORITY}`
+  }
+
+  const authMethod = mapEnumReverse(profile.authenticationMethod, AUTHENTICATION_METHOD_TO_STRING)
+  if (authMethod == null) {
+    return 'authenticationMethod is invalid'
+  }
+
+  if (mapEnumReverse(profile.encryptionMethod, ENCRYPTION_METHOD_TO_STRING) == null) {
+    return 'encryptionMethod is invalid'
+  }
+
+  return validateWirelessProfileCredentials(profile, authMethod)
+}
+
+const validateWirelessProfileCredentials = (
+  profile: WirelessProfileConfigRequest,
+  authMethod: number
+): string | null => {
+  if (isPSKAuthenticationMethod(authMethod)) {
+    if (!profile.password || profile.ieee8021x != null) {
+      return 'PSK authentication requires a password and must not include ieee8021x settings'
+    }
+    return null
+  }
+
+  if (isIEEE8021xAuthenticationMethod(authMethod)) {
+    if (profile.ieee8021x == null || profile.password) {
+      return 'IEEE 802.1x authentication requires ieee8021x settings and must not include a password'
+    }
+    if (!profile.ieee8021x.username) {
+      return 'ieee8021x.username is required'
+    }
+    const protocol = profile.ieee8021x.authenticationProtocol
+    if (protocol !== 0 && protocol !== 2) {
+      return 'ieee8021x.authenticationProtocol must be 0 (EAP-TLS) or 2 (PEAP)'
+    }
+    return null
+  }
+
+  return 'authenticationMethod is not supported'
+}
+
+export const findWirelessSettingByProfileName = (
+  settings: CIM.Models.WiFiEndpointSettings[],
+  profileName: string
+): CIM.Models.WiFiEndpointSettings | null => settings.find((setting) => setting.ElementName === profileName) ?? null
+
+export const findWirelessSettingByPriority = (
+  settings: CIM.Models.WiFiEndpointSettings[],
+  priority: number
+): CIM.Models.WiFiEndpointSettings | null => settings.find((setting) => setting.Priority === priority) ?? null
+
+export const hasReachedWirelessProfileLimit = (settings: CIM.Models.WiFiEndpointSettings[]): boolean =>
+  settings.length >= MAX_WIRELESS_PROFILES
+
+export const toWiFiEndpointSettingsRequest = (profile: WirelessProfileConfigRequest): CIM.Models.WiFiEndpointSettings =>
+  ({
+    ElementName: profile.profileName,
+    InstanceID: wifiEndpointInstanceID(profile.profileName),
+    AuthenticationMethod: mapEnumReverse(profile.authenticationMethod, AUTHENTICATION_METHOD_TO_STRING),
+    EncryptionMethod: mapEnumReverse(profile.encryptionMethod, ENCRYPTION_METHOD_TO_STRING),
+    SSID: profile.ssid,
+    Priority: profile.priority,
+    PSKPassPhrase: profile.password
+  }) as CIM.Models.WiFiEndpointSettings
+
+export const toIEEE8021xSettingsRequest = (profile: WirelessProfileConfigRequest): CIM.Models.IEEE8021xSettings => {
+  if (profile.ieee8021x == null) {
+    return {} as CIM.Models.IEEE8021xSettings
+  }
+
+  return {
+    ElementName: profile.profileName,
+    InstanceID: ieee8021xInstanceID(profile.profileName),
+    AuthenticationProtocol: profile.ieee8021x.authenticationProtocol,
+    Username: profile.ieee8021x.username,
+    Password: profile.ieee8021x.password
+  } as CIM.Models.IEEE8021xSettings
+}
+
+const normalizeCertItems = (certs: Certificates): any[] =>
+  asArray<any>((certs?.PublicKeyCertificateResponse as any)?.AMT_PublicKeyCertificate)
+
+const normalizeKeyItems = (certs: Certificates): any[] =>
+  asArray<any>((certs?.PublicPrivateKeyPairResponse as any)?.AMT_PublicPrivateKeyPair)
+
+const findExistingPrivateKeyHandle = (certs: Certificates, privateKey: string): string | null => {
+  for (const item of normalizeKeyItems(certs)) {
+    if (item?.DERKey === privateKey) {
+      return item.InstanceID ?? null
+    }
+  }
+  return null
+}
+
+const isTrustedRootCert = (item: any): boolean => Boolean(item?.TrustedRootCertficate ?? item?.TrustedRootCertificate)
+
+const findExistingClientCertHandle = (certs: Certificates, clientCert: string): string | null => {
+  for (const item of normalizeCertItems(certs)) {
+    if (item?.X509Certificate === clientCert && !isTrustedRootCert(item)) {
+      return item.InstanceID ?? null
+    }
+  }
+  return null
+}
+
+const findExistingTrustedRootCertHandle = (certs: Certificates, caCert: string): string | null => {
+  for (const item of normalizeCertItems(certs)) {
+    if (item?.X509Certificate === caCert && isTrustedRootCert(item)) {
+      return item.InstanceID ?? null
+    }
+  }
+  return null
+}
+
+type CredentialFinder = (certs: Certificates, credential: string) => string | null
+type CredentialAdder = (credential: string) => Promise<string | null>
+
+interface ResolveResult {
+  handle: string
+  certs: Certificates
+  added: boolean
+}
+
+const resolveOrAddCredentialHandle = async (
+  certs: Certificates,
+  credential: string,
+  find: CredentialFinder,
+  add: CredentialAdder,
+  refresh: () => Promise<Certificates>
+): Promise<ResolveResult> => {
+  let updatedCerts = certs
+
+  const existing = find(updatedCerts, credential)
+  if (existing != null) {
+    return { handle: existing, certs: updatedCerts, added: false }
+  }
+
+  const handle = await add(credential)
+  if (handle != null) {
+    return { handle, certs: updatedCerts, added: true }
+  }
+
+  updatedCerts = await refresh()
+  const refreshed = find(updatedCerts, credential)
+  if (refreshed == null) {
+    throw new Error('failed to resolve certificate handle')
+  }
+
+  return { handle: refreshed, certs: updatedCerts, added: false }
+}
+
+export const configureIEEE8021xCertificates = async (
+  device: DeviceAction,
+  privateKey: string,
+  clientCert: string,
+  caCert: string
+): Promise<{ handles: IEEE8021xCertHandles; addedCredentials: boolean }> => {
+  const handles: IEEE8021xCertHandles = { clientCertHandle: '', rootCertHandle: '' }
+  let certs = await device.getCertificates()
+  let addedCredentials = false
+
+  const refresh = async (): Promise<Certificates> => device.getCertificates()
+
+  if (privateKey) {
+    const result = await resolveOrAddCredentialHandle(
+      certs,
+      privateKey,
+      findExistingPrivateKeyHandle,
+      async (credential) => device.addPrivateKey(credential),
+      refresh
+    )
+    certs = result.certs
+    addedCredentials = addedCredentials || result.added
+  }
+
+  if (clientCert) {
+    const result = await resolveOrAddCredentialHandle(
+      certs,
+      clientCert,
+      findExistingClientCertHandle,
+      async (credential) => device.addCertificate(credential, false),
+      refresh
+    )
+    handles.clientCertHandle = result.handle
+    certs = result.certs
+    addedCredentials = addedCredentials || result.added
+  }
+
+  if (caCert) {
+    const result = await resolveOrAddCredentialHandle(
+      certs,
+      caCert,
+      findExistingTrustedRootCertHandle,
+      async (credential) => device.addCertificate(credential, true),
+      refresh
+    )
+    handles.rootCertHandle = result.handle
+    addedCredentials = addedCredentials || result.added
+  }
+
+  return { handles, addedCredentials }
+}
+
+export const prepareWirelessProfileForApply = async (
+  device: DeviceAction,
+  profile: WirelessProfileConfigRequest
+): Promise<PreparedWirelessProfile> => {
+  const prepared: PreparedWirelessProfile = {
+    wifiRequest: toWiFiEndpointSettingsRequest(profile),
+    ieee8021xRequest: {} as CIM.Models.IEEE8021xSettings,
+    certHandles: { clientCertHandle: '', rootCertHandle: '' },
+    needsPauseBeforeApply: false
+  }
+
+  if (profile.ieee8021x != null) {
+    prepared.ieee8021xRequest = toIEEE8021xSettingsRequest(profile)
+    const { handles, addedCredentials } = await configureIEEE8021xCertificates(
+      device,
+      profile.ieee8021x.privateKey ?? '',
+      profile.ieee8021x.clientCert ?? '',
+      profile.ieee8021x.caCert ?? ''
+    )
+    prepared.certHandles = handles
+    prepared.needsPauseBeforeApply = addedCredentials
+  }
+
+  return prepared
+}
+
+export const wait = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms))

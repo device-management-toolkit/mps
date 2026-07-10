@@ -8,14 +8,14 @@ import { type Response, type Request } from 'express'
 import { logger, messages } from '../../../logging/index.js'
 import { ErrorResponse } from '../../../utils/amtHelper.js'
 import { MqttProvider } from '../../../utils/MqttProvider.js'
-import { parseWirelessState, wirelessStateToString, hasWiFiPort, findWiFiPortEnabledState } from './helper.js'
+import { mapEnum, mapEnumReverse, WIRELESS_STATE_VALUE_TO_STRING, hasWiFiPort, findWiFiPortEnabledState } from './helper.js'
 
 export async function requestWirelessStateChange(req: Request, res: Response): Promise<void> {
   const guid: string = req.params.guid
   try {
     MqttProvider.publishEvent('request', ['CIM_WiFiPort'], messages.WIRELESS_STATE_CHANGE_REQUESTED, guid)
 
-    const requestedState = parseWirelessState(req.body?.state)
+    const requestedState = mapEnumReverse(req.body?.state, WIRELESS_STATE_VALUE_TO_STRING)
     if (requestedState == null) {
       logger.error(`${messages.WIRELESS_STATE_UNSUPPORTED}: ${req.body?.state} for guid : ${guid}.`)
       res.status(400).json(ErrorResponse(400, `${messages.WIRELESS_STATE_UNSUPPORTED}: ${req.body?.state}`))
@@ -37,7 +37,7 @@ export async function requestWirelessStateChange(req: Request, res: Response): P
     // Device already in the requested state: skip the WSMAN state-change call (mirrors Console).
     if (findWiFiPortEnabledState(items) === requestedState) {
       MqttProvider.publishEvent('success', ['CIM_WiFiPort'], messages.WIRELESS_STATE_CHANGE_SUCCESS, guid)
-      res.status(200).json({ state: wirelessStateToString(requestedState) })
+      res.status(200).json({ state: mapEnum(requestedState, WIRELESS_STATE_VALUE_TO_STRING) })
       return
     }
 
@@ -52,7 +52,7 @@ export async function requestWirelessStateChange(req: Request, res: Response): P
     }
 
     MqttProvider.publishEvent('success', ['CIM_WiFiPort'], messages.WIRELESS_STATE_CHANGE_SUCCESS, guid)
-    res.status(200).json({ state: wirelessStateToString(requestedState) })
+    res.status(200).json({ state: mapEnum(requestedState, WIRELESS_STATE_VALUE_TO_STRING) })
   } catch (error) {
     logger.error(`${messages.NETWORK_SETTINGS_EXCEPTION}: ${error}`)
     MqttProvider.publishEvent('fail', ['CIM_WiFiPort'], messages.INTERNAL_SERVICE_ERROR, guid)

@@ -70,6 +70,11 @@ const BSS_TYPE_TO_STRING: Record<number, string> = {
   2: 'Independent',
   3: 'Infrastructure'
 }
+export const WIRELESS_STATE_VALUE_TO_STRING: Record<number, string> = {
+  3: 'WifiDisabled',
+  32768: 'WifiEnabledS0',
+  32769: 'WifiEnabledS0SxAC'
+}
 
 export interface IEEE8021xInfo {
   enabled: string
@@ -171,6 +176,19 @@ export function mapEnum(value: unknown, map: Record<number, string>): string  | 
     return null
   }
   return map[value] ?? null
+}
+
+export function mapEnumReverse(value: unknown, map: Record<number, string>): number | null {
+  if (typeof value !== 'string') {
+    return null
+  }
+  const normalizedValue = value.toUpperCase()
+  for (const [key, val] of Object.entries(map)) {
+    if (val.toUpperCase() === normalizedValue) {
+      return Number(key)
+    }
+  }
+  return null
 }
 
 function mapLinkPolicy(linkPolicy: unknown): string[] {
@@ -467,40 +485,6 @@ export function buildWiredSettingsRequest(
   }
 
   return settingsRequest
-}
-
-// WiFi radio state values mirror go-wsman-messages CIM_WiFiPort
-// EnabledState/RequestedState (and the strings the Sample Web UI sends/receives).
-export const WIRELESS_STATE_VALUE_TO_STRING: Record<number, string> = {
-  3: 'WifiDisabled',
-  32768: 'WifiEnabledS0',
-  32769: 'WifiEnabledS0SxAC'
-}
-
-const WIRELESS_STATE_STRING_TO_VALUE: Record<string, number> = {
-  WIFIDISABLED: 3,
-  WIFIENABLEDS0: 32768,
-  WIFIENABLEDS0SXAC: 32769
-}
-
-/** Returns the canonical WiFi state string for an EnabledState/RequestedState value, or null. */
-export function wirelessStateToString(value: number | undefined | null): string | null {
-  if (value == null) {
-    return null
-  }
-  return WIRELESS_STATE_VALUE_TO_STRING[value] ?? null
-}
-
-/**
- * Parses a WiFi state string (case-insensitive, matching Console) into its
- * RequestedState numeric value, or null when unsupported.
- */
-export function parseWirelessState(state: unknown): number | null {
-  if (typeof state !== 'string') {
-    return null
-  }
-  const value = WIRELESS_STATE_STRING_TO_VALUE[state.toUpperCase()]
-  return value ?? null
 }
 
 /** Extracts the first CIM_WiFiPort EnabledState from a pull response, or null when no port exists. */

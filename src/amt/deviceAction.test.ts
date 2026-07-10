@@ -850,4 +850,89 @@ describe('Device Action Tests', () => {
       expect((result?.Body as any)?.Fault?.Reason?.Text).toBe('Invalid value')
     })
   })
+
+  describe('getWiFiPortState', () => {
+    it('should return null when enumerate response is null', async () => {
+      enumerateSpy.mockResolvedValueOnce(null)
+      const result = await device.getWiFiPortState()
+      expect(result).toBeNull()
+    })
+
+    it('should return the WiFi port envelope when present', async () => {
+      const envelope = { Body: { PullResponse: { Items: { CIM_WiFiPort: { InstanceID: 'WiFi Port 0' } } } } }
+      enumerateSpy.mockResolvedValueOnce(enumerateResponse)
+      pullSpy.mockResolvedValueOnce({ Envelope: envelope })
+      const result = await device.getWiFiPortState()
+      expect(result).toEqual(envelope)
+    })
+  })
+
+  describe('addWiFiSettings', () => {
+    const wifiEndpointSettings = {
+      ElementName: 'home',
+      InstanceID: 'Intel(r) AMT:WiFi Endpoint Settings home',
+      AuthenticationMethod: 4,
+      EncryptionMethod: 4,
+      SSID: 'home-ssid',
+      Priority: 1,
+      PSKPassPhrase: 'P@ssw0rd'
+    } as unknown as CIM.Models.WiFiEndpointSettings
+
+    it('should return the ReturnValue on success', async () => {
+      sendSpy.mockResolvedValue({ Envelope: { Body: { AddWiFiSettings_OUTPUT: { ReturnValue: 0 } } } })
+      const result = await device.addWiFiSettings(wifiEndpointSettings)
+      expect(result).toBe(0)
+      expect(sendSpy).toHaveBeenCalled()
+    })
+
+    it('should return null when send response is null', async () => {
+      sendSpy.mockResolvedValue(null)
+      const result = await device.addWiFiSettings(wifiEndpointSettings)
+      expect(result).toBeNull()
+    })
+
+    it('should return null when AddWiFiSettings_OUTPUT is missing', async () => {
+      sendSpy.mockResolvedValue({ Envelope: { Body: {} } })
+      const result = await device.addWiFiSettings(wifiEndpointSettings)
+      expect(result).toBeNull()
+    })
+  })
+
+  describe('addPrivateKey', () => {
+    it('should return the created key handle when present', async () => {
+      sendSpy.mockResolvedValue({
+        Envelope: {
+          Body: {
+            AddKey_OUTPUT: {
+              CreatedKey: {
+                ReferenceParameters: {
+                  SelectorSet: { Selector: 'private-key-handle' }
+                }
+              }
+            }
+          }
+        }
+      })
+      const result = await device.addPrivateKey('dummy-key')
+      expect(result).toBe('private-key-handle')
+    })
+
+    it('should return null and log error when send response is null', async () => {
+      sendSpy.mockResolvedValue(null)
+      const result = await device.addPrivateKey('dummy-key')
+      expect(result).toBeNull()
+    })
+
+    it('should return empty string when key already exists (200 with no CreatedKey)', async () => {
+      sendSpy.mockResolvedValue({ statusCode: 200, Envelope: { Body: {} } })
+      const result = await device.addPrivateKey('dummy-key')
+      expect(result).toBe('')
+    })
+
+    it('should return null when no handle and status code is not 200', async () => {
+      sendSpy.mockResolvedValue({ statusCode: 400, Envelope: { Body: {} } })
+      const result = await device.addPrivateKey('dummy-key')
+      expect(result).toBeNull()
+    })
+  })
 })
