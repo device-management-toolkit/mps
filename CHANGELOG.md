@@ -1,3 +1,10 @@
+# [2.34.0](https://github.com/device-management-toolkit/mps/compare/v2.33.0...v2.34.0) (2026-07-14)
+
+
+### Features
+
+* **api:** add update and delete wireless profile endpoints ([#2549](https://github.com/device-management-toolkit/mps/issues/2549)) ([a1a32ae](https://github.com/device-management-toolkit/mps/commit/a1a32aee17fbe97f5932e93259f5a1ec3746e00c)), closes [#2525](https://github.com/device-management-toolkit/mps/issues/2525)
+
 # [2.33.0](https://github.com/device-management-toolkit/mps/compare/v2.32.2...v2.33.0) (2026-07-02)
 
 
