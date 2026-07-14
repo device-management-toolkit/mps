@@ -1278,6 +1278,99 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+    patch:
+      summary: Update Wireless Profile
+      description: |
+        Update an existing AMT wireless (WiFi) profile on a device. The profile is
+        identified by `profileName`, which cannot be changed.
+
+        **This is a full profile replacement, not a partial update.** All fields
+        required by [`WirelessProfileRequest`](#/components/schemas/WirelessProfileRequest)
+        (`profileName`, `ssid`, `priority`, `authenticationMethod`, `encryptionMethod`,
+        plus `password` or `ieee8021x` depending on the authentication method) must
+        be supplied in the request body; any omitted field is not preserved from the
+        existing profile.
+      tags:
+        - AMT
+      parameters:
+        - name: guid
+          in: path
+          description: GUID of device
+          example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+          schema:
+            type: string
+      requestBody:
+        description: Wireless profile configuration
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WirelessProfileRequest'
+      responses:
+        204:
+          description: 'Wireless profile updated successfully'
+        400:
+          description: 'Validation error - invalid wireless profile'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        404:
+          description: 'Device not found, no WiFi port available, or profile not found'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DisconnectErrorResponse'
+        409:
+          description: 'Another profile already uses the requested priority'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        500:
+          description: 'Internal server error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/amt/networkSettings/wireless/profile/{guid}/{profileName}:
+    delete:
+      summary: Delete Wireless Profile
+      description: |
+        Delete an AMT wireless (WiFi) profile from a device by profile name.
+      tags:
+        - AMT
+      parameters:
+        - name: guid
+          in: path
+          description: GUID of device
+          example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+          schema:
+            type: string
+        - name: profileName
+          in: path
+          description: Name of the wireless profile to delete
+          example: home
+          required: true
+          schema:
+            type: string
+      responses:
+        204:
+          description: 'Wireless profile deleted successfully'
+        404:
+          description: 'Device not found or profile not found'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DisconnectErrorResponse'
+        500:
+          description: 'Internal server error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
   /api/v1/amt/screen/{guid}:
     put:
       summary: Put the changed settings for KVM in AMT
