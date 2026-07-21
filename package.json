@@ -80,5 +80,11 @@
   },
   "optionalDependencies": {
     "fsevents": "^2.3.3"
+  },
+  "overrides": {
+    "brace-expansion": "5.0.7",
+    "filelist": {
+      "brace-expansion": "2.1.2"
+    }
   }
 }
