@@ -28,6 +28,11 @@ export async function getAMTFeatures(req: Request, res: Response): Promise<void>
     const userConsent = Object.keys(UserConsentOptions).find((key) => UserConsentOptions[key] === value)
     const ocrProcessResult = processOCRData(OCRData)
 
+    const rpeCaps = OCRData.capabilities?.Body?.AMT_BootCapabilities?.PlatformErase ?? 0
+    const bootData = OCRData.bootData?.AMT_BootSettingData
+    const rpe = !!(bootData?.RPE ?? bootData?.RPEEnabled ?? bootData?.PlatformErase)
+    const rpeSupported = rpeCaps !== 0
+
     MqttProvider.publishEvent('success', ['AMT_GetFeatures'], messages.AMT_FEATURES_GET_SUCCESS, guid)
     res
       .status(200)
@@ -43,7 +48,8 @@ export async function getAMTFeatures(req: Request, res: Response): Promise<void>
         httpsBootSupported: ocrProcessResult.HTTPSBootSupported,
         winREBootSupported: ocrProcessResult.WinREBootSupported,
         localPBABootSupported: ocrProcessResult.LocalPBABootSupported,
-        remoteErase: false
+        rpe,
+        rpeSupported
       })
       .end()
   } catch (error) {

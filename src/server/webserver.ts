@@ -95,7 +95,7 @@ export class WebServer {
     const pathToCustomMiddleware = path.join(this.__dirname, '../middleware/custom')
     const middleware: RequestHandler[] = []
     const doesExist = existsSync(pathToCustomMiddleware)
-    const isDirectory = lstatSync(pathToCustomMiddleware).isDirectory()
+    const isDirectory = doesExist && lstatSync(pathToCustomMiddleware).isDirectory()
     if (doesExist && isDirectory) {
       const files = readdirSync(pathToCustomMiddleware)
       for (const file of files) {
