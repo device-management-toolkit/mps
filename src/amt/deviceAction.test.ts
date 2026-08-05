@@ -405,6 +405,7 @@ describe('Device Action Tests', () => {
       enumerateSpy.mockResolvedValueOnce(enumerateResponse)
       pullSpy.mockResolvedValueOnce(serviceAvailableToElement)
       getSpy.mockResolvedValueOnce({ Envelope: { Body: { RequestPowerStateChange_OUTPUT: { ReturnValue: 0 } } } })
+      sendSpy.mockResolvedValueOnce({ Envelope: { Body: {} } }) // RequestStateChange(32768)
       sendSpy.mockResolvedValueOnce({ Envelope: { Body: {} } }) // RequestStateChange(32770)
       sendSpy.mockResolvedValueOnce({ Envelope: { Body: {} } }) // Put(putBody)
       sendSpy.mockResolvedValueOnce({ Envelope: { Body: {} } }) // forceBootMode(1)
@@ -419,12 +420,111 @@ describe('Device Action Tests', () => {
       enumerateSpy.mockResolvedValueOnce(enumerateResponse)
       pullSpy.mockResolvedValueOnce(serviceAvailableToElement)
       getSpy.mockResolvedValueOnce({ Envelope: { Body: { RequestPowerStateChange_OUTPUT: { ReturnValue: 0 } } } })
+      sendSpy.mockResolvedValueOnce({ Envelope: { Body: {} } }) // RequestStateChange(32768)
       sendSpy.mockResolvedValueOnce({ Envelope: { Body: {} } }) // RequestStateChange(32770)
       sendSpy.mockResolvedValueOnce({ Envelope: { Body: {} } }) // Put(putBody)
       sendSpy.mockResolvedValueOnce({ Envelope: { Body: {} } }) // forceBootMode(1)
       await device.sendRPE(0)
       expect(getSpy).toHaveBeenCalled()
       expect(sendSpy).toHaveBeenCalled()
+    })
+    it('should enable RPE before sending remote erase when it is disabled', async () => {
+      getSpy.mockResolvedValueOnce({
+        Envelope: { Body: { AMT_BootSettingData: { ElementName: 'test', RPESupported: true, RPE: false } } }
+      })
+      sendSpy.mockResolvedValueOnce({ Envelope: { Body: {} } }) // RequestStateChange(32768)
+      sendSpy.mockResolvedValueOnce({ Envelope: { Body: {} } }) // setRPE(true)
+      getSpy.mockResolvedValueOnce({
+        Envelope: { Body: { AMT_BootSettingData: { ElementName: 'test', RPESupported: true, RPE: true } } }
+      })
+      enumerateSpy.mockResolvedValueOnce(enumerateResponse)
+      pullSpy.mockResolvedValueOnce(serviceAvailableToElement)
+      getSpy.mockResolvedValueOnce({ Envelope: { Body: { RequestPowerStateChange_OUTPUT: { ReturnValue: 0 } } } })
+      sendSpy.mockResolvedValueOnce({ Envelope: { Body: {} } }) // RequestStateChange(32770)
+      sendSpy.mockResolvedValueOnce({ Envelope: { Body: {} } }) // Put(putBody)
+      sendSpy.mockResolvedValueOnce({ Envelope: { Body: {} } }) // forceBootMode(1)
+
+      await device.sendRPE(3)
+
+      expect(sendSpy).toHaveBeenCalledTimes(5)
+    })
+    it('should clear boot order only for CSME-only remote erase requests', async () => {
+      const changeBootOrderSpy = vi.spyOn(device, 'changeBootOrder').mockResolvedValue({})
+      getSpy.mockResolvedValueOnce({
+        Envelope: { Body: { AMT_BootSettingData: { ElementName: 'test', RPESupported: true, RPE: true } } }
+      })
+      enumerateSpy.mockResolvedValueOnce(enumerateResponse)
+      pullSpy.mockResolvedValueOnce(serviceAvailableToElement)
+      getSpy.mockResolvedValueOnce({ Envelope: { Body: { RequestPowerStateChange_OUTPUT: { ReturnValue: 0 } } } })
+      sendSpy.mockResolvedValueOnce({ Envelope: { Body: {} } }) // RequestStateChange(32768)
+      sendSpy.mockResolvedValueOnce({ Envelope: { Body: {} } }) // RequestStateChange(32770)
+      sendSpy.mockResolvedValueOnce({ Envelope: { Body: {} } }) // Put(putBody)
+      sendSpy.mockResolvedValueOnce({ Envelope: { Body: {} } }) // forceBootMode(1)
+
+      await device.sendRPE(0x10000)
+
+      expect(changeBootOrderSpy).toHaveBeenCalledTimes(1)
+    })
+    it('should preserve boot order for combined CSME and hardware remote erase requests', async () => {
+      const changeBootOrderSpy = vi.spyOn(device, 'changeBootOrder').mockResolvedValue({})
+      getSpy.mockResolvedValueOnce({
+        Envelope: { Body: { AMT_BootSettingData: { ElementName: 'test', RPESupported: true, RPE: true } } }
+      })
+      enumerateSpy.mockResolvedValueOnce(enumerateResponse)
+      pullSpy.mockResolvedValueOnce(serviceAvailableToElement)
+      getSpy.mockResolvedValueOnce({ Envelope: { Body: { RequestPowerStateChange_OUTPUT: { ReturnValue: 0 } } } })
+      sendSpy.mockResolvedValueOnce({ Envelope: { Body: {} } }) // RequestStateChange(32768)
+      sendSpy.mockResolvedValueOnce({ Envelope: { Body: {} } }) // RequestStateChange(32770)
+      sendSpy.mockResolvedValueOnce({ Envelope: { Body: {} } }) // Put(putBody)
+      sendSpy.mockResolvedValueOnce({ Envelope: { Body: {} } }) // forceBootMode(1)
+
+      await device.sendRPE(0x10004)
+
+      expect(changeBootOrderSpy).not.toHaveBeenCalled()
+    })
+    it('should serialize hardware erase mask with UEFI boot parameter elements', async () => {
+      getSpy.mockResolvedValueOnce({
+        Envelope: { Body: { AMT_BootSettingData: { ElementName: 'test', RPESupported: true, RPE: true } } }
+      })
+      enumerateSpy.mockResolvedValueOnce(enumerateResponse)
+      pullSpy.mockResolvedValueOnce(serviceAvailableToElement)
+      getSpy.mockResolvedValueOnce({ Envelope: { Body: { RequestPowerStateChange_OUTPUT: { ReturnValue: 0 } } } })
+      sendSpy.mockResolvedValueOnce({ Envelope: { Body: {} } }) // RequestStateChange(32768)
+      sendSpy.mockResolvedValueOnce({ Envelope: { Body: {} } }) // RequestStateChange(32770)
+      sendSpy.mockResolvedValueOnce({ Envelope: { Body: {} } }) // Put(putBody)
+      sendSpy.mockResolvedValueOnce({ Envelope: { Body: {} } }) // forceBootMode(1)
+
+      await device.sendRPE(0x4)
+
+      const putXml = sendSpy.mock.calls[2][1] as string
+      expect(putXml).toContain('UefiBootParametersArray')
+      expect(putXml).toContain('UefiBootNumberOfParams')
+      expect(putXml).not.toContain('UEFIBootParametersArray')
+      expect(putXml).not.toContain('UEFIBootNumberOfParams')
+      expect(putXml).toContain('<h:UefiBootParametersArray>hoABAAQAAAAEAAAA</h:UefiBootParametersArray>')
+      const paramMatches = putXml.match(/<h:UefiBootParametersArray>/g) ?? []
+      expect(paramMatches.length).toBe(1)
+      expect(putXml).toContain('<h:UefiBootNumberOfParams>1</h:UefiBootNumberOfParams>')
+    })
+    it('should encode combined hardware erase bits as a single Uefi parameter mask', async () => {
+      getSpy.mockResolvedValueOnce({
+        Envelope: { Body: { AMT_BootSettingData: { ElementName: 'test', RPESupported: true, RPE: true } } }
+      })
+      enumerateSpy.mockResolvedValueOnce(enumerateResponse)
+      pullSpy.mockResolvedValueOnce(serviceAvailableToElement)
+      getSpy.mockResolvedValueOnce({ Envelope: { Body: { RequestPowerStateChange_OUTPUT: { ReturnValue: 0 } } } })
+      sendSpy.mockResolvedValueOnce({ Envelope: { Body: {} } }) // RequestStateChange(32768)
+      sendSpy.mockResolvedValueOnce({ Envelope: { Body: {} } }) // RequestStateChange(32770)
+      sendSpy.mockResolvedValueOnce({ Envelope: { Body: {} } }) // Put(putBody)
+      sendSpy.mockResolvedValueOnce({ Envelope: { Body: {} } }) // forceBootMode(1)
+
+      await device.sendRPE(0x04000040)
+
+      const putXml = sendSpy.mock.calls[2][1] as string
+      expect(putXml).toContain('<h:UefiBootParametersArray>hoABAAQAAABAAAAE</h:UefiBootParametersArray>')
+      expect(putXml).toContain('<h:UefiBootNumberOfParams>1</h:UefiBootNumberOfParams>')
+      expect(putXml).toContain('<h:SecureErase>false</h:SecureErase>')
+      expect(putXml).toContain('<h:ReflashBIOS>false</h:ReflashBIOS>')
     })
   })
   describe('alarm occurrences', () => {

@@ -9,6 +9,8 @@ import { ErrorResponse } from '../../utils/amtHelper.js'
 import { MqttProvider } from '../../utils/MqttProvider.js'
 import { MPSValidationError } from '../../utils/MPSValidationError.js'
 
+const PLATFORM_ERASE_CSME_UNCONFIGURE = 0x10000
+
 export async function sendRPE(req: Request, res: Response): Promise<void> {
   try {
     const guid: string = req.params.guid
@@ -29,13 +31,8 @@ export async function sendRPE(req: Request, res: Response): Promise<void> {
       throw new MPSValidationError('Device does not support Remote Platform Erase', 400)
     }
 
-    if (mask !== 0 && (platformEraseCaps & mask) === 0) {
+    if (mask !== 0 && (platformEraseCaps & mask) !== mask) {
       throw new MPSValidationError('Requested erase capabilities are not supported by this device', 400)
-    }
-
-    const CSME_BIT = 0x10000
-    if ((mask & CSME_BIT) !== 0 && (mask & ~CSME_BIT) !== 0) {
-      throw new MPSValidationError('CSME unconfigure cannot be combined with other erase operations', 400)
     }
 
     await req.deviceAction.sendRPE(mask, powerType)

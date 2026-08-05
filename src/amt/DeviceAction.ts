@@ -217,73 +217,89 @@ export class DeviceAction {
 
     // CSME sentinel bit: 0x10000 maps to ConfigurationDataReset, not a hardware erase target
     const CSME_BIT = 0x10000
-    const csmeRequested = (eraseMask & CSME_BIT) !== 0
-    const hwMask = eraseMask & ~CSME_BIT // strip the CSME bit for hardware TLV
+    const SECURE_ERASE_BIT = 0x4
+    const wantCSMEReset = (eraseMask & CSME_BIT) !== 0
+    const tlvMask = eraseMask & ~CSME_BIT
+    const wantSecureErase = (tlvMask & SECURE_ERASE_BIT) !== 0
 
-    // Step 1: GET current boot settings and verify RPE
-    const bootOptions = await this.getBootOptions()
-    const current = bootOptions.AMT_BootSettingData
-    const rpeEnabled = (current as any).RPE ?? current.RPEEnabled ?? current.PlatformErase
-    if (!rpeEnabled) {
-      throw new Error('RPE is not enabled on this device')
+    const xmlIdleMode = this.cim.BootService.RequestStateChange(32768)
+    const idleResult = await this.ciraHandler.Send(this.ciraSocket, xmlIdleMode)
+    if (idleResult?.Envelope?.Body?.RequestStateChange_OUTPUT?.ReturnValue !== 0) {
+      logger.error(`sendRPE RequestStateChange(32768) failed: ${JSON.stringify(idleResult?.Envelope?.Body)}`)
     }
 
-    // Step 1a: Clear boot source override (CSME path only)
-    if (csmeRequested) {
+    let bootOptions = await this.getBootOptions()
+    let current = bootOptions.AMT_BootSettingData
+    const rpeEnabled = (current as any).RPE ?? current.RPEEnabled ?? current.PlatformErase
+    if (!rpeEnabled) {
+      await this.setRPE(true)
+      bootOptions = await this.getBootOptions()
+      current = bootOptions.AMT_BootSettingData
+    }
+
+    if (wantCSMEReset && tlvMask === 0) {
       await this.changeBootOrder()
     }
 
-    // Step 1b: Switch firmware to RPE mode BEFORE the PUT
-    // Required when boot service is in OCR mode (32769); must precede PUT
     const xmlRpeMode = this.cim.BootService.RequestStateChange(32770)
     const rscResult = await this.ciraHandler.Send(this.ciraSocket, xmlRpeMode)
     if (rscResult?.Envelope?.Body?.RequestStateChange_OUTPUT?.ReturnValue !== 0) {
       logger.error(`sendRPE RequestStateChange(32770) failed: ${JSON.stringify(rscResult?.Envelope?.Body)}`)
     }
 
-    // Step 2: Build minimal PUT body — only writable fields, no read-only fields.
-    // Read-only fields (BIOSLastStatus, BootguardStatus, RPEEnabled, SecureBootControlEnabled,
-    // UEFIHTTPSBootEnabled, UEFILocalPBABootEnabled, WinREBootEnabled, OptionsCleared)
-    // cause InvalidRepresentation if included. Use 'Uefi' (not 'UEFI') to match AMT XML element names.
+    // Step 2: Build a strict, schema-safe payload with deterministic values.
+    // Avoid carrying mutable values from GET (for example BIOSSetup=true) that can
+    // make PUT fail validation on some firmware generations.
     const putBody: any = {
-      ElementName: current.ElementName,
       InstanceID: current.InstanceID,
+      ElementName: current.ElementName,
       OwningEntity: current.OwningEntity,
-      BIOSPause: current.BIOSPause,
-      BIOSSetup: current.BIOSSetup,
-      BootMediaIndex: current.BootMediaIndex,
-      ConfigurationDataReset: csmeRequested,
-      EnforceSecureBoot: current.EnforceSecureBoot,
-      FirmwareVerbosity: current.FirmwareVerbosity,
-      ForcedProgressEvents: current.ForcedProgressEvents,
-      IDERBootDevice: current.IDERBootDevice,
-      LockKeyboard: current.LockKeyboard,
-      LockPowerButton: current.LockPowerButton,
-      LockResetButton: current.LockResetButton,
-      LockSleepButton: current.LockSleepButton,
-      PlatformErase: hwMask !== 0,
-      RSEPassword: current.RSEPassword,
-      ReflashBIOS: current.ReflashBIOS,
-      SecureErase: current.SecureErase,
-      UseIDER: current.UseIDER,
-      UseSOL: current.UseSOL,
-      UseSafeMode: current.UseSafeMode,
-      UserPasswordBypass: current.UserPasswordBypass
+      BIOSPause: false,
+      BIOSSetup: false,
+      BootMediaIndex: 0,
+      ConfigurationDataReset: wantCSMEReset,
+      FirmwareVerbosity: 0,
+      ForcedProgressEvents: false,
+      IDERBootDevice: 0,
+      LockKeyboard: false,
+      LockPowerButton: false,
+      LockResetButton: false,
+      LockSleepButton: false,
+      PlatformErase: tlvMask !== 0,
+      ReflashBIOS: false,
+      SecureErase: false,
+      UseIDER: false,
+      UseSOL: false,
+      UseSafeMode: false,
+      UserPasswordBypass: false
     }
 
-    if (hwMask !== 0) {
+    if (tlvMask !== 0) {
+      // AMT RPE expects an Intel TLV payload for erase targets.
+      // Parameter format: [vendor:0x8086][type:1][len:4][value:eraseMask]
       const buf = Buffer.alloc(12)
-      buf.writeUInt16LE(0x8086, 0) // Intel vendor prefix
-      buf.writeUInt16LE(1, 2) // ParameterTypeID = 1
-      buf.writeUInt32LE(4, 4) // value length = 4 bytes
-      buf.writeUInt32LE(hwMask, 8) // device bitmask
+      buf.writeUInt16LE(0x8086, 0)
+      buf.writeUInt16LE(1, 2)
+      buf.writeUInt32LE(4, 4)
+      buf.writeUInt32LE(tlvMask, 8)
       putBody.UefiBootParametersArray = buf.toString('base64')
       putBody.UefiBootNumberOfParams = 1
+    } else {
+      delete putBody.UefiBootParametersArray
+      delete putBody.UefiBootNumberOfParams
     }
+
+    // Remove conflicting schema variants and read-only fields if present.
+    delete putBody.UEFIBootParametersArray
+    delete putBody.UEFIBootNumberOfParams
+    delete putBody.RPEEnabled
+    delete putBody.OptionsCleared
+    delete putBody.BIOSLastStatus
 
     const xmlPut = this.amt.BootSettingData.Put(putBody as AMT.Models.BootSettingData)
     const putResult = await this.ciraHandler.Send(this.ciraSocket, xmlPut)
     if (putResult?.Envelope?.Body?.Fault) {
+      logger.error(`sendRPE BootSettingData PUT XML: ${xmlPut}`)
       throw new Error(`BootSettingData PUT failed: ${JSON.stringify(putResult.Envelope.Body.Fault)}`)
     }
 

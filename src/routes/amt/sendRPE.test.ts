@@ -85,7 +85,17 @@ describe('Send Remote Erase', () => {
     )
   })
 
-  it('should return 400 when CSME is combined with hardware erase bits', async () => {
+  it('should send combined CSME and hardware erase when device supports all requested bits', async () => {
+    req.body = { secureEraseAllSSDs: true, tpmClear: false, restoreBIOSToEOM: false, unconfigureCSME: true }
+    bootCapsSpy.mockResolvedValue({ Body: { AMT_BootCapabilities: { PlatformErase: 0x10004 } } })
+    sendEraseSpy.mockResolvedValue(undefined)
+
+    await sendRPE(req, resSpy)
+    expect(sendEraseSpy).toHaveBeenCalledWith(0x10004, undefined)
+    expect(resSpy.status).toHaveBeenCalledWith(200)
+  })
+
+  it('should return 400 when combined request includes an unsupported capability bit', async () => {
     req.body = { secureEraseAllSSDs: true, tpmClear: false, restoreBIOSToEOM: false, unconfigureCSME: true }
     bootCapsSpy.mockResolvedValue({ Body: { AMT_BootCapabilities: { PlatformErase: 0x4 } } })
 
@@ -93,7 +103,7 @@ describe('Send Remote Erase', () => {
     expect(sendEraseSpy).not.toHaveBeenCalled()
     expect(resSpy.status).toHaveBeenCalledWith(400)
     expect(resSpy.json).toHaveBeenCalledWith(
-      ErrorResponse(400, 'CSME unconfigure cannot be combined with other erase operations')
+      ErrorResponse(400, 'Requested erase capabilities are not supported by this device')
     )
   })
 
