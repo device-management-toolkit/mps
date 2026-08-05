@@ -20,7 +20,6 @@ import {
 } from './wirelessProfileHelper.js'
 
 describe('wirelessProfileHelper', () => {
-
   describe('instanceID helpers', () => {
     it('formats instance ids', () => {
       expect(ieee8021xInstanceID('home')).toBe('Intel(r) AMT:IEEE 802.1x Settings home')
