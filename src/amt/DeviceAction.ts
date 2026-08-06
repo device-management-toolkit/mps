@@ -8,6 +8,10 @@ import { type Selector } from '@device-management-toolkit/wsman-messages/WSMan.j
 import { logger, messages } from '../logging/index.js'
 import { Certificates, OCRData, type CIRASocket } from '../models/models.js'
 import { type CIRAHandler } from './CIRAHandler.js'
+import {
+  BOOT_SERVICE_STATE_BOTH_OFF,
+  BOOT_SERVICE_STATE_RPE_ONLY
+} from '../routes/amt/rpeConstants.js'
 
 export class DeviceAction {
   ciraHandler: CIRAHandler
@@ -116,7 +120,7 @@ export class DeviceAction {
     return result.Envelope.Body
   }
 
-  async forceBootMode(role: CIM.Types.BootService.Role = 1): Promise<number> {
+  async forceBootMode(role: CIM.Types.BootService.Role = 1): Promise<any> {
     logger.silly(`forceBootMode ${messages.REQUEST}`)
     const bootSource = 'Intel(r) AMT: Boot Configuration 0'
     const xmlRequestBody = this.cim.BootService.SetBootConfigRole(bootSource, role)
@@ -207,25 +211,26 @@ export class DeviceAction {
     logger.silly(`setRPE ${messages.REQUEST}`)
     const bootOptions = await this.getBootOptions()
     const current = bootOptions.AMT_BootSettingData
-    ;(current as any).RPE = isEnabled
+    // Set all known firmware variants of the RPE enable field for cross-generation compatibility.
+    if ('RPE' in (current as any)) (current as any).RPE = isEnabled
+    if ('RPEEnabled' in (current as any)) (current as any).RPEEnabled = isEnabled
+    if ('PlatformErase' in (current as any)) (current as any).PlatformErase = isEnabled
     await this.setBootConfiguration(current)
     logger.silly(`setRPE ${messages.COMPLETE}`)
   }
 
-  async sendRPE(eraseMask: number, powerType: number): Promise<void> {
+  async sendRPE(eraseMask: number, ssdPassword?: string): Promise<void> {
     logger.silly(`sendRPE ${messages.REQUEST}`)
 
     // CSME sentinel bit: 0x10000 maps to ConfigurationDataReset, not a hardware erase target
     const CSME_BIT = 0x10000
-    const SECURE_ERASE_BIT = 0x4
     const wantCSMEReset = (eraseMask & CSME_BIT) !== 0
     const tlvMask = eraseMask & ~CSME_BIT
-    const wantSecureErase = (tlvMask & SECURE_ERASE_BIT) !== 0
 
-    const xmlIdleMode = this.cim.BootService.RequestStateChange(32768)
+    const xmlIdleMode = this.cim.BootService.RequestStateChange(BOOT_SERVICE_STATE_BOTH_OFF)
     const idleResult = await this.ciraHandler.Send(this.ciraSocket, xmlIdleMode)
     if (idleResult?.Envelope?.Body?.RequestStateChange_OUTPUT?.ReturnValue !== 0) {
-      logger.error(`sendRPE RequestStateChange(32768) failed: ${JSON.stringify(idleResult?.Envelope?.Body)}`)
+      throw new Error(`sendRPE RequestStateChange(${BOOT_SERVICE_STATE_BOTH_OFF}) failed: ${JSON.stringify(idleResult?.Envelope?.Body)}`)
     }
 
     let bootOptions = await this.getBootOptions()
@@ -241,10 +246,10 @@ export class DeviceAction {
       await this.changeBootOrder()
     }
 
-    const xmlRpeMode = this.cim.BootService.RequestStateChange(32770)
+    const xmlRpeMode = this.cim.BootService.RequestStateChange(BOOT_SERVICE_STATE_RPE_ONLY)
     const rscResult = await this.ciraHandler.Send(this.ciraSocket, xmlRpeMode)
     if (rscResult?.Envelope?.Body?.RequestStateChange_OUTPUT?.ReturnValue !== 0) {
-      logger.error(`sendRPE RequestStateChange(32770) failed: ${JSON.stringify(rscResult?.Envelope?.Body)}`)
+      throw new Error(`sendRPE RequestStateChange(${BOOT_SERVICE_STATE_RPE_ONLY}) failed: ${JSON.stringify(rscResult?.Envelope?.Body)}`)
     }
 
     // Step 2: Build a strict, schema-safe payload with deterministic values.
@@ -284,6 +289,10 @@ export class DeviceAction {
       buf.writeUInt32LE(tlvMask, 8)
       putBody.UefiBootParametersArray = buf.toString('base64')
       putBody.UefiBootNumberOfParams = 1
+
+      if (ssdPassword != null && ssdPassword !== '') {
+        putBody.RSEPassword = ssdPassword
+      }
     } else {
       delete putBody.UefiBootParametersArray
       delete putBody.UefiBootNumberOfParams
@@ -297,20 +306,40 @@ export class DeviceAction {
     delete putBody.BIOSLastStatus
 
     const xmlPut = this.amt.BootSettingData.Put(putBody as AMT.Models.BootSettingData)
+    if (process.env.MPS_RPE_LOG_REDACTED_XML != null && process.env.MPS_RPE_LOG_REDACTED_XML !== '') {
+      const redactedXml = xmlPut.replace(/(<h:RSEPassword>)([\s\S]*?)(<\/h:RSEPassword>)/g, '$1***$3')
+      logger.info(`sendRPE BootSettingData PUT XML (redacted): ${redactedXml}`)
+    }
     const putResult = await this.ciraHandler.Send(this.ciraSocket, xmlPut)
     if (putResult?.Envelope?.Body?.Fault) {
-      logger.error(`sendRPE BootSettingData PUT XML: ${xmlPut}`)
+      logger.error(`sendRPE BootSettingData PUT failed: ${JSON.stringify(putResult.Envelope.Body.Fault)}`)
       throw new Error(`BootSettingData PUT failed: ${JSON.stringify(putResult.Envelope.Body.Fault)}`)
     }
 
     // Step 4: Activate boot configuration
-    await this.forceBootMode(1)
+    const forceBootResult = await this.forceBootMode(1)
+    if (forceBootResult?.Envelope?.Body?.SetBootConfigRole_OUTPUT?.ReturnValue !== 0) {
+      throw new Error(`sendRPE SetBootConfigRole failed: ${JSON.stringify(forceBootResult?.Envelope?.Body)}`)
+    }
 
-    // Step 5: Power Cycle Off Hard — S5→S0 required; warm reset keeps ME power rails active
+    // Step 5: Determine the appropriate power action by querying live power state.
+    // States treated as "off" → Power On (2):
+    //   6  = Off - Hard
+    //   7  = Hibernate (Off - Soft, S4)
+    //   8  = Off - Soft (S5)
+    // All other states (On=2, sleeping=3/4, unknown/null) → Master Bus Reset (10)
+    // so that a connected system is reliably rebooted into the erase sequence.
+    // Note: states 12 (Off-Soft Graceful) and 13 (Off-Hard Graceful) are transitional
+    // requested states, not reported current states; AMT settles to 6/7/8 once complete.
     const powerStateResult = await this.getPowerState()
     const currentState = powerStateResult?.PullResponse?.Items?.CIM_AssociatedPowerManagementService?.PowerState
-    const action = currentState === '8' ? 2 : 5
-    await this.sendPowerAction(action as CIM.Types.PowerManagementService.PowerState)
+    const OFF_STATES = new Set([6, 7, 8])
+    const action: CIM.Types.PowerManagementService.PowerState = OFF_STATES.has(Number(currentState)) ? 2 : 10
+    logger.info(`sendRPE: dispatching power action=${action}`)
+    const powerActionResult = await this.sendPowerAction(action)
+    if (powerActionResult?.Body?.RequestPowerStateChange_OUTPUT?.ReturnValue !== 0) {
+      throw new Error(`sendRPE power action ${action} failed: ${JSON.stringify(powerActionResult?.Body)}`)
+    }
 
     logger.silly(`sendRPE ${messages.COMPLETE}`)
   }
@@ -890,9 +919,7 @@ export class DeviceAction {
     return result?.Envelope ?? null
   }
 
-  async putWiFiPortConfigurationService(
-    data: AMT.Models.WiFiPortConfigurationService
-  ): Promise<
+  async putWiFiPortConfigurationService(data: AMT.Models.WiFiPortConfigurationService): Promise<
     | (Common.Models.Envelope<{ AMT_WiFiPortConfigurationService: AMT.Models.WiFiPortConfigurationService }> & {
         statusCode?: number
       })

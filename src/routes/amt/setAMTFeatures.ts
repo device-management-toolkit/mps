@@ -8,8 +8,15 @@ import { logger, messages } from '../../logging/index.js'
 import { ErrorResponse } from '../../utils/amtHelper.js'
 import { MqttProvider } from '../../utils/MqttProvider.js'
 import { UserConsentOptions } from '../../utils/constants.js'
+import { MPSValidationError } from '../../utils/MPSValidationError.js'
 import { type AMT, type IPS, Common } from '@device-management-toolkit/wsman-messages'
 import { type DeviceAction } from '../../amt/DeviceAction.js'
+import {
+  BOOT_SERVICE_STATE_BOTH_OFF,
+  BOOT_SERVICE_STATE_OCR_ONLY,
+  BOOT_SERVICE_STATE_RPE_ONLY,
+  BOOT_SERVICE_STATE_BOTH_ON
+} from './rpeConstants.js'
 
 export async function setAMTFeatures(req: Request, res: Response): Promise<void> {
   try {
@@ -85,25 +92,42 @@ export async function setAMTFeatures(req: Request, res: Response): Promise<void>
     if (payload.platformEraseEnabled !== undefined) {
       const bootCaps = await req.deviceAction.getBootCapabilities()
       const platformEraseCaps = bootCaps.Body?.AMT_BootCapabilities?.PlatformErase ?? 0
-      if (platformEraseCaps !== 0) {
-        rpeDesired = !!payload.platformEraseEnabled
-        await req.deviceAction.setRPE(rpeDesired)
+      if (platformEraseCaps === 0) {
+        throw new MPSValidationError('Device does not support Remote Platform Erase', 400)
       }
+      rpeDesired = !!payload.platformEraseEnabled
+      await req.deviceAction.setRPE(rpeDesired)
     }
 
     // Configure boot service state — combines OCR and RPE
-    // 32768 = both off, 32769 = OCR only, 32770 = RPE only, 32771 = both
+    // BOTH_OFF=32768, OCR_ONLY=32769, RPE_ONLY=32770, BOTH_ON=32771
     if (payload.ocr !== undefined) {
       const ocrOn = !!payload.ocr
-      const rpeOn = rpeDesired ?? false
-      let requestedState = 32768
-      if (ocrOn && rpeOn) requestedState = 32771
-      else if (ocrOn) requestedState = 32769
-      else if (rpeOn) requestedState = 32770
+      // If platformEraseEnabled was not provided, read the current RPE state from the
+      // device so an OCR-only update does not inadvertently clear the RPE boot bit.
+      let rpeOn: boolean
+      if (rpeDesired !== undefined) {
+        rpeOn = rpeDesired
+      } else {
+        const bootOptions = await req.deviceAction.getBootOptions()
+        const current = bootOptions.AMT_BootSettingData
+        rpeOn = !!((current as any).RPE ?? current.RPEEnabled ?? current.PlatformErase)
+      }
+      let requestedState = BOOT_SERVICE_STATE_BOTH_OFF
+      if (ocrOn && rpeOn) requestedState = BOOT_SERVICE_STATE_BOTH_ON
+      else if (ocrOn) requestedState = BOOT_SERVICE_STATE_OCR_ONLY
+      else if (rpeOn) requestedState = BOOT_SERVICE_STATE_RPE_ONLY
       await req.deviceAction.BootServiceStateChange(requestedState)
     } else if (rpeDesired !== undefined) {
-      // OCR not in request — set RPE-only state (32770 enabled, 32768 disabled)
-      await req.deviceAction.BootServiceStateChange(rpeDesired ? 32770 : 32768)
+      // OCR not in request — read current OCR state so RPE-only update does not clear it.
+      const ocrData = await req.deviceAction.getOCRData()
+      const currentBootServiceState = ocrData.bootService?.CIM_BootService?.EnabledState
+      const ocrOn = currentBootServiceState === BOOT_SERVICE_STATE_OCR_ONLY || currentBootServiceState === BOOT_SERVICE_STATE_BOTH_ON
+      let requestedState = BOOT_SERVICE_STATE_BOTH_OFF
+      if (ocrOn && rpeDesired) requestedState = BOOT_SERVICE_STATE_BOTH_ON
+      else if (ocrOn) requestedState = BOOT_SERVICE_STATE_OCR_ONLY
+      else if (rpeDesired) requestedState = BOOT_SERVICE_STATE_RPE_ONLY
+      await req.deviceAction.BootServiceStateChange(requestedState)
     }
 
     MqttProvider.publishEvent('success', ['AMT_SetFeatures'], messages.AMT_FEATURES_SET_SUCCESS, guid)
@@ -111,7 +135,11 @@ export async function setAMTFeatures(req: Request, res: Response): Promise<void>
   } catch (error) {
     logger.error(`${messages.AMT_FEATURES_SET_EXCEPTION}: ${error}`)
     MqttProvider.publishEvent('fail', ['AMT_SetFeatures'], messages.INTERNAL_SERVICE_ERROR)
-    res.status(500).json(ErrorResponse(500, messages.AMT_FEATURES_SET_EXCEPTION)).end()
+    if (error instanceof MPSValidationError) {
+      res.status(error.status ?? 400).json(ErrorResponse(error.status ?? 400, error.message)).end()
+    } else {
+      res.status(500).json(ErrorResponse(500, messages.AMT_FEATURES_SET_EXCEPTION)).end()
+    }
   }
 }
 export async function setRedirectionService(
