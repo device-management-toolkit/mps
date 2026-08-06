@@ -13,6 +13,10 @@ import { HttpHandler } from '../../amt/HttpHandler.js'
 import { messages } from '../../logging/index.js'
 import { vi, type MockInstance } from 'vitest'
 
+import {
+  PLATFORM_ERASE_ALL_SSDS
+} from './rpeConstants.js'
+
 describe('Send Remote Erase', () => {
   let req: any
   let resSpy: any
@@ -45,11 +49,12 @@ describe('Send Remote Erase', () => {
   })
 
   it('should send remote erase when device supports the requested mask', async () => {
+    req.body.ssdPassword = 'mypassword'
     bootCapsSpy.mockResolvedValue({ Body: { AMT_BootCapabilities: { PlatformErase: 0x44 } } })
     sendEraseSpy.mockResolvedValue(undefined)
 
     await sendRPE(req, resSpy)
-    expect(sendEraseSpy).toHaveBeenCalledWith(0x4, undefined)
+    expect(sendEraseSpy).toHaveBeenCalledWith(PLATFORM_ERASE_ALL_SSDS, 'mypassword')
     expect(resSpy.status).toHaveBeenCalledWith(200)
     expect(resSpy.json).toHaveBeenCalledWith({ status: 'success' })
   })
@@ -97,7 +102,7 @@ describe('Send Remote Erase', () => {
 
   it('should return 400 when combined request includes an unsupported capability bit', async () => {
     req.body = { secureEraseAllSSDs: true, tpmClear: false, restoreBIOSToEOM: false, unconfigureCSME: true }
-    bootCapsSpy.mockResolvedValue({ Body: { AMT_BootCapabilities: { PlatformErase: 0x4 } } })
+    bootCapsSpy.mockResolvedValue({ Body: { AMT_BootCapabilities: { PlatformErase: PLATFORM_ERASE_ALL_SSDS } } })
 
     await sendRPE(req, resSpy)
     expect(sendEraseSpy).not.toHaveBeenCalled()

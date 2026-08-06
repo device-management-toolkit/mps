@@ -299,13 +299,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/GetAMTFeaturesResponse'
-  /api/v1/amt/boot/rpe/{guid}:
-    post:
-      summary: Enable or Disable Remote Platform Erase (RPE)
-      description: |
-        Enables or disables the Remote Platform Erase feature on the specified AMT device.
-        RPE must be enabled before calling `POST /api/v1/amt/rpe/{guid}` to trigger an erase.
-        Returns 400 if the device does not support RPE.
+  /api/v1/amt/boot/remoteErase/{guid}:
+    get:
+      summary: Get Remote Platform Erase capabilities
+      description: Returns the Remote Platform Erase capabilities supported by the device as individual boolean flags.
       tags:
         - AMT
       parameters:
@@ -316,39 +313,31 @@ paths:
           required: true
           schema:
             type: string
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/SetRPERequest'
       responses:
         200:
-          description: 'RPE enabled/disabled successfully'
+          description: 'Remote Platform Erase capabilities supported by this device'
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/RPEStatusResponse'
-        400:
-          description: 'Device does not support Remote Platform Erase'
+                $ref: '#/components/schemas/RemoteEraseCapabilitiesResponse'
         404:
           description: 'Device not found/connected'
         500:
           description: 'Internal server error'
-  /api/v1/amt/rpe/{guid}:
     post:
       summary: Trigger Remote Platform Erase
       description: |
         Initiates a Remote Platform Erase on the specified AMT device.
-        RPE must be enabled on the device first via `POST /api/v1/amt/boot/rpe/{guid}`.
+        RPE must be enabled on the device first via `POST /api/v1/amt/features/{guid}`.
 
-        The `eraseMask` is a bitmask of erase targets to activate:
-        - `0x0001` — Non-volatile memory
-        - `0x0002` — Volatile memory
-        - `0x10000` — CSME unconfigure (cannot be combined with other bits)
-        - `0` — Platform erase without specific hardware target
+        Supported erase options (select one or more hardware bits, optionally combined with CSME):
+        - `secureEraseAllSSDs` — Secure erase all SSDs (bit 0x04)
+        - `tpmClear` — Clear TPM (bit 0x40)
+        - `restoreBIOSToEOM` — Reload BIOS golden configuration (bit 0x4000000)
+        - `unconfigureCSME` — CSME unconfigure; can be combined with hardware bits
+        - `ssdPassword` — Optional password for encrypted SSD erase (max 64 bytes)
 
-        Returns 400 if the device does not support RPE, if the requested mask is not supported, or if CSME is combined with other erase operations.
+        Returns 400 if the device does not support RPE or the requested options are not supported.
       tags:
         - AMT
       parameters:
@@ -364,7 +353,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/SendRPERequest'
+              $ref: '#/components/schemas/RemoteEraseRequest'
       responses:
         200:
           description: 'Remote Platform Erase initiated successfully'
@@ -373,7 +362,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/RPEStatusResponse'
         400:
-          description: 'Device does not support RPE, requested mask not supported, or invalid mask combination'
+          description: 'Device does not support RPE, requested options not supported, or password too long'
         404:
           description: 'Device not found/connected'
         500:
@@ -3408,6 +3397,9 @@ components:
           type: boolean
         ocr:
           type: boolean
+        platformEraseEnabled:
+          type: boolean
+          description: Enable or disable Remote Platform Erase (RPE). Only applied when the device reports PlatformErase capability.
     SetAMTFeaturesResponse:
       type: string
       example:
@@ -4550,18 +4542,28 @@ components:
         structuredBiosBootString:
           type: string
           example: ''
-    SetRPERequest:
-      title: SetRPERequest
-      required:
-        - enabled
+    RemoteEraseCapabilitiesResponse:
+      title: RemoteEraseCapabilitiesResponse
       properties:
-        enabled:
+        secureEraseAllSSDs:
           type: boolean
-          description: Set to true to enable RPE, false to disable
+          description: 'Device supports secure erase of all SSDs (bit 0x04)'
+        tpmClear:
+          type: boolean
+          description: 'Device supports TPM clear (bit 0x40)'
+        restoreBIOSToEOM:
+          type: boolean
+          description: 'Device supports restoring BIOS to end-of-manufacturing state (bit 0x4000000)'
+        unconfigureCSME:
+          type: boolean
+          description: 'Device supports CSME unconfigure / ConfigurationDataReset (bit 0x10000)'
       example:
-        enabled: true
-    SendRPERequest:
-      title: SendRPERequest
+        secureEraseAllSSDs: true
+        tpmClear: true
+        restoreBIOSToEOM: false
+        unconfigureCSME: false
+    RemoteEraseRequest:
+      title: RemoteEraseRequest
       properties:
         secureEraseAllSSDs:
           type: boolean
@@ -4574,12 +4576,17 @@ components:
           description: 'Bit 26 (0x4000000) — Reload BIOS golden configuration'
         unconfigureCSME:
           type: boolean
-          description: 'CSME unconfigure — sets ConfigurationDataReset; cannot be combined with other erase operations'
+          description: 'CSME unconfigure — sets ConfigurationDataReset; can be combined with hardware bits'
+        ssdPassword:
+          type: string
+          description: 'Optional password for encrypted SSD erase (max 64 bytes)'
+          maxLength: 64
       example:
         secureEraseAllSSDs: true
         tpmClear: false
         restoreBIOSToEOM: false
         unconfigureCSME: false
+        ssdPassword: ''
     RPEStatusResponse:
       title: RPEStatusResponse
       properties:

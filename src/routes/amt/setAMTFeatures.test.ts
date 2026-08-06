@@ -22,6 +22,7 @@ describe('set amt features', () => {
   let putRedirectionServiceSpy: MockInstance
   let putIpsOptInServiceSpy: MockInstance
   let bootServiceStateChangeSpy: MockInstance
+  let getBootOptionsSpy: MockInstance
   let mqttSpy: MockInstance
 
   beforeEach(() => {
@@ -58,6 +59,7 @@ describe('set amt features', () => {
     putRedirectionServiceSpy = vi.spyOn(device, 'putRedirectionService')
     putIpsOptInServiceSpy = vi.spyOn(device, 'putIpsOptInService')
     bootServiceStateChangeSpy = vi.spyOn(device, 'BootServiceStateChange')
+    getBootOptionsSpy = vi.spyOn(device, 'getBootOptions')
 
     mqttSpy = vi.spyOn(MqttProvider, 'publishEvent')
 
@@ -76,6 +78,7 @@ describe('set amt features', () => {
     putIpsOptInServiceSpy.mockResolvedValue({})
     putRedirectionServiceSpy.mockResolvedValue({})
     bootServiceStateChangeSpy.mockResolvedValue({})
+    getBootOptionsSpy.mockResolvedValue({ AMT_BootSettingData: { RPE: false } })
   })
 
   it('should set amt features - no change', async () => {
@@ -207,5 +210,118 @@ describe('set amt features', () => {
     expect(resSpy.status).toHaveBeenCalledWith(500)
     expect(resSpy.json).toHaveBeenCalled()
     expect(mqttSpy).toHaveBeenCalled()
+  })
+
+  describe('platformEraseEnabled without ocr — preserves current OCR state', () => {
+    let getBootCapsSpy: MockInstance
+    let setRPESpy: MockInstance
+    let getOCRDataSpy: MockInstance
+
+    beforeEach(() => {
+      // Remove ocr from body so the RPE-only branch is exercised
+      delete req.body.ocr
+      getBootCapsSpy = vi.spyOn(req.deviceAction, 'getBootCapabilities')
+      setRPESpy = vi.spyOn(req.deviceAction, 'setRPE')
+      getOCRDataSpy = vi.spyOn(req.deviceAction, 'getOCRData')
+      getBootCapsSpy.mockResolvedValue({ Body: { AMT_BootCapabilities: { PlatformErase: 0x4 } } })
+      setRPESpy.mockResolvedValue(undefined)
+    })
+
+    it('enables RPE and preserves OCR-on → boot state 32771 (both)', async () => {
+      req.body.platformEraseEnabled = true
+      getOCRDataSpy.mockResolvedValue({ bootService: { CIM_BootService: { EnabledState: 32769 } } })
+
+      await setAMTFeatures(req, resSpy)
+
+      expect(resSpy.status).toHaveBeenCalledWith(200)
+      expect(setRPESpy).toHaveBeenCalledWith(true)
+      expect(bootServiceStateChangeSpy).toHaveBeenCalledWith(32771)
+    })
+
+    it('enables RPE and preserves OCR-off → boot state 32770 (RPE only)', async () => {
+      req.body.platformEraseEnabled = true
+      getOCRDataSpy.mockResolvedValue({ bootService: { CIM_BootService: { EnabledState: 32768 } } })
+
+      await setAMTFeatures(req, resSpy)
+
+      expect(resSpy.status).toHaveBeenCalledWith(200)
+      expect(setRPESpy).toHaveBeenCalledWith(true)
+      expect(bootServiceStateChangeSpy).toHaveBeenCalledWith(32770)
+    })
+
+    it('disables RPE and preserves OCR-on → boot state 32769 (OCR only)', async () => {
+      req.body.platformEraseEnabled = false
+      getOCRDataSpy.mockResolvedValue({ bootService: { CIM_BootService: { EnabledState: 32771 } } })
+
+      await setAMTFeatures(req, resSpy)
+
+      expect(resSpy.status).toHaveBeenCalledWith(200)
+      expect(setRPESpy).toHaveBeenCalledWith(false)
+      expect(bootServiceStateChangeSpy).toHaveBeenCalledWith(32769)
+    })
+
+    it('disables RPE and preserves OCR-off → boot state 32768 (both off)', async () => {
+      req.body.platformEraseEnabled = false
+      getOCRDataSpy.mockResolvedValue({ bootService: { CIM_BootService: { EnabledState: 32768 } } })
+
+      await setAMTFeatures(req, resSpy)
+
+      expect(resSpy.status).toHaveBeenCalledWith(200)
+      expect(setRPESpy).toHaveBeenCalledWith(false)
+      expect(bootServiceStateChangeSpy).toHaveBeenCalledWith(32768)
+    })
+
+    it('returns 400 when device does not support RPE', async () => {
+      req.body.platformEraseEnabled = true
+      getBootCapsSpy.mockResolvedValue({ Body: { AMT_BootCapabilities: { PlatformErase: 0 } } })
+
+      await setAMTFeatures(req, resSpy)
+
+      expect(resSpy.status).toHaveBeenCalledWith(400)
+      expect(setRPESpy).not.toHaveBeenCalled()
+      expect(bootServiceStateChangeSpy).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('ocr without platformEraseEnabled — preserves current RPE state', () => {
+    it('enables OCR and preserves RPE-on → boot state 32771 (both)', async () => {
+      req.body.ocr = true
+      getBootOptionsSpy.mockResolvedValue({ AMT_BootSettingData: { RPE: true } })
+
+      await setAMTFeatures(req, resSpy)
+
+      expect(resSpy.status).toHaveBeenCalledWith(200)
+      expect(bootServiceStateChangeSpy).toHaveBeenCalledWith(32771)
+    })
+
+    it('enables OCR and preserves RPE-off → boot state 32769 (OCR only)', async () => {
+      req.body.ocr = true
+      getBootOptionsSpy.mockResolvedValue({ AMT_BootSettingData: { RPE: false } })
+
+      await setAMTFeatures(req, resSpy)
+
+      expect(resSpy.status).toHaveBeenCalledWith(200)
+      expect(bootServiceStateChangeSpy).toHaveBeenCalledWith(32769)
+    })
+
+    it('disables OCR and preserves RPE-on → boot state 32770 (RPE only)', async () => {
+      req.body.ocr = false
+      getBootOptionsSpy.mockResolvedValue({ AMT_BootSettingData: { RPE: true } })
+
+      await setAMTFeatures(req, resSpy)
+
+      expect(resSpy.status).toHaveBeenCalledWith(200)
+      expect(bootServiceStateChangeSpy).toHaveBeenCalledWith(32770)
+    })
+
+    it('disables OCR and preserves RPE-off → boot state 32768 (both off)', async () => {
+      req.body.ocr = false
+      getBootOptionsSpy.mockResolvedValue({ AMT_BootSettingData: { RPE: false } })
+
+      await setAMTFeatures(req, resSpy)
+
+      expect(resSpy.status).toHaveBeenCalledWith(200)
+      expect(bootServiceStateChangeSpy).toHaveBeenCalledWith(32768)
+    })
   })
 })

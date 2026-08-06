@@ -3191,83 +3191,6 @@
           "response": []
         },
         {
-          "name": "Get Boot Capabilities",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test(\"Status code is 404\", function () {\r\n    pm.response.to.have.status(404);\r\n});\r\n\r\npm.test(\"Device should not be found\", function () {\r\n    var jsonData = pm.response.json();\r\n    pm.expect(jsonData.error).to.eq(\"Device not found/connected. Please connect again using CIRA.\")\r\n    pm.expect(jsonData.errorDescription).to.eq(\"guid : 1\")\r\n});\r\n"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{protocol}}://{{host}}/api/v1/amt/boot/capabilities/1",
-              "protocol": "{{protocol}}",
-              "host": [
-                "{{host}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "amt",
-                "boot",
-                "capabilities",
-                "1"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Set RPE Enabled",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test(\"Status code is 404\", function () {\r\n    pm.response.to.have.status(404);\r\n});\r\n\r\npm.test(\"Device should not be found\", function () {\r\n    var jsonData = pm.response.json();\r\n    pm.expect(jsonData.error).to.eq(\"Device not found/connected. Please connect again using CIRA.\")\r\n    pm.expect(jsonData.errorDescription).to.eq(\"guid : 1\")\r\n});\r\n"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
-          "request": {
-            "method": "POST",
-            "header": [],
-            "body": {
-              "mode": "raw",
-              "raw": "{\r\n    \"enabled\": true\r\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{protocol}}://{{host}}/api/v1/amt/boot/rpe/1",
-              "protocol": "{{protocol}}",
-              "host": [
-                "{{host}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "amt",
-                "boot",
-                "rpe",
-                "1"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
           "name": "Send Remote Erase",
           "event": [
             {
@@ -3293,7 +3216,7 @@
               }
             },
             "url": {
-              "raw": "{{protocol}}://{{host}}/api/v1/amt/rpe/1",
+              "raw": "{{protocol}}://{{host}}/api/v1/amt/boot/remoteErase/1",
               "protocol": "{{protocol}}",
               "host": [
                 "{{host}}"
@@ -3302,7 +3225,8 @@
                 "api",
                 "v1",
                 "amt",
-                "rpe",
+                "boot",
+                "remoteErase",
                 "1"
               ]
             }

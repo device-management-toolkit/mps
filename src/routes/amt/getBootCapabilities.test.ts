@@ -69,7 +69,7 @@ describe('Get Boot Capabilities', () => {
 
     await getBootCapabilities(req, resSpy)
     expect(resSpy.status).toHaveBeenCalledWith(500)
-    expect(resSpy.json).toHaveBeenCalledWith(ErrorResponse(500, messages.POWER_CAPABILITIES_EXCEPTION))
+    expect(resSpy.json).toHaveBeenCalledWith(ErrorResponse(500, messages.BOOT_CAPABILITIES_EXCEPTION))
     expect(resSpy.end).toHaveBeenCalled()
   })
 })

@@ -11,6 +11,10 @@ import { MPSValidationError } from '../../utils/MPSValidationError.js'
 import { MqttProvider } from '../../utils/MqttProvider.js'
 import { type AMT, type CIM, type IPS, Common } from '@device-management-toolkit/wsman-messages'
 import type { BootSettingResult, OCRData, OCRProcessResult } from '../../models/models.js'
+import {
+  BOOT_SERVICE_STATE_OCR_ONLY,
+  BOOT_SERVICE_STATE_BOTH_ON
+} from './rpeConstants.js'
 
 export async function getAMTFeatures(req: Request, res: Response): Promise<void> {
   try {
@@ -97,7 +101,7 @@ export function processOCRData(ocrData: OCRData): OCRProcessResult {
   const bootData = ocrData.bootData?.AMT_BootSettingData
   const bootSourceSettings = ocrData.bootSourceSettings
 
-  const isOCR = EnabledState === 32769 || EnabledState === 32771
+  const isOCR = EnabledState === BOOT_SERVICE_STATE_OCR_ONLY || EnabledState === BOOT_SERVICE_STATE_BOTH_ON
 
   const bootSettings = findBootSettingInstances(bootSourceSettings)
 

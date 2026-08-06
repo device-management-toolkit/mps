@@ -54,7 +54,7 @@ export const serviceAvailableToElement = {
               '2',
               '5'
             ],
-            PowerState: '4',
+            PowerState: 4,
             ServiceProvided: {
               Address: 'http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous',
               ReferenceParameters: {
