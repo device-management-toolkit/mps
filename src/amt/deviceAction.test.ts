@@ -85,7 +85,7 @@ describe('Device Action Tests', () => {
       enumerateSpy.mockResolvedValueOnce(enumerateResponse)
       pullSpy.mockResolvedValue(serviceAvailableToElement)
       const result = await device.getPowerState()
-      expect(result.PullResponse.Items.CIM_AssociatedPowerManagementService.PowerState).toBe('4')
+      expect(result.PullResponse.Items.CIM_AssociatedPowerManagementService.PowerState).toBe(4)
     })
     it('should send power action', async () => {
       getSpy.mockResolvedValueOnce({ Envelope: { Body: { RequestPowerStateChange_OUTPUT: { ReturnValue: 0 } } } })
@@ -382,11 +382,255 @@ describe('Device Action Tests', () => {
       expect(result).toEqual(chip.Envelope)
     })
   })
-  describe('power capabilities', () => {
-    it('should get power capabilities', async () => {
+
+  describe('boot capabilities and RPE', () => {
+    it('should get boot capabilities', async () => {
       getSpy.mockResolvedValueOnce(bootCapabilities)
-      const result = await device.getPowerCapabilities()
+      const result = await device.getBootCapabilities()
       expect(result).toEqual(bootCapabilities.Envelope)
+    })
+    it('should set RPE enabled', async () => {
+      getSpy.mockResolvedValueOnce({
+        Envelope: { Body: { AMT_BootSettingData: { ElementName: 'test', RPESupported: true, RPE: false } } }
+      })
+      sendSpy.mockResolvedValueOnce({ Envelope: { Body: {} } })
+      await device.setRPE(true)
+      expect(getSpy).toHaveBeenCalled()
+      expect(sendSpy).toHaveBeenCalled()
+    })
+    it('should send remote erase with non-zero mask', async () => {
+      getSpy.mockResolvedValueOnce({
+        Envelope: { Body: { AMT_BootSettingData: { ElementName: 'test', RPESupported: true, RPE: true } } }
+      })
+      enumerateSpy.mockResolvedValueOnce(enumerateResponse)
+      pullSpy.mockResolvedValueOnce(serviceAvailableToElement)
+      getSpy.mockResolvedValueOnce({ Envelope: { Body: { RequestPowerStateChange_OUTPUT: { ReturnValue: 0 } } } })
+      sendSpy.mockResolvedValueOnce({ Envelope: { Body: { RequestStateChange_OUTPUT: { ReturnValue: 0 } } } }) // RequestStateChange(32768)
+      sendSpy.mockResolvedValueOnce({ Envelope: { Body: { RequestStateChange_OUTPUT: { ReturnValue: 0 } } } }) // RequestStateChange(32770)
+      sendSpy.mockResolvedValueOnce({ Envelope: { Body: {} } }) // Put(putBody)
+      sendSpy.mockResolvedValueOnce({ Envelope: { Body: { SetBootConfigRole_OUTPUT: { ReturnValue: 0 } } } }) // forceBootMode(1)
+      await device.sendRPE(3)
+      expect(getSpy).toHaveBeenCalled()
+      expect(sendSpy).toHaveBeenCalled()
+    })
+    it('should send remote erase with zero mask sets PlatformErase to false', async () => {
+      getSpy.mockResolvedValueOnce({
+        Envelope: { Body: { AMT_BootSettingData: { ElementName: 'test', PlatformErase: true, RPE: true } } }
+      })
+      enumerateSpy.mockResolvedValueOnce(enumerateResponse)
+      pullSpy.mockResolvedValueOnce(serviceAvailableToElement)
+      getSpy.mockResolvedValueOnce({ Envelope: { Body: { RequestPowerStateChange_OUTPUT: { ReturnValue: 0 } } } })
+      sendSpy.mockResolvedValueOnce({ Envelope: { Body: { RequestStateChange_OUTPUT: { ReturnValue: 0 } } } }) // RequestStateChange(32768)
+      sendSpy.mockResolvedValueOnce({ Envelope: { Body: { RequestStateChange_OUTPUT: { ReturnValue: 0 } } } }) // RequestStateChange(32770)
+      sendSpy.mockResolvedValueOnce({ Envelope: { Body: {} } }) // Put(putBody)
+      sendSpy.mockResolvedValueOnce({ Envelope: { Body: { SetBootConfigRole_OUTPUT: { ReturnValue: 0 } } } }) // forceBootMode(1)
+      await device.sendRPE(0)
+      expect(getSpy).toHaveBeenCalled()
+      expect(sendSpy).toHaveBeenCalled()
+    })
+    it('should enable RPE before sending remote erase when it is disabled', async () => {
+      // Call order:
+      // Send#1: RequestStateChange(32768)
+      // Get#1:  getBootOptions → RPE: false  → triggers setRPE path
+      //   Get#2:  getBootOptions inside setRPE
+      //   Send#2: setBootConfiguration inside setRPE
+      // Get#3:  getBootOptions re-fetch after setRPE
+      // Send#3: RequestStateChange(32770)
+      // Send#4: BootSettingData.Put
+      // Send#5: forceBootMode(1)
+      // Enumerate + Pull: getPowerState
+      // Get#4:  sendPowerAction
+      sendSpy.mockResolvedValueOnce({ Envelope: { Body: { RequestStateChange_OUTPUT: { ReturnValue: 0 } } } }) // RequestStateChange(32768)
+      getSpy.mockResolvedValueOnce({
+        Envelope: { Body: { AMT_BootSettingData: { ElementName: 'test', RPESupported: true, RPE: false } } }
+      }) // initial getBootOptions → RPE disabled
+      getSpy.mockResolvedValueOnce({
+        Envelope: { Body: { AMT_BootSettingData: { ElementName: 'test', RPESupported: true, RPE: false } } }
+      }) // getBootOptions inside setRPE
+      sendSpy.mockResolvedValueOnce({ Envelope: { Body: {} } }) // setBootConfiguration inside setRPE
+      getSpy.mockResolvedValueOnce({
+        Envelope: { Body: { AMT_BootSettingData: { ElementName: 'test', RPESupported: true, RPE: true } } }
+      }) // getBootOptions re-fetch after setRPE
+      sendSpy.mockResolvedValueOnce({ Envelope: { Body: { RequestStateChange_OUTPUT: { ReturnValue: 0 } } } }) // RequestStateChange(32770)
+      sendSpy.mockResolvedValueOnce({ Envelope: { Body: {} } }) // BootSettingData.Put
+      sendSpy.mockResolvedValueOnce({ Envelope: { Body: { SetBootConfigRole_OUTPUT: { ReturnValue: 0 } } } }) // forceBootMode(1)
+      enumerateSpy.mockResolvedValueOnce(enumerateResponse)
+      pullSpy.mockResolvedValueOnce(serviceAvailableToElement)
+      getSpy.mockResolvedValueOnce({ Envelope: { Body: { RequestPowerStateChange_OUTPUT: { ReturnValue: 0 } } } })
+
+      await device.sendRPE(3)
+
+      expect(sendSpy).toHaveBeenCalledTimes(5)
+    })
+    it('should clear boot order only for CSME-only remote erase requests', async () => {
+      const changeBootOrderSpy = vi.spyOn(device, 'changeBootOrder').mockResolvedValue({})
+      getSpy.mockResolvedValueOnce({
+        Envelope: { Body: { AMT_BootSettingData: { ElementName: 'test', RPESupported: true, RPE: true } } }
+      })
+      enumerateSpy.mockResolvedValueOnce(enumerateResponse)
+      pullSpy.mockResolvedValueOnce(serviceAvailableToElement)
+      getSpy.mockResolvedValueOnce({ Envelope: { Body: { RequestPowerStateChange_OUTPUT: { ReturnValue: 0 } } } })
+      sendSpy.mockResolvedValueOnce({ Envelope: { Body: { RequestStateChange_OUTPUT: { ReturnValue: 0 } } } }) // RequestStateChange(32768)
+      sendSpy.mockResolvedValueOnce({ Envelope: { Body: { RequestStateChange_OUTPUT: { ReturnValue: 0 } } } }) // RequestStateChange(32770)
+      sendSpy.mockResolvedValueOnce({ Envelope: { Body: {} } }) // Put(putBody)
+      sendSpy.mockResolvedValueOnce({ Envelope: { Body: { SetBootConfigRole_OUTPUT: { ReturnValue: 0 } } } }) // forceBootMode(1)
+
+      await device.sendRPE(0x10000)
+
+      expect(changeBootOrderSpy).toHaveBeenCalledTimes(1)
+    })
+    it('should preserve boot order for combined CSME and hardware remote erase requests', async () => {
+      const changeBootOrderSpy = vi.spyOn(device, 'changeBootOrder').mockResolvedValue({})
+      getSpy.mockResolvedValueOnce({
+        Envelope: { Body: { AMT_BootSettingData: { ElementName: 'test', RPESupported: true, RPE: true } } }
+      })
+      enumerateSpy.mockResolvedValueOnce(enumerateResponse)
+      pullSpy.mockResolvedValueOnce(serviceAvailableToElement)
+      getSpy.mockResolvedValueOnce({ Envelope: { Body: { RequestPowerStateChange_OUTPUT: { ReturnValue: 0 } } } })
+      sendSpy.mockResolvedValueOnce({ Envelope: { Body: { RequestStateChange_OUTPUT: { ReturnValue: 0 } } } }) // RequestStateChange(32768)
+      sendSpy.mockResolvedValueOnce({ Envelope: { Body: { RequestStateChange_OUTPUT: { ReturnValue: 0 } } } }) // RequestStateChange(32770)
+      sendSpy.mockResolvedValueOnce({ Envelope: { Body: {} } }) // Put(putBody)
+      sendSpy.mockResolvedValueOnce({ Envelope: { Body: { SetBootConfigRole_OUTPUT: { ReturnValue: 0 } } } }) // forceBootMode(1)
+
+      await device.sendRPE(0x10004)
+
+      expect(changeBootOrderSpy).not.toHaveBeenCalled()
+    })
+    it('should serialize hardware erase mask with UEFI boot parameter elements', async () => {
+      getSpy.mockResolvedValueOnce({
+        Envelope: { Body: { AMT_BootSettingData: { ElementName: 'test', RPESupported: true, RPE: true } } }
+      })
+      enumerateSpy.mockResolvedValueOnce(enumerateResponse)
+      pullSpy.mockResolvedValueOnce(serviceAvailableToElement)
+      getSpy.mockResolvedValueOnce({ Envelope: { Body: { RequestPowerStateChange_OUTPUT: { ReturnValue: 0 } } } })
+      sendSpy.mockResolvedValueOnce({ Envelope: { Body: { RequestStateChange_OUTPUT: { ReturnValue: 0 } } } }) // RequestStateChange(32768)
+      sendSpy.mockResolvedValueOnce({ Envelope: { Body: { RequestStateChange_OUTPUT: { ReturnValue: 0 } } } }) // RequestStateChange(32770)
+      sendSpy.mockResolvedValueOnce({ Envelope: { Body: {} } }) // Put(putBody)
+      sendSpy.mockResolvedValueOnce({ Envelope: { Body: { SetBootConfigRole_OUTPUT: { ReturnValue: 0 } } } }) // forceBootMode(1)
+
+      await device.sendRPE(0x4)
+
+      const putXml = sendSpy.mock.calls[2][1] as string
+      expect(putXml).toContain('UefiBootParametersArray')
+      expect(putXml).toContain('UefiBootNumberOfParams')
+      expect(putXml).not.toContain('UEFIBootParametersArray')
+      expect(putXml).not.toContain('UEFIBootNumberOfParams')
+      expect(putXml).toContain('<h:UefiBootParametersArray>hoABAAQAAAAEAAAA</h:UefiBootParametersArray>')
+      const paramMatches = putXml.match(/<h:UefiBootParametersArray>/g) ?? []
+      expect(paramMatches.length).toBe(1)
+      expect(putXml).toContain('<h:UefiBootNumberOfParams>1</h:UefiBootNumberOfParams>')
+    })
+    it('should encode combined hardware erase bits as a single Uefi parameter mask', async () => {
+      getSpy.mockResolvedValueOnce({
+        Envelope: { Body: { AMT_BootSettingData: { ElementName: 'test', RPESupported: true, RPE: true } } }
+      })
+      enumerateSpy.mockResolvedValueOnce(enumerateResponse)
+      pullSpy.mockResolvedValueOnce(serviceAvailableToElement)
+      getSpy.mockResolvedValueOnce({ Envelope: { Body: { RequestPowerStateChange_OUTPUT: { ReturnValue: 0 } } } })
+      sendSpy.mockResolvedValueOnce({ Envelope: { Body: { RequestStateChange_OUTPUT: { ReturnValue: 0 } } } }) // RequestStateChange(32768)
+      sendSpy.mockResolvedValueOnce({ Envelope: { Body: { RequestStateChange_OUTPUT: { ReturnValue: 0 } } } }) // RequestStateChange(32770)
+      sendSpy.mockResolvedValueOnce({ Envelope: { Body: {} } }) // Put(putBody)
+      sendSpy.mockResolvedValueOnce({ Envelope: { Body: { SetBootConfigRole_OUTPUT: { ReturnValue: 0 } } } }) // forceBootMode(1)
+
+      await device.sendRPE(0x04000040)
+
+      const putXml = sendSpy.mock.calls[2][1] as string
+      expect(putXml).toContain('<h:UefiBootParametersArray>hoABAAQAAABAAAAE</h:UefiBootParametersArray>')
+      expect(putXml).toContain('<h:UefiBootNumberOfParams>1</h:UefiBootNumberOfParams>')
+      expect(putXml).toContain('<h:SecureErase>false</h:SecureErase>')
+      expect(putXml).toContain('<h:ReflashBIOS>false</h:ReflashBIOS>')
+    })
+    it('should include RSEPassword when provided for encrypted SSD erase', async () => {
+      getSpy.mockResolvedValueOnce({
+        Envelope: { Body: { AMT_BootSettingData: { ElementName: 'test', RPESupported: true, RPE: true } } }
+      })
+      enumerateSpy.mockResolvedValueOnce(enumerateResponse)
+      pullSpy.mockResolvedValueOnce(serviceAvailableToElement)
+      getSpy.mockResolvedValueOnce({ Envelope: { Body: { RequestPowerStateChange_OUTPUT: { ReturnValue: 0 } } } })
+      sendSpy.mockResolvedValueOnce({ Envelope: { Body: { RequestStateChange_OUTPUT: { ReturnValue: 0 } } } }) // RequestStateChange(32768)
+      sendSpy.mockResolvedValueOnce({ Envelope: { Body: { RequestStateChange_OUTPUT: { ReturnValue: 0 } } } }) // RequestStateChange(32770)
+      sendSpy.mockResolvedValueOnce({ Envelope: { Body: {} } }) // Put(putBody)
+      sendSpy.mockResolvedValueOnce({ Envelope: { Body: { SetBootConfigRole_OUTPUT: { ReturnValue: 0 } } } }) // forceBootMode(1)
+
+      await device.sendRPE(0x4, 'mypassword')
+
+      const putXml = sendSpy.mock.calls[2][1] as string
+      expect(putXml).toContain('<h:RSEPassword>mypassword</h:RSEPassword>')
+    })
+    it('should query live power state and send Power On (2) when system is off (state 8)', async () => {
+      const sendPowerActionSpy = vi.spyOn(device, 'sendPowerAction').mockResolvedValue({ Body: { RequestPowerStateChange_OUTPUT: { ReturnValue: 0 } } } as any)
+      getSpy.mockResolvedValueOnce({
+        Envelope: { Body: { AMT_BootSettingData: { ElementName: 'test', RPESupported: true, RPE: true } } }
+      })
+      // getPowerState fallback: enumerate + pull returning PowerState '8' (off)
+      enumerateSpy.mockResolvedValueOnce(enumerateResponse)
+      pullSpy.mockResolvedValueOnce({
+        Envelope: {
+          Body: {
+            PullResponse: {
+              Items: { CIM_AssociatedPowerManagementService: { PowerState: 8 } }
+            }
+          }
+        }
+      })
+      sendSpy.mockResolvedValueOnce({ Envelope: { Body: { RequestStateChange_OUTPUT: { ReturnValue: 0 } } } }) // RequestStateChange(32768)
+      sendSpy.mockResolvedValueOnce({ Envelope: { Body: { RequestStateChange_OUTPUT: { ReturnValue: 0 } } } }) // RequestStateChange(32770)
+      sendSpy.mockResolvedValueOnce({ Envelope: { Body: {} } }) // Put(putBody)
+      sendSpy.mockResolvedValueOnce({ Envelope: { Body: { SetBootConfigRole_OUTPUT: { ReturnValue: 0 } } } }) // forceBootMode(1)
+
+      await device.sendRPE(0x4)
+
+      expect(sendPowerActionSpy).toHaveBeenCalledWith(2)
+    })
+    it('should query live power state and send Power On (2) when system is off-hard (state 6)', async () => {
+      const sendPowerActionSpy = vi.spyOn(device, 'sendPowerAction').mockResolvedValue({ Body: { RequestPowerStateChange_OUTPUT: { ReturnValue: 0 } } } as any)
+      getSpy.mockResolvedValueOnce({
+        Envelope: { Body: { AMT_BootSettingData: { ElementName: 'test', RPESupported: true, RPE: true } } }
+      })
+      // getPowerState fallback: enumerate + pull returning PowerState '6' (off-hard)
+      enumerateSpy.mockResolvedValueOnce(enumerateResponse)
+      pullSpy.mockResolvedValueOnce({
+        Envelope: {
+          Body: {
+            PullResponse: {
+              Items: { CIM_AssociatedPowerManagementService: { PowerState: 6 } }
+            }
+          }
+        }
+      })
+      sendSpy.mockResolvedValueOnce({ Envelope: { Body: { RequestStateChange_OUTPUT: { ReturnValue: 0 } } } }) // RequestStateChange(32768)
+      sendSpy.mockResolvedValueOnce({ Envelope: { Body: { RequestStateChange_OUTPUT: { ReturnValue: 0 } } } }) // RequestStateChange(32770)
+      sendSpy.mockResolvedValueOnce({ Envelope: { Body: {} } }) // Put(putBody)
+      sendSpy.mockResolvedValueOnce({ Envelope: { Body: { SetBootConfigRole_OUTPUT: { ReturnValue: 0 } } } }) // forceBootMode(1)
+
+      await device.sendRPE(0x4)
+
+      expect(sendPowerActionSpy).toHaveBeenCalledWith(2)
+    })
+    it('should query live power state and send Master Bus Reset (10) when system is on (state 2)', async () => {
+      const sendPowerActionSpy = vi.spyOn(device, 'sendPowerAction').mockResolvedValue({ Body: { RequestPowerStateChange_OUTPUT: { ReturnValue: 0 } } } as any)
+      getSpy.mockResolvedValueOnce({
+        Envelope: { Body: { AMT_BootSettingData: { ElementName: 'test', RPESupported: true, RPE: true } } }
+      })
+      // getPowerState fallback: enumerate + pull returning PowerState '2' (on)
+      enumerateSpy.mockResolvedValueOnce(enumerateResponse)
+      pullSpy.mockResolvedValueOnce({
+        Envelope: {
+          Body: {
+            PullResponse: {
+              Items: { CIM_AssociatedPowerManagementService: { PowerState: 2 } }
+            }
+          }
+        }
+      })
+      sendSpy.mockResolvedValueOnce({ Envelope: { Body: { RequestStateChange_OUTPUT: { ReturnValue: 0 } } } }) // RequestStateChange(32768)
+      sendSpy.mockResolvedValueOnce({ Envelope: { Body: { RequestStateChange_OUTPUT: { ReturnValue: 0 } } } }) // RequestStateChange(32770)
+      sendSpy.mockResolvedValueOnce({ Envelope: { Body: {} } }) // Put(putBody)
+      sendSpy.mockResolvedValueOnce({ Envelope: { Body: { SetBootConfigRole_OUTPUT: { ReturnValue: 0 } } } }) // forceBootMode(1)
+
+      await device.sendRPE(0x4)
+
+      expect(sendPowerActionSpy).toHaveBeenCalledWith(10)
     })
   })
   describe('alarm occurrences', () => {
@@ -941,6 +1185,50 @@ describe('Device Action Tests', () => {
       sendSpy.mockResolvedValue({ statusCode: 400, Envelope: { Body: {} } })
       const result = await device.addPrivateKey('dummy-key')
       expect(result).toBeNull()
+    })
+  })
+
+  describe('withDeviceLock', () => {
+    it('serializes concurrent callers for the same device', async () => {
+      const order: number[] = []
+      const p1 = device.withDeviceLock(async () => {
+        await new Promise<void>((r) => setTimeout(r, 20))
+        order.push(1)
+      })
+      const p2 = device.withDeviceLock(async () => {
+        order.push(2)
+      })
+      await Promise.all([p1, p2])
+      expect(order).toEqual([1, 2])
+    })
+
+    it('releases the lock when the callback throws', async () => {
+      await expect(
+        device.withDeviceLock(async () => {
+          throw new Error('boom')
+        })
+      ).rejects.toThrow('boom')
+
+      // A subsequent caller must not be blocked forever
+      const result = await device.withDeviceLock(async () => 'ok')
+      expect(result).toBe('ok')
+    })
+
+    it('allows different devices to run concurrently', async () => {
+      const handler2 = new CIRAHandler(new HttpHandler(), 'admin', 'P@ssw0rd')
+      const device2 = new DeviceAction(handler2, {} as any)
+
+      const order: number[] = []
+      const p1 = device.withDeviceLock(async () => {
+        await new Promise<void>((r) => setTimeout(r, 20))
+        order.push(1)
+      })
+      const p2 = device2.withDeviceLock(async () => {
+        order.push(2)
+      })
+      await Promise.all([p1, p2])
+      // device2 should not be blocked by device — it runs before device1 finishes
+      expect(order).toEqual([2, 1])
     })
   })
 })

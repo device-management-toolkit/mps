@@ -11,6 +11,10 @@ import { MPSValidationError } from '../../utils/MPSValidationError.js'
 import { MqttProvider } from '../../utils/MqttProvider.js'
 import { type AMT, type CIM, type IPS, Common } from '@device-management-toolkit/wsman-messages'
 import type { BootSettingResult, OCRData, OCRProcessResult } from '../../models/models.js'
+import {
+  BOOT_SERVICE_STATE_OCR_ONLY,
+  BOOT_SERVICE_STATE_BOTH_ON
+} from './rpeConstants.js'
 
 export async function getAMTFeatures(req: Request, res: Response): Promise<void> {
   try {
@@ -28,6 +32,11 @@ export async function getAMTFeatures(req: Request, res: Response): Promise<void>
     const userConsent = Object.keys(UserConsentOptions).find((key) => UserConsentOptions[key] === value)
     const ocrProcessResult = processOCRData(OCRData)
 
+    const rpeCaps = OCRData.capabilities?.Body?.AMT_BootCapabilities?.PlatformErase ?? 0
+    const bootData = OCRData.bootData?.AMT_BootSettingData
+    const rpe = !!(bootData?.RPE ?? bootData?.RPEEnabled ?? bootData?.PlatformErase)
+    const rpeSupported = rpeCaps !== 0
+
     MqttProvider.publishEvent('success', ['AMT_GetFeatures'], messages.AMT_FEATURES_GET_SUCCESS, guid)
     res
       .status(200)
@@ -43,7 +52,8 @@ export async function getAMTFeatures(req: Request, res: Response): Promise<void>
         httpsBootSupported: ocrProcessResult.HTTPSBootSupported,
         winREBootSupported: ocrProcessResult.WinREBootSupported,
         localPBABootSupported: ocrProcessResult.LocalPBABootSupported,
-        remoteErase: false
+        rpe,
+        rpeSupported
       })
       .end()
   } catch (error) {
@@ -91,7 +101,7 @@ export function processOCRData(ocrData: OCRData): OCRProcessResult {
   const bootData = ocrData.bootData?.AMT_BootSettingData
   const bootSourceSettings = ocrData.bootSourceSettings
 
-  const isOCR = EnabledState === 32769 || EnabledState === 32771
+  const isOCR = EnabledState === BOOT_SERVICE_STATE_OCR_ONLY || EnabledState === BOOT_SERVICE_STATE_BOTH_ON
 
   const bootSettings = findBootSettingInstances(bootSourceSettings)
 
