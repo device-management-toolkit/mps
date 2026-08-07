@@ -1187,4 +1187,48 @@ describe('Device Action Tests', () => {
       expect(result).toBeNull()
     })
   })
+
+  describe('withDeviceLock', () => {
+    it('serializes concurrent callers for the same device', async () => {
+      const order: number[] = []
+      const p1 = device.withDeviceLock(async () => {
+        await new Promise<void>((r) => setTimeout(r, 20))
+        order.push(1)
+      })
+      const p2 = device.withDeviceLock(async () => {
+        order.push(2)
+      })
+      await Promise.all([p1, p2])
+      expect(order).toEqual([1, 2])
+    })
+
+    it('releases the lock when the callback throws', async () => {
+      await expect(
+        device.withDeviceLock(async () => {
+          throw new Error('boom')
+        })
+      ).rejects.toThrow('boom')
+
+      // A subsequent caller must not be blocked forever
+      const result = await device.withDeviceLock(async () => 'ok')
+      expect(result).toBe('ok')
+    })
+
+    it('allows different devices to run concurrently', async () => {
+      const handler2 = new CIRAHandler(new HttpHandler(), 'admin', 'P@ssw0rd')
+      const device2 = new DeviceAction(handler2, {} as any)
+
+      const order: number[] = []
+      const p1 = device.withDeviceLock(async () => {
+        await new Promise<void>((r) => setTimeout(r, 20))
+        order.push(1)
+      })
+      const p2 = device2.withDeviceLock(async () => {
+        order.push(2)
+      })
+      await Promise.all([p1, p2])
+      // device2 should not be blocked by device — it runs before device1 finishes
+      expect(order).toEqual([2, 1])
+    })
+  })
 })

@@ -87,6 +87,9 @@ export async function setAMTFeatures(req: Request, res: Response): Promise<void>
       await setUserConsent(req.deviceAction, optServiceResponse, payload.guid as string)
     }
 
+    // Configure Remote Platform Erase (RPE) and boot service state under a device lock
+    // to prevent concurrent boot-configuration requests from interleaving.
+    await req.deviceAction.withDeviceLock(async () => {
     // Configure Remote Platform Erase (RPE) — PUT must run BEFORE BootServiceStateChange
     let rpeDesired: boolean | undefined
     if (payload.platformEraseEnabled !== undefined) {
@@ -129,6 +132,7 @@ export async function setAMTFeatures(req: Request, res: Response): Promise<void>
       else if (rpeDesired) requestedState = BOOT_SERVICE_STATE_RPE_ONLY
       await req.deviceAction.BootServiceStateChange(requestedState)
     }
+    }) // end withDeviceLock
 
     MqttProvider.publishEvent('success', ['AMT_SetFeatures'], messages.AMT_FEATURES_SET_SUCCESS, guid)
     res.status(200).json({ status: messages.AMT_FEATURES_SET_SUCCESS }).end()

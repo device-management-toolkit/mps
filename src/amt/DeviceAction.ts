@@ -13,6 +13,12 @@ import {
   BOOT_SERVICE_STATE_RPE_ONLY
 } from '../routes/amt/rpeConstants.js'
 
+// Per-device mutex registry. Keyed by the CIRASocket instance (one per device
+// connection) so that concurrent requests to the same device are serialized for
+// boot-configuration sequences that must not interleave (sendRPE, bootOptions,
+// setAMTFeatures boot-state changes, and power actions).
+const deviceLocks = new Map<object, Promise<void>>()
+
 export class DeviceAction {
   ciraHandler: CIRAHandler
   ciraSocket: CIRASocket
@@ -207,6 +213,29 @@ export class DeviceAction {
     return await this.getBootCapabilities()
   }
 
+  /**
+   * Acquires a per-device mutual-exclusion lock for the duration of `fn`.
+   * All callers for the same device (same CIRASocket) are serialized into a
+   * FIFO queue so that multi-step boot-configuration sequences cannot interleave.
+   */
+  async withDeviceLock<T>(fn: () => Promise<T>): Promise<T> {
+    const key = this.ciraSocket as object
+    // Each caller chains onto the current tail of the promise queue.
+    // `gate` is resolved only when this caller calls `release`, which unblocks
+    // the next waiter in the queue.
+    let release!: () => void
+    const gate = new Promise<void>((resolve) => { release = resolve })
+    const prev = deviceLocks.get(key) ?? Promise.resolve()
+    deviceLocks.set(key, prev.then(() => gate))
+    // Wait for all previous holders to finish before proceeding.
+    await prev
+    try {
+      return await fn()
+    } finally {
+      release()
+    }
+  }
+
   async setRPE(isEnabled: boolean): Promise<void> {
     logger.silly(`setRPE ${messages.REQUEST}`)
     const bootOptions = await this.getBootOptions()
@@ -220,7 +249,8 @@ export class DeviceAction {
   }
 
   async sendRPE(eraseMask: number, ssdPassword?: string): Promise<void> {
-    logger.silly(`sendRPE ${messages.REQUEST}`)
+    await this.withDeviceLock(async () => {
+      logger.silly(`sendRPE ${messages.REQUEST}`)
 
     // CSME sentinel bit: 0x10000 maps to ConfigurationDataReset, not a hardware erase target
     const CSME_BIT = 0x10000
@@ -340,7 +370,8 @@ export class DeviceAction {
       throw new Error(`sendRPE power action ${action} failed: ${JSON.stringify(powerActionResult?.Body)}`)
     }
 
-    logger.silly(`sendRPE ${messages.COMPLETE}`)
+      logger.silly(`sendRPE ${messages.COMPLETE}`)
+    }) // end withDeviceLock
   }
 
   async requestUserConsentCode(): Promise<Common.Models.Envelope<IPS.Models.StartOptIn_OUTPUT>> {
