@@ -323,17 +323,16 @@ export class DeviceAction {
     }
 
     // Step 5: Determine the appropriate power action by querying live power state.
-    // States treated as "off" → Power On (2):
+    // Off states (aligned with Console) → Power On (2):
     //   6  = Off - Hard
-    //   7  = Hibernate (Off - Soft, S4)
     //   8  = Off - Soft (S5)
-    // All other states (On=2, sleeping=3/4, unknown/null) → Master Bus Reset (10)
+    //   12 = Off - Soft Graceful
+    //   13 = Off - Hard Graceful
+    // All other states (On=2, sleeping=3/4/7, unknown/null) → Master Bus Reset (10)
     // so that a connected system is reliably rebooted into the erase sequence.
-    // Note: states 12 (Off-Soft Graceful) and 13 (Off-Hard Graceful) are transitional
-    // requested states, not reported current states; AMT settles to 6/7/8 once complete.
     const powerStateResult = await this.getPowerState()
     const currentState = powerStateResult?.PullResponse?.Items?.CIM_AssociatedPowerManagementService?.PowerState
-    const OFF_STATES = new Set([6, 7, 8])
+    const OFF_STATES = new Set([6, 8, 12, 13])
     const action: CIM.Types.PowerManagementService.PowerState = OFF_STATES.has(Number(currentState)) ? 2 : 10
     logger.info(`sendRPE: dispatching power action=${action}`)
     const powerActionResult = await this.sendPowerAction(action)
