@@ -18,6 +18,19 @@ import {
   BOOT_SERVICE_STATE_BOTH_ON
 } from './rpeConstants.js'
 
+function normalizeRPEState(value: unknown): boolean {
+  if (typeof value === 'boolean') return value
+  if (typeof value === 'string') return value === 'true' || value === '1'
+  if (typeof value === 'number') return value === 1 || value === 0
+  return false
+}
+
+function resolveRPEStateFromBootService(enabledState: number | undefined, bootData?: any): boolean {
+  if (enabledState === BOOT_SERVICE_STATE_RPE_ONLY || enabledState === BOOT_SERVICE_STATE_BOTH_ON) return true
+  if (enabledState === BOOT_SERVICE_STATE_BOTH_OFF || enabledState === BOOT_SERVICE_STATE_OCR_ONLY) return false
+  return normalizeRPEState((bootData as any)?.RPEEnabled ?? (bootData as any)?.RPE)
+}
+
 export async function setAMTFeatures(req: Request, res: Response): Promise<void> {
   try {
     const payload = req.body
@@ -90,15 +103,15 @@ export async function setAMTFeatures(req: Request, res: Response): Promise<void>
     // Configure Remote Platform Erase (RPE) and boot service state under a device lock
     // to prevent concurrent boot-configuration requests from interleaving.
     await req.deviceAction.withDeviceLock(async () => {
-    // Configure Remote Platform Erase (RPE) — PUT must run BEFORE BootServiceStateChange
+    // Configure Remote Platform Erase (RPE) — PUT must run BEFORE BootServiceStateChange.
     let rpeDesired: boolean | undefined
-    if (payload.platformEraseEnabled !== undefined) {
+    if (payload.rpe !== undefined) {
       const bootCaps = await req.deviceAction.getBootCapabilities()
       const platformEraseCaps = bootCaps.Body?.AMT_BootCapabilities?.PlatformErase ?? 0
       if (platformEraseCaps === 0) {
         throw new MPSValidationError('Device does not support Remote Platform Erase', 400)
       }
-      rpeDesired = !!payload.platformEraseEnabled
+      rpeDesired = !!payload.rpe
       await req.deviceAction.setRPE(rpeDesired)
     }
 
@@ -106,15 +119,16 @@ export async function setAMTFeatures(req: Request, res: Response): Promise<void>
     // BOTH_OFF=32768, OCR_ONLY=32769, RPE_ONLY=32770, BOTH_ON=32771
     if (payload.ocr !== undefined) {
       const ocrOn = !!payload.ocr
-      // If platformEraseEnabled was not provided, read the current RPE state from the
-      // device so an OCR-only update does not inadvertently clear the RPE boot bit.
+      // If rpe was not provided, read the current RPE state from the device so an
+      // OCR-only update does not inadvertently clear the RPE boot bit.
       let rpeOn: boolean
       if (rpeDesired !== undefined) {
         rpeOn = rpeDesired
       } else {
         const bootOptions = await req.deviceAction.getBootOptions()
         const current = bootOptions.AMT_BootSettingData
-        rpeOn = !!((current as any).RPE ?? current.RPEEnabled ?? current.PlatformErase)
+        const ocrData = await req.deviceAction.getOCRData()
+        rpeOn = resolveRPEStateFromBootService(ocrData.bootService?.CIM_BootService?.EnabledState, current)
       }
       let requestedState = BOOT_SERVICE_STATE_BOTH_OFF
       if (ocrOn && rpeOn) requestedState = BOOT_SERVICE_STATE_BOTH_ON

@@ -3166,7 +3166,7 @@
             "header": [],
             "body": {
               "mode": "raw",
-              "raw": "{\r\n    \"userConsent\": \"none\",\r\n    \"enableSOL\": \"false\",\r\n    \"enableIDER\": \"false\",\r\n    \"enableKVM\": \"false\",\r\n    \"platformEraseEnabled\": false\r\n}",
+              "raw": "{\r\n    \"userConsent\": \"none\",\r\n    \"enableSOL\": \"false\",\r\n    \"enableIDER\": \"false\",\r\n    \"enableKVM\": \"false\",\r\n    \"rpe\": false\r\n}",
               "options": {
                 "raw": {
                   "language": "json"

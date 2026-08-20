@@ -176,10 +176,45 @@ describe('get amt features', () => {
       httpsBootSupported: true,
       winREBootSupported: true,
       localPBABootSupported: false,
-      rpe: true,
+      rpe: false,
       rpeSupported: true
     })
     expect(mqttSpy).toHaveBeenCalledTimes(2)
+  })
+
+  it('should ignore a numeric PlatformErase mask when determining the current RPE state', async () => {
+    redirectionSpy.mockResolvedValue({
+      AMT_RedirectionService: {
+        ListenerEnabled: false,
+        EnabledState: 32768
+      }
+    })
+
+    optInServiceSpy.mockResolvedValue({
+      IPS_OptInService: {
+        OptInRequired: 0,
+        OptInState: 0
+      }
+    })
+
+    kvmRedirectionSpy.mockResolvedValue({
+      CIM_KVMRedirectionSAP: {
+        RequestedState: 2,
+        EnabledState: 2
+      }
+    })
+
+    ocrDataSpy.mockResolvedValue({
+      bootService: { CIM_BootService: { EnabledState: 32768 } },
+      bootSourceSettings: null,
+      capabilities: { Body: { AMT_BootCapabilities: { PlatformErase: 0x4 } } },
+      bootData: { AMT_BootSettingData: { PlatformErase: 0x4 } }
+    })
+
+    await getAMTFeatures(req, resSpy)
+
+    expect(resSpy.status).toHaveBeenCalledWith(200)
+    expect(resSpy.json).toHaveBeenCalledWith(expect.objectContaining({ rpe: false, rpeSupported: true }))
   })
 
   it('should handle error when get feature', async () => {

@@ -12,9 +12,24 @@ import { MqttProvider } from '../../utils/MqttProvider.js'
 import { type AMT, type CIM, type IPS, Common } from '@device-management-toolkit/wsman-messages'
 import type { BootSettingResult, OCRData, OCRProcessResult } from '../../models/models.js'
 import {
+  BOOT_SERVICE_STATE_BOTH_OFF,
+  BOOT_SERVICE_STATE_BOTH_ON,
   BOOT_SERVICE_STATE_OCR_ONLY,
-  BOOT_SERVICE_STATE_BOTH_ON
+  BOOT_SERVICE_STATE_RPE_ONLY
 } from './rpeConstants.js'
+
+function normalizeRPEState(value: unknown): boolean {
+  if (typeof value === 'boolean') return value
+  if (typeof value === 'string') return value === 'true' || value === '1'
+  if (typeof value === 'number') return value === 1 || value === 0
+  return false
+}
+
+function resolveRPEStateFromBootService(enabledState: number | undefined, bootData?: any): boolean {
+  if (enabledState === BOOT_SERVICE_STATE_RPE_ONLY || enabledState === BOOT_SERVICE_STATE_BOTH_ON) return true
+  if (enabledState === BOOT_SERVICE_STATE_BOTH_OFF || enabledState === BOOT_SERVICE_STATE_OCR_ONLY) return false
+  return normalizeRPEState(bootData?.RPEEnabled ?? bootData?.RPE)
+}
 
 export async function getAMTFeatures(req: Request, res: Response): Promise<void> {
   try {
@@ -34,7 +49,8 @@ export async function getAMTFeatures(req: Request, res: Response): Promise<void>
 
     const rpeCaps = OCRData.capabilities?.Body?.AMT_BootCapabilities?.PlatformErase ?? 0
     const bootData = OCRData.bootData?.AMT_BootSettingData
-    const rpe = !!(bootData?.RPE ?? bootData?.RPEEnabled ?? bootData?.PlatformErase)
+    const bootServiceState = OCRData.bootService?.CIM_BootService?.EnabledState
+    const rpe = resolveRPEStateFromBootService(bootServiceState, bootData)
     const rpeSupported = rpeCaps !== 0
 
     MqttProvider.publishEvent('success', ['AMT_GetFeatures'], messages.AMT_FEATURES_GET_SUCCESS, guid)

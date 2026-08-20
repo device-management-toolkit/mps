@@ -240,10 +240,12 @@ export class DeviceAction {
     logger.silly(`setRPE ${messages.REQUEST}`)
     const bootOptions = await this.getBootOptions()
     const current = bootOptions.AMT_BootSettingData
-    // Set all known firmware variants of the RPE enable field for cross-generation compatibility.
-    if ('RPE' in (current as any)) (current as any).RPE = isEnabled
-    if ('RPEEnabled' in (current as any)) (current as any).RPEEnabled = isEnabled
-    if ('PlatformErase' in (current as any)) (current as any).PlatformErase = isEnabled
+    const currentAny = current as any
+    // The live RPE toggle is the boolean flag, not the erase mask. Keep the
+    // firmware's actual state fields in sync without writing stale capability data
+    // back into the boot-setting object.
+    if ('RPEEnabled' in currentAny) currentAny.RPEEnabled = isEnabled
+    if ('RPE' in currentAny) currentAny.RPE = isEnabled
     await this.setBootConfiguration(current)
     logger.silly(`setRPE ${messages.COMPLETE}`)
   }
@@ -265,7 +267,8 @@ export class DeviceAction {
 
     let bootOptions = await this.getBootOptions()
     let current = bootOptions.AMT_BootSettingData
-    const rpeEnabled = (current as any).RPE ?? current.RPEEnabled ?? current.PlatformErase
+    const rpeValue = (current as any).RPEEnabled ?? (current as any).RPE
+    const rpeEnabled = rpeValue === true || rpeValue === 'true' || rpeValue === 1 || rpeValue === '1'
     if (!rpeEnabled) {
       await this.setRPE(true)
       bootOptions = await this.getBootOptions()

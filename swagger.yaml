@@ -3397,7 +3397,7 @@ components:
           type: boolean
         ocr:
           type: boolean
-        platformEraseEnabled:
+        rpe:
           type: boolean
           description: Enable or disable Remote Platform Erase (RPE). Only applied when the device reports PlatformErase capability.
     SetAMTFeaturesResponse:
