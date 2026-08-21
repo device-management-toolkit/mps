@@ -68,29 +68,31 @@ export async function bootOptions(req: Request, res: Response): Promise<void> {
     const guid = req.params?.guid || ''
     const bootSource = await getBootSource(guid, payload, device)
 
-    const results = await device.getBootOptions()
-    const bootData = setBootData(payload.action as number, payload.useSOL as boolean, results.AMT_BootSettingData)
+    await device.withDeviceLock(async () => {
+      const results = await device.getBootOptions()
+      const bootData = setBootData(payload.action as number, payload.useSOL as boolean, results.AMT_BootSettingData)
 
-    await determineBootDevice(payload, bootData)
+      await determineBootDevice(payload, bootData)
 
-    await device.changeBootOrder(null)
+      await device.changeBootOrder(null)
 
-    await device.setBootConfiguration(bootData)
+      await device.setBootConfiguration(bootData)
 
-    // set boot config role
-    await device.forceBootMode(1)
+      // set boot config role
+      await device.forceBootMode(1)
 
-    await device.changeBootOrder(bootSource as unknown as CIM.Types.BootConfigSetting.InstanceID)
+      await device.changeBootOrder(bootSource as unknown as CIM.Types.BootConfigSetting.InstanceID)
 
-    const newAction = determinePowerAction(payload.action as number)
+      const newAction = determinePowerAction(payload.action as number)
 
-    const powerActionResult = await device.sendPowerAction(newAction)
-    powerActionResult.Body.RequestPowerStateChange_OUTPUT.ReturnValueStr = AMTStatusToString(
-      powerActionResult.Body.RequestPowerStateChange_OUTPUT.ReturnValue as number
-    )
-    powerActionResult.Body = powerActionResult.Body.RequestPowerStateChange_OUTPUT
+      const powerActionResult = await device.sendPowerAction(newAction)
+      powerActionResult.Body.RequestPowerStateChange_OUTPUT.ReturnValueStr = AMTStatusToString(
+        powerActionResult.Body.RequestPowerStateChange_OUTPUT.ReturnValue as number
+      )
+      powerActionResult.Body = powerActionResult.Body.RequestPowerStateChange_OUTPUT
 
-    res.status(200).json(powerActionResult)
+      res.status(200).json(powerActionResult)
+    })
   } catch (error) {
     logger.error(`${messages.BOOT_SETTING_EXCEPTION} : ${error}`)
     MqttProvider.publishEvent('fail', ['AMT_BootSettingData'], messages.INTERNAL_SERVICE_ERROR)

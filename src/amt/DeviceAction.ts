@@ -8,6 +8,16 @@ import { type Selector } from '@device-management-toolkit/wsman-messages/WSMan.j
 import { logger, messages } from '../logging/index.js'
 import { Certificates, OCRData, type CIRASocket } from '../models/models.js'
 import { type CIRAHandler } from './CIRAHandler.js'
+import {
+  BOOT_SERVICE_STATE_BOTH_OFF,
+  BOOT_SERVICE_STATE_RPE_ONLY
+} from '../routes/amt/rpeConstants.js'
+
+// Per-device mutex registry. Keyed by the CIRASocket instance (one per device
+// connection) so that concurrent requests to the same device are serialized for
+// boot-configuration sequences that must not interleave (sendRPE, bootOptions,
+// setAMTFeatures boot-state changes, and power actions).
+const deviceLocks = new Map<object, Promise<void>>()
 
 export class DeviceAction {
   ciraHandler: CIRAHandler
@@ -116,7 +126,7 @@ export class DeviceAction {
     return result.Envelope.Body
   }
 
-  async forceBootMode(role: CIM.Types.BootService.Role = 1): Promise<number> {
+  async forceBootMode(role: CIM.Types.BootService.Role = 1): Promise<any> {
     logger.silly(`forceBootMode ${messages.REQUEST}`)
     const bootSource = 'Intel(r) AMT: Boot Configuration 0'
     const xmlRequestBody = this.cim.BootService.SetBootConfigRole(bootSource, role)
@@ -190,13 +200,181 @@ export class DeviceAction {
     return getResponse.Envelope
   }
 
-  async getPowerCapabilities(): Promise<Common.Models.Envelope<AMT.Models.BootCapabilities>> {
-    logger.silly(`getPowerCapabilities ${messages.REQUEST}`)
+  async getBootCapabilities(): Promise<Common.Models.Envelope<AMT.Models.BootCapabilities>> {
+    logger.silly(`getBootCapabilities ${messages.REQUEST}`)
     const xmlRequestBody = this.amt.BootCapabilities.Get()
     const result = await this.ciraHandler.Get<AMT.Models.BootCapabilities>(this.ciraSocket, xmlRequestBody)
-    logger.info(JSON.stringify(result))
-    logger.silly(`getPowerCapabilities ${messages.COMPLETE}`)
+    logger.silly(`getBootCapabilities ${messages.COMPLETE}`)
     return result.Envelope
+  }
+
+  // Backward-compatible alias. Prefer getBootCapabilities for new code.
+  async getPowerCapabilities(): Promise<Common.Models.Envelope<AMT.Models.BootCapabilities>> {
+    return await this.getBootCapabilities()
+  }
+
+  /**
+   * Acquires a per-device mutual-exclusion lock for the duration of `fn`.
+   * All callers for the same device (same CIRASocket) are serialized into a
+   * FIFO queue so that multi-step boot-configuration sequences cannot interleave.
+   */
+  async withDeviceLock<T>(fn: () => Promise<T>): Promise<T> {
+    const key = this.ciraSocket as object
+    // Each caller chains onto the current tail of the promise queue.
+    // `gate` is resolved only when this caller calls `release`, which unblocks
+    // the next waiter in the queue.
+    let release!: () => void
+    const gate = new Promise<void>((resolve) => { release = resolve })
+    const prev = deviceLocks.get(key) ?? Promise.resolve()
+    deviceLocks.set(key, prev.then(() => gate))
+    // Wait for all previous holders to finish before proceeding.
+    await prev
+    try {
+      return await fn()
+    } finally {
+      release()
+    }
+  }
+
+  async setRPE(isEnabled: boolean): Promise<void> {
+    logger.silly(`setRPE ${messages.REQUEST}`)
+    const bootOptions = await this.getBootOptions()
+    const current = bootOptions.AMT_BootSettingData
+    const currentAny = current as any
+    // The live RPE toggle is the boolean flag, not the erase mask. Keep the
+    // firmware's actual state fields in sync without writing stale capability data
+    // back into the boot-setting object.
+    if ('RPEEnabled' in currentAny) currentAny.RPEEnabled = isEnabled
+    if ('RPE' in currentAny) currentAny.RPE = isEnabled
+    await this.setBootConfiguration(current)
+    logger.silly(`setRPE ${messages.COMPLETE}`)
+  }
+
+  async sendRPE(eraseMask: number, ssdPassword?: string): Promise<void> {
+    await this.withDeviceLock(async () => {
+      logger.silly(`sendRPE ${messages.REQUEST}`)
+
+    // CSME sentinel bit: 0x10000 maps to ConfigurationDataReset, not a hardware erase target
+    const CSME_BIT = 0x10000
+    const wantCSMEReset = (eraseMask & CSME_BIT) !== 0
+    const tlvMask = eraseMask & ~CSME_BIT
+
+    const xmlIdleMode = this.cim.BootService.RequestStateChange(BOOT_SERVICE_STATE_BOTH_OFF)
+    const idleResult = await this.ciraHandler.Send(this.ciraSocket, xmlIdleMode)
+    if (idleResult?.Envelope?.Body?.RequestStateChange_OUTPUT?.ReturnValue !== 0) {
+      throw new Error(`sendRPE RequestStateChange(${BOOT_SERVICE_STATE_BOTH_OFF}) failed: ${JSON.stringify(idleResult?.Envelope?.Body)}`)
+    }
+
+    let bootOptions = await this.getBootOptions()
+    let current = bootOptions.AMT_BootSettingData
+    const rpeValue = (current as any).RPEEnabled ?? (current as any).RPE
+    const rpeEnabled = rpeValue === true || rpeValue === 'true' || rpeValue === 1 || rpeValue === '1'
+    if (!rpeEnabled) {
+      await this.setRPE(true)
+      bootOptions = await this.getBootOptions()
+      current = bootOptions.AMT_BootSettingData
+    }
+
+    if (wantCSMEReset && tlvMask === 0) {
+      await this.changeBootOrder()
+    }
+
+    const xmlRpeMode = this.cim.BootService.RequestStateChange(BOOT_SERVICE_STATE_RPE_ONLY)
+    const rscResult = await this.ciraHandler.Send(this.ciraSocket, xmlRpeMode)
+    if (rscResult?.Envelope?.Body?.RequestStateChange_OUTPUT?.ReturnValue !== 0) {
+      throw new Error(`sendRPE RequestStateChange(${BOOT_SERVICE_STATE_RPE_ONLY}) failed: ${JSON.stringify(rscResult?.Envelope?.Body)}`)
+    }
+
+    // Step 2: Build a strict, schema-safe payload with deterministic values.
+    // Avoid carrying mutable values from GET (for example BIOSSetup=true) that can
+    // make PUT fail validation on some firmware generations.
+    const putBody: any = {
+      InstanceID: current.InstanceID,
+      ElementName: current.ElementName,
+      OwningEntity: current.OwningEntity,
+      BIOSPause: false,
+      BIOSSetup: false,
+      BootMediaIndex: 0,
+      ConfigurationDataReset: wantCSMEReset,
+      FirmwareVerbosity: 0,
+      ForcedProgressEvents: false,
+      IDERBootDevice: 0,
+      LockKeyboard: false,
+      LockPowerButton: false,
+      LockResetButton: false,
+      LockSleepButton: false,
+      PlatformErase: tlvMask !== 0,
+      ReflashBIOS: false,
+      SecureErase: false,
+      UseIDER: false,
+      UseSOL: false,
+      UseSafeMode: false,
+      UserPasswordBypass: false
+    }
+
+    if (tlvMask !== 0) {
+      // AMT RPE expects an Intel TLV payload for erase targets.
+      // Parameter format: [vendor:0x8086][type:1][len:4][value:eraseMask]
+      const buf = Buffer.alloc(12)
+      buf.writeUInt16LE(0x8086, 0)
+      buf.writeUInt16LE(1, 2)
+      buf.writeUInt32LE(4, 4)
+      buf.writeUInt32LE(tlvMask, 8)
+      putBody.UefiBootParametersArray = buf.toString('base64')
+      putBody.UefiBootNumberOfParams = 1
+
+      if (ssdPassword != null && ssdPassword !== '') {
+        putBody.RSEPassword = ssdPassword
+      }
+    } else {
+      delete putBody.UefiBootParametersArray
+      delete putBody.UefiBootNumberOfParams
+    }
+
+    // Remove conflicting schema variants and read-only fields if present.
+    delete putBody.UEFIBootParametersArray
+    delete putBody.UEFIBootNumberOfParams
+    delete putBody.RPEEnabled
+    delete putBody.OptionsCleared
+    delete putBody.BIOSLastStatus
+
+    const xmlPut = this.amt.BootSettingData.Put(putBody as AMT.Models.BootSettingData)
+    if (process.env.MPS_RPE_LOG_REDACTED_XML != null && process.env.MPS_RPE_LOG_REDACTED_XML !== '') {
+      const redactedXml = xmlPut.replace(/(<h:RSEPassword>)([\s\S]*?)(<\/h:RSEPassword>)/g, '$1***$3')
+      logger.info(`sendRPE BootSettingData PUT XML (redacted): ${redactedXml}`)
+    }
+    const putResult = await this.ciraHandler.Send(this.ciraSocket, xmlPut)
+    if (putResult?.Envelope?.Body?.Fault) {
+      logger.error(`sendRPE BootSettingData PUT failed: ${JSON.stringify(putResult.Envelope.Body.Fault)}`)
+      throw new Error(`BootSettingData PUT failed: ${JSON.stringify(putResult.Envelope.Body.Fault)}`)
+    }
+
+    // Step 4: Activate boot configuration
+    const forceBootResult = await this.forceBootMode(1)
+    if (forceBootResult?.Envelope?.Body?.SetBootConfigRole_OUTPUT?.ReturnValue !== 0) {
+      throw new Error(`sendRPE SetBootConfigRole failed: ${JSON.stringify(forceBootResult?.Envelope?.Body)}`)
+    }
+
+    // Step 5: Determine the appropriate power action by querying live power state.
+    // Off states (aligned with Console) → Power On (2):
+    //   6  = Off - Hard
+    //   8  = Off - Soft (S5)
+    //   12 = Off - Soft Graceful
+    //   13 = Off - Hard Graceful
+    // All other states (On=2, sleeping=3/4/7, unknown/null) → Master Bus Reset (10)
+    // so that a connected system is reliably rebooted into the erase sequence.
+    const powerStateResult = await this.getPowerState()
+    const currentState = powerStateResult?.PullResponse?.Items?.CIM_AssociatedPowerManagementService?.PowerState
+    const OFF_STATES = new Set([6, 8, 12, 13])
+    const action: CIM.Types.PowerManagementService.PowerState = OFF_STATES.has(Number(currentState)) ? 2 : 10
+    logger.info(`sendRPE: dispatching power action=${action}`)
+    const powerActionResult = await this.sendPowerAction(action)
+    if (powerActionResult?.Body?.RequestPowerStateChange_OUTPUT?.ReturnValue !== 0) {
+      throw new Error(`sendRPE power action ${action} failed: ${JSON.stringify(powerActionResult?.Body)}`)
+    }
+
+      logger.silly(`sendRPE ${messages.COMPLETE}`)
+    }) // end withDeviceLock
   }
 
   async requestUserConsentCode(): Promise<Common.Models.Envelope<IPS.Models.StartOptIn_OUTPUT>> {
@@ -774,9 +952,7 @@ export class DeviceAction {
     return result?.Envelope ?? null
   }
 
-  async putWiFiPortConfigurationService(
-    data: AMT.Models.WiFiPortConfigurationService
-  ): Promise<
+  async putWiFiPortConfigurationService(data: AMT.Models.WiFiPortConfigurationService): Promise<
     | (Common.Models.Envelope<{ AMT_WiFiPortConfigurationService: AMT.Models.WiFiPortConfigurationService }> & {
         statusCode?: number
       })
