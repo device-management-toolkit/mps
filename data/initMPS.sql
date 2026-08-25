@@ -20,6 +20,9 @@ CREATE TABLE IF NOT EXISTS devices(
       lastseen timestamp with time zone,
       lastdisconnected timestamp with time zone,
       deviceinfo JSON,
+      powerstate integer,
+      ospowersavingstate integer,
+      powerstateupdatedat timestamp with time zone,
       CONSTRAINT device_guid UNIQUE(guid),
       PRIMARY KEY (guid,tenantid)
     ); 

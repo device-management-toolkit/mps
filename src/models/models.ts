@@ -22,6 +22,9 @@ export interface Device {
   lastSeen?: Date
   lastDisconnected?: Date
   deviceInfo?: DeviceInfo
+  powerState?: number
+  osPowerSavingState?: number
+  powerStateUpdatedAt?: Date
 }
 export interface DeviceInfo {
   fwVersion: string
