@@ -26,7 +26,13 @@ import {
   MIN_CIRA_WINDOW,
   MAX_CIRA_WINDOW,
   DEFAULT_MPS_CERT_KEY_SIZE,
-  ALLOWED_MPS_CERT_KEY_SIZES
+  ALLOWED_MPS_CERT_KEY_SIZES,
+  DEFAULT_POWER_STATE_REFRESH_INTERVAL,
+  MIN_POWER_STATE_REFRESH_INTERVAL,
+  MAX_POWER_STATE_REFRESH_INTERVAL,
+  DEFAULT_POWER_STATE_REFRESH_JITTER,
+  DEFAULT_POWER_STATE_MAX_CONCURRENT,
+  MAX_POWER_STATE_MAX_CONCURRENT
 } from './utils/constants.js'
 
 export async function main(): Promise<void> {
@@ -133,6 +139,20 @@ export function loadConfig(config: any): configType {
     config.cira_window_size = windowsize
   }
 
+  // power state refresh checks
+  config.power_state_refresh_interval = clampInterval(config.power_state_refresh_interval)
+  config.power_state_refresh_jitter = clampPositive(
+    config.power_state_refresh_jitter,
+    DEFAULT_POWER_STATE_REFRESH_JITTER,
+    'power_state_refresh_jitter'
+  )
+  config.power_state_max_concurrent = clampConcurrency(config.power_state_max_concurrent)
+  if (config.power_state_refresh_interval > 0 && !config.cira_last_seen) {
+    logger.warn(
+      'power_state_refresh_interval is set but cira_last_seen is false, so no keepalives are observed and power state will never refresh.'
+    )
+  }
+
   // Ensure mps_tls_config exists
   if (!config.mps_tls_config) {
     config.mps_tls_config = {}
@@ -155,6 +175,41 @@ export function loadConfig(config: any): configType {
 
   logger.silly(`Updated config... ${JSON.stringify(config, null, 2)}`)
   return config
+}
+
+// 0 disables background power state refresh entirely
+function clampInterval(value: any): number {
+  if (Number(value) === 0) return 0
+  const interval = Number(value)
+  if (
+    !Number.isInteger(interval) ||
+    interval < MIN_POWER_STATE_REFRESH_INTERVAL ||
+    interval > MAX_POWER_STATE_REFRESH_INTERVAL
+  ) {
+    logger.warn(
+      `Invalid power_state_refresh_interval "${value}", using default ${DEFAULT_POWER_STATE_REFRESH_INTERVAL}`
+    )
+    return DEFAULT_POWER_STATE_REFRESH_INTERVAL
+  }
+  return interval
+}
+
+function clampPositive(value: any, fallback: number, name: string): number {
+  const parsed = Number(value)
+  if (!Number.isInteger(parsed) || parsed < 0) {
+    logger.warn(`Invalid ${name} "${value}", using default ${fallback}`)
+    return fallback
+  }
+  return parsed
+}
+
+function clampConcurrency(value: any): number {
+  const parsed = Number(value)
+  if (!Number.isInteger(parsed) || parsed < 1 || parsed > MAX_POWER_STATE_MAX_CONCURRENT) {
+    logger.warn(`Invalid power_state_max_concurrent "${value}", using default ${DEFAULT_POWER_STATE_MAX_CONCURRENT}`)
+    return DEFAULT_POWER_STATE_MAX_CONCURRENT
+  }
+  return parsed
 }
 
 async function setupSignalHandling(db: IDB): Promise<void> {

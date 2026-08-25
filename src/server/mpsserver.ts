@@ -33,6 +33,7 @@ import { type ISecretManagerService } from '../interfaces/ISecretManagerService.
 import { ConnectedDevice } from '../amt/ConnectedDevice.js'
 import { MqttProvider } from '../utils/MqttProvider.js'
 import { CIRA_MAX_IDLE_TIME } from '../utils/constants.js'
+import { PowerStateRefresher } from '../amt/PowerStateRefresher.js'
 
 const devices: Record<string, ConnectedDevice> = {}
 
@@ -43,11 +44,13 @@ export class MPSServer {
   events: EventEmitter
   db: IDB
   secrets: ISecretManagerService
+  powerStateRefresher: PowerStateRefresher
   constructor(certs: certificatesType, db: IDB, secrets: ISecretManagerService) {
     this.certs = certs
     this.db = db
     this.secrets = secrets
     this.events = new EventEmitter()
+    this.powerStateRefresher = new PowerStateRefresher(db)
 
     APFProcessor.APFEvents.on('userAuthRequest', this.onVerifyUserAuth.bind(this))
     APFProcessor.APFEvents.on('protocolVersion', this.onAPFProtocolVersion.bind(this))
@@ -101,6 +104,11 @@ export class MPSServer {
   onAPFKeepAliveRequest = async (nodeId: string): Promise<void> => {
     try {
       await this.handleLastSeenUpdate(nodeId)
+    } catch (e) {
+      logger.error(e)
+    }
+    try {
+      await this.powerStateRefresher.maybeRefresh(nodeId, devices[nodeId])
     } catch (e) {
       logger.error(e)
     }
@@ -249,6 +257,7 @@ export class MPSServer {
   async handleDeviceDisconnect(guid: string): Promise<void> {
     if (devices[guid]) {
       delete devices[guid]
+      this.powerStateRefresher.onDisconnect(guid)
       const device: Device = await this.db.devices.getById(guid)
       if (device != null) {
         device.connectionStatus = false
@@ -270,6 +279,7 @@ export class MPSServer {
     device.mpsInstance = Environment.Config.instance_name
     device.lastConnected = new Date()
     const results = await this.db.devices.update(device)
+    this.powerStateRefresher.onConnect(guid)
     if (results) {
       MqttProvider.publishEvent('success', ['CIRA_Connected'], messages.MPS_CIRA_CONNECTION_ESTABLISHED, guid)
       logger.debug(`${messages.MPS_CIRA_CONNECTION_ESTABLISHED} for ${guid}`)

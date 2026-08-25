@@ -119,6 +119,25 @@ describe('MPS Server', function () {
     await mps.onAPFKeepAliveRequest('123')
     expect(lastSeenUpdateSpy).toHaveBeenCalledWith('123')
   })
+  it('should offer the device to the power state refresher on keepalive', async () => {
+    const refreshSpy = vi.spyOn(mps.powerStateRefresher, 'maybeRefresh').mockResolvedValue(true)
+    devices['123'] = { ciraSocket: { tag: { id: 'ABC123XYZ', nodeid: '123' } } } as any
+    await mps.onAPFKeepAliveRequest('123')
+    expect(refreshSpy).toHaveBeenCalledWith('123', devices['123'])
+  })
+  it('should still update last seen when the power state refresh throws', async () => {
+    const lastSeenUpdateSpy = vi.spyOn(mps, 'handleLastSeenUpdate')
+    vi.spyOn(mps.powerStateRefresher, 'maybeRefresh').mockRejectedValue(new Error('refresh blew up'))
+    devices['123'] = { ciraSocket: { tag: { id: 'ABC123XYZ', nodeid: '123' } } } as any
+    await mps.onAPFKeepAliveRequest('123')
+    expect(lastSeenUpdateSpy).toHaveBeenCalledWith('123')
+  })
+  it('should drop refresher state when a device disconnects', async () => {
+    const onDisconnectSpy = vi.spyOn(mps.powerStateRefresher, 'onDisconnect')
+    devices['123'] = { ciraSocket: { tag: { id: 'ABC123XYZ', nodeid: '123' } } } as any
+    await mps.handleDeviceDisconnect('123')
+    expect(onDisconnectSpy).toHaveBeenCalledWith('123')
+  })
   it('should allow device to connect if exists in db', async () => {
     await mps.onAPFProtocolVersion(socket)
     expect(deviceSpy).toHaveBeenCalledWith('123')
