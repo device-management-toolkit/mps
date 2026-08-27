@@ -1,3 +1,10 @@
+# [2.35.0](https://github.com/device-management-toolkit/mps/compare/v2.34.2...v2.35.0) (2026-08-27)
+
+
+### Features
+
+* Remote Platform Erase capability ([#2407](https://github.com/device-management-toolkit/mps/issues/2407)) ([1dba7d5](https://github.com/device-management-toolkit/mps/commit/1dba7d50c31333ed1c209cba790a7686d8b7e33b))
+
 ## [2.34.2](https://github.com/device-management-toolkit/mps/compare/v2.34.1...v2.34.2) (2026-08-26)
 
 ## [2.34.1](https://github.com/device-management-toolkit/mps/compare/v2.34.0...v2.34.1) (2026-07-28)
