@@ -8,10 +8,10 @@ FROM node:lts-bullseye-slim@sha256:f7818cba7c85740e6f9dd31553636131d01e9992fb7d1
 
 WORKDIR /mps
 
-COPY package*.json ./
+COPY package*.json .npmrc ./
 
 # Install dependencies
-RUN npm ci --unsafe-perm
+RUN npm ci --ignore-scripts
 
 COPY tsconfig.json tsconfig.build.json ./
 COPY src ./src/
