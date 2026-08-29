@@ -67,7 +67,10 @@ describe('device tests', () => {
       tenantid as "tenantId",
       friendlyname as "friendlyName",
       dnssuffix as "dnsSuffix",
-      deviceinfo as "deviceInfo"
+      deviceinfo as "deviceInfo",
+      powerstate as "powerState",
+      ospowersavingstate as "osPowerSavingState",
+      powerstateupdatedat as "powerStateUpdatedAt"
     FROM devices
     WHERE tenantid = $3 
     ORDER BY guid 
@@ -105,7 +108,10 @@ describe('device tests', () => {
       tenantid as "tenantId",
       friendlyname as "friendlyName",
       dnssuffix as "dnsSuffix",
-      deviceinfo as "deviceInfo"
+      deviceinfo as "deviceInfo",
+      powerstate as "powerState",
+      ospowersavingstate as "osPowerSavingState",
+      powerstateupdatedat as "powerStateUpdatedAt"
     FROM devices
     WHERE tenantid = $3 
     ORDER BY guid 
@@ -139,7 +145,10 @@ describe('device tests', () => {
       lastconnected as "lastConnected",
       lastseen as "lastSeen",
       lastdisconnected as "lastDisconnected",
-      deviceinfo as "deviceInfo"
+      deviceinfo as "deviceInfo",
+      powerstate as "powerState",
+      ospowersavingstate as "osPowerSavingState",
+      powerstateupdatedat as "powerStateUpdatedAt"
       FROM devices 
       WHERE guid = $1`,
       ['4c4c4544-004b-4210-8033-b6c04f504633']
@@ -202,7 +211,10 @@ describe('device tests', () => {
     lastconnected as "lastConnected",
     lastseen as "lastSeen",
     lastdisconnected as "lastDisconnected",
-    deviceinfo as "deviceInfo"
+    deviceinfo as "deviceInfo",
+    powerstate as "powerState",
+    ospowersavingstate as "osPowerSavingState",
+    powerstateupdatedat as "powerStateUpdatedAt"
     FROM devices 
     WHERE guid = $1 and tenantid = $2`,
       ['4c4c4544-004b-4210-8033-b6c04f504633', 'tenantId']
@@ -235,7 +247,10 @@ describe('device tests', () => {
       tenantid as "tenantId",
       friendlyname as "friendlyName",
       dnssuffix as "dnsSuffix",
-      deviceinfo as "deviceInfo"
+      deviceinfo as "deviceInfo",
+      powerstate as "powerState",
+      ospowersavingstate as "osPowerSavingState",
+      powerstateupdatedat as "powerStateUpdatedAt"
     FROM devices 
     WHERE hostname = $1 and tenantid = $2`,
       ['hostname', 'tenantId']
@@ -259,7 +274,10 @@ describe('device tests', () => {
       tenantid as "tenantId",
       friendlyname as "friendlyName",
       dnssuffix as "dnsSuffix",
-      deviceinfo as "deviceInfo"
+      deviceinfo as "deviceInfo",
+      powerstate as "powerState",
+      ospowersavingstate as "osPowerSavingState",
+      powerstateupdatedat as "powerStateUpdatedAt"
     FROM devices 
     WHERE hostname = $1 and tenantid = $2`,
       ['hostname', '']
@@ -317,7 +335,10 @@ describe('device tests', () => {
         tenantid as "tenantId",
         friendlyname as "friendlyName",
         dnssuffix as "dnsSuffix",
-        deviceinfo as "deviceInfo"
+        deviceinfo as "deviceInfo",
+        powerstate as "powerState",
+        ospowersavingstate as "osPowerSavingState",
+        powerstateupdatedat as "powerStateUpdatedAt"
       FROM devices 
       WHERE tags @> $1 and tenantId = $4
       ORDER BY guid 
@@ -357,7 +378,10 @@ describe('device tests', () => {
         tenantid as "tenantId",
         friendlyname as "friendlyName",
         dnssuffix as "dnsSuffix",
-        deviceinfo as "deviceInfo"
+        deviceinfo as "deviceInfo",
+        powerstate as "powerState",
+        ospowersavingstate as "osPowerSavingState",
+        powerstateupdatedat as "powerStateUpdatedAt"
       FROM devices 
       WHERE tags && $1 and tenantId = $4
       ORDER BY guid 
@@ -669,6 +693,71 @@ describe('device tests', () => {
       mpsError = error
     }
     expect(mpsError).toBeInstanceOf(MPSValidationError)
+  })
+
+  test('should leave the power state columns alone when updating a device', async () => {
+    // both writers of this row must keep disjoint SET lists or one clobbers the other
+    querySpy.mockResolvedValueOnce({ rows: [], command: '', fields: null, rowCount: 1, oid: 0 })
+    querySpy.mockResolvedValueOnce({ rows: [{}], command: '', fields: null, rowCount: 1, oid: 0 })
+    await deviceTable.update({ guid: '4c4c4544-004b-4210-8033-b6c04f504633', tenantId: '' } as Device)
+    const sql = querySpy.mock.calls[0][0]
+    expect(sql).toContain('UPDATE devices')
+    expect(sql).not.toContain('powerstate')
+    expect(sql).not.toContain('ospowersavingstate')
+    expect(sql).not.toContain('powerstateupdatedat')
+  })
+
+  test('should get true when power state is updated', async () => {
+    const updatedAt = new Date('2026-08-25T17:00:00.000Z')
+    querySpy.mockResolvedValueOnce({ rows: [], command: '', fields: null, rowCount: 1, oid: 0 })
+    const result = await deviceTable.updatePowerState(
+      '4c4c4544-004b-4210-8033-b6c04f504633',
+      4,
+      2,
+      updatedAt,
+      'tenantId'
+    )
+    expect(result).toBe(true)
+    expect(querySpy).toHaveBeenCalledTimes(1)
+    expect(querySpy).toHaveBeenCalledWith(
+      `
+      UPDATE devices 
+      SET powerstate=$2, ospowersavingstate=$3, powerstateupdatedat=$4
+      WHERE guid=$1 and tenantid = $5`,
+      [
+        '4c4c4544-004b-4210-8033-b6c04f504633',
+        4,
+        2,
+        updatedAt,
+        'tenantId'
+      ]
+    )
+  })
+
+  test('should default to an empty tenantId when the power state update omits it', async () => {
+    const updatedAt = new Date('2026-08-25T17:00:00.000Z')
+    querySpy.mockResolvedValueOnce({ rows: [], command: '', fields: null, rowCount: 1, oid: 0 })
+    await deviceTable.updatePowerState('4c4c4544-004b-4210-8033-b6c04f504633', 4, 2, updatedAt)
+    expect(querySpy).toHaveBeenCalledWith(expect.any(String), [
+      '4c4c4544-004b-4210-8033-b6c04f504633',
+      4,
+      2,
+      updatedAt,
+      ''
+    ])
+  })
+
+  test('should get false when no device matches the power state update', async () => {
+    querySpy.mockResolvedValueOnce({ rows: [], command: '', fields: null, rowCount: 0, oid: 0 })
+    const result = await deviceTable.updatePowerState('4c4c4544-004b-4210-8033-b6c04f504633', 4, 2, new Date())
+    expect(result).toBe(false)
+  })
+
+  test('should reject when the power state update fails so the caller can back off', async () => {
+    querySpy.mockRejectedValueOnce(new Error('db is down'))
+    await expect(
+      deviceTable.updatePowerState('4c4c4544-004b-4210-8033-b6c04f504633', 4, 2, new Date())
+    ).rejects.toThrow('db is down')
   })
 
   test('should get true when device connection status update', async () => {
