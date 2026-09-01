@@ -84,18 +84,25 @@ jobs:
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@db488ddef3bf6cb639b32c2e9a7c0a7ea8271d28 # v4.37.8
       - name: Generate Security Report
-        uses: rsdmike/github-security-report-action@1df22b1e0a7e15b32f728ccf7bab259e46c80589 # v4.0.1
-        continue-on-error: true
+        id: security_report
+        # SECURITY_TOKEN is not available to fork PRs or Dependabot runs; an empty token fails the step.
+        if: >-
+          github.actor != 'dependabot[bot]' &&
+          (github.event_name != 'pull_request' ||
+          github.event.pull_request.head.repo.full_name == github.repository)
+        uses: rsdmike/github-security-report-action@a3d8cc051bc89f1b622d396adab901aa73857a29 # v4.1.0
         with:
           template: report
           token: ${{ secrets.SECURITY_TOKEN }}
       - name: Rename Report
+        if: steps.security_report.outcome == 'success'
         shell: bash
         continue-on-error: true
         run: |
           DATE=$(date +"%Y-%m-%d")
           mv "report.pdf" "mps-security-report-$DATE.pdf"
       - name: GitHub Upload Release Artifacts
+        if: steps.security_report.outcome == 'success'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         continue-on-error: true
         with:
