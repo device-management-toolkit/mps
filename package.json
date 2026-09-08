@@ -80,5 +80,8 @@
   },
   "optionalDependencies": {
     "fsevents": "^2.3.3"
+  },
+  "overrides": {
+    "qs": "^6.16.0"
   }
 }
