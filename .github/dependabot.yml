@@ -5,6 +5,13 @@ updates:
     directory: '/'
     schedule:
       interval: 'daily'
+    # vitest and @vitest/* release in lockstep and declare exact peers on each
+    # other; one PR instead of a split that cannot install.
+    groups:
+      vitest:
+        patterns:
+          - 'vitest'
+          - '@vitest/*'
 
   - package-ecosystem: github-actions
     directory: /
