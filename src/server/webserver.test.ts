@@ -297,7 +297,7 @@ describe('webserver tests', () => {
       const listenSpy = vi.spyOn(web.server, 'listen')
       Environment.Config.web_port = null
       web.listen()
-      expect(listenSpy).toHaveBeenCalledTimes(2)
+      expect(listenSpy).toHaveBeenCalledTimes(1)
       web.server.close()
     })
   })
@@ -343,7 +343,7 @@ describe('webserver tests', () => {
       const err = new SyntaxError()
       const appUseJsonParserSpy = vi.spyOn(web, 'appUseJsonParser')
       web.appUseJsonParser(err, req as any, res as any, vi.fn())
-      expect(appUseJsonParserSpy).toHaveBeenCalledTimes(2)
+      expect(appUseJsonParserSpy).toHaveBeenCalledTimes(1)
     })
   })
 
@@ -408,7 +408,7 @@ describe('webserver tests', () => {
       }
       const afterResponseSpy = vi.spyOn(web, 'afterResponse')
       web.afterResponse(req as any, res as any)
-      expect(afterResponseSpy).toHaveBeenCalledTimes(2)
+      expect(afterResponseSpy).toHaveBeenCalledTimes(1)
     })
     it('test onAborted calls afterResponse', () => {
       const req: Express.Request = {
@@ -425,7 +425,7 @@ describe('webserver tests', () => {
       }
       const afterResponseSpy = vi.spyOn(web, 'afterResponse')
       web.onAborted(req as any, res as any)
-      expect(afterResponseSpy).toHaveBeenCalledTimes(3)
+      expect(afterResponseSpy).toHaveBeenCalledTimes(1)
     })
   })
 
