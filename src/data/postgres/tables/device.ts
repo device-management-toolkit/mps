@@ -48,7 +48,10 @@ export class DeviceTable implements IDeviceTable {
       tenantid as "tenantId",
       friendlyname as "friendlyName",
       dnssuffix as "dnsSuffix",
-      deviceinfo as "deviceInfo"
+      deviceinfo as "deviceInfo",
+      powerstate as "powerState",
+      ospowersavingstate as "osPowerSavingState",
+      powerstateupdatedat as "powerStateUpdatedAt"
     FROM devices
     WHERE tenantid = $3 
     ORDER BY guid 
@@ -100,7 +103,10 @@ export class DeviceTable implements IDeviceTable {
     lastconnected as "lastConnected",
     lastseen as "lastSeen",
     lastdisconnected as "lastDisconnected",
-    deviceinfo as "deviceInfo"
+    deviceinfo as "deviceInfo",
+    powerstate as "powerState",
+    ospowersavingstate as "osPowerSavingState",
+    powerstateupdatedat as "powerStateUpdatedAt"
     FROM devices 
     WHERE guid = $1 and tenantid = $2`
     let params = [id, tenantId]
@@ -118,7 +124,10 @@ export class DeviceTable implements IDeviceTable {
       lastconnected as "lastConnected",
       lastseen as "lastSeen",
       lastdisconnected as "lastDisconnected",
-      deviceinfo as "deviceInfo"
+      deviceinfo as "deviceInfo",
+      powerstate as "powerState",
+      ospowersavingstate as "osPowerSavingState",
+      powerstateupdatedat as "powerStateUpdatedAt"
       FROM devices 
       WHERE guid = $1`
       params = [id]
@@ -140,7 +149,10 @@ export class DeviceTable implements IDeviceTable {
       tenantid as "tenantId",
       friendlyname as "friendlyName",
       dnssuffix as "dnsSuffix",
-      deviceinfo as "deviceInfo"
+      deviceinfo as "deviceInfo",
+      powerstate as "powerState",
+      ospowersavingstate as "osPowerSavingState",
+      powerstateupdatedat as "powerStateUpdatedAt"
     FROM devices 
     WHERE ${columnName} = $1 and tenantid = $2`,
       [queryValue, tenantId]
@@ -178,7 +190,10 @@ export class DeviceTable implements IDeviceTable {
         tenantid as "tenantId",
         friendlyname as "friendlyName",
         dnssuffix as "dnsSuffix",
-        deviceinfo as "deviceInfo"
+        deviceinfo as "deviceInfo",
+        powerstate as "powerState",
+        ospowersavingstate as "osPowerSavingState",
+        powerstateupdatedat as "powerStateUpdatedAt"
       FROM devices 
       WHERE tags @> $1 and tenantId = $4
       ORDER BY guid 
@@ -204,7 +219,10 @@ export class DeviceTable implements IDeviceTable {
         tenantid as "tenantId",
         friendlyname as "friendlyName",
         dnssuffix as "dnsSuffix",
-        deviceinfo as "deviceInfo"
+        deviceinfo as "deviceInfo",
+        powerstate as "powerState",
+        ospowersavingstate as "osPowerSavingState",
+        powerstateupdatedat as "powerStateUpdatedAt"
       FROM devices 
       WHERE tags && $1 and tenantId = $4
       ORDER BY guid 
@@ -305,6 +323,38 @@ export class DeviceTable implements IDeviceTable {
       logger.error(`${messages.DATABASE_UPDATE_FAILED}: ${device.guid}`, error)
       throw new MPSValidationError(`Failed to update device: ${device.guid}, error: ${error}`, 500)
     }
+  }
+
+  /**
+   * @description Update the cached power state for a device
+   * @param {string} guid
+   * @param {number} powerState DMTF power state value read from the device
+   * @param {number} osPowerSavingState OS power saving state read from the device
+   * @param {Date} updatedAt time the power state was read
+   * @param {string} [tenantId] tenant the device belongs to
+   * @returns {boolean} Return true when a device row matched and was updated
+   */
+  async updatePowerState(
+    guid: string,
+    powerState: number,
+    osPowerSavingState: number,
+    updatedAt: Date,
+    tenantId = ''
+  ): Promise<boolean> {
+    const results = await this.db.query(
+      `
+      UPDATE devices 
+      SET powerstate=$2, ospowersavingstate=$3, powerstateupdatedat=$4
+      WHERE guid=$1 and tenantid = $5`,
+      [
+        guid,
+        powerState,
+        osPowerSavingState,
+        updatedAt,
+        tenantId
+      ]
+    )
+    return results.rowCount > 0
   }
 
   /**

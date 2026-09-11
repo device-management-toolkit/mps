@@ -22,6 +22,7 @@ describe('MongoDeviceTable', () => {
       insertOne: vi.fn(),
       findOneAndUpdate: vi.fn(),
       distinct: vi.fn(),
+      updateOne: vi.fn(),
       updateMany: vi.fn()
     } as any
 
@@ -154,6 +155,47 @@ describe('MongoDeviceTable', () => {
     const result = await mongoDeviceTable.getByHostname('someHostname', 'someTenantId')
 
     expect(result).toEqual(mockData)
+  })
+
+  it('should update the power state for a device', async () => {
+    const updatedAt = new Date('2026-08-25T17:00:00.000Z')
+    collection.updateOne.mockResolvedValue({ matchedCount: 1 } as any)
+
+    const result = await mongoDeviceTable.updatePowerState('someGuid', 4, 2, updatedAt, 'someTenantId')
+
+    expect(result).toBe(true)
+    expect(collection.updateOne).toHaveBeenCalledWith(
+      { guid: 'someGuid', tenantId: 'someTenantId' },
+      { $set: { powerState: 4, osPowerSavingState: 2, powerStateUpdatedAt: updatedAt } }
+    )
+  })
+
+  it('should default to an empty tenantId when the power state update omits it', async () => {
+    const updatedAt = new Date('2026-08-25T17:00:00.000Z')
+    collection.updateOne.mockResolvedValue({ matchedCount: 1 } as any)
+
+    await mongoDeviceTable.updatePowerState('someGuid', 4, 2, updatedAt)
+
+    expect(collection.updateOne).toHaveBeenCalledWith(
+      { guid: 'someGuid', tenantId: '' },
+      { $set: { powerState: 4, osPowerSavingState: 2, powerStateUpdatedAt: updatedAt } }
+    )
+  })
+
+  it('should return false when no device matches the power state update', async () => {
+    collection.updateOne.mockResolvedValue({ matchedCount: 0 } as any)
+
+    const result = await mongoDeviceTable.updatePowerState('someGuid', 4, 2, new Date(), 'someTenantId')
+
+    expect(result).toBe(false)
+  })
+
+  it('should reject when the power state update fails so the caller can back off', async () => {
+    collection.updateOne.mockRejectedValue(new Error('mongo is down'))
+
+    await expect(mongoDeviceTable.updatePowerState('someGuid', 4, 2, new Date(), 'someTenantId')).rejects.toThrow(
+      'mongo is down'
+    )
   })
 
   it('should clear instance status', async () => {

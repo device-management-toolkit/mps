@@ -49,6 +49,40 @@ describe('update', () => {
     expect(endSpy).toHaveBeenCalled()
   })
 
+  it('should not let the request body overwrite server-owned power state fields', async () => {
+    const updatedAt = new Date('2026-08-25T17:00:00.000Z')
+    const stored = {
+      guid,
+      friendlyName: 'before',
+      powerState: 4,
+      osPowerSavingState: 2,
+      powerStateUpdatedAt: updatedAt
+    } as any
+    const updateFn = vi.fn().mockReturnValue(stored)
+    const req = {
+      db: {
+        devices: {
+          getById: vi.fn().mockReturnValue(stored),
+          update: updateFn
+        }
+      },
+      body: {
+        guid,
+        friendlyName: 'after',
+        powerState: 2,
+        osPowerSavingState: 0,
+        powerStateUpdatedAt: new Date('2000-01-01T00:00:00.000Z')
+      }
+    }
+    await updateDevice(req as any, res as any)
+    const persisted = updateFn.mock.calls[0][0]
+    expect(persisted.friendlyName).toBe('after')
+    expect(persisted.powerState).toBe(4)
+    expect(persisted.osPowerSavingState).toBe(2)
+    expect(persisted.powerStateUpdatedAt).toBe(updatedAt)
+    expect(statusSpy).toHaveBeenCalledWith(200)
+  })
+
   it('should set status to 200 if getById gets a result', async () => {
     const device = {} as any
 

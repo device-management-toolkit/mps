@@ -96,6 +96,21 @@ export class MongoDeviceTable implements IDeviceTable {
     return this.collection.find({ hostname, tenantId }).toArray() as unknown as WithId<Device>[]
   }
 
+  async updatePowerState(
+    guid: string,
+    powerState: number,
+    osPowerSavingState: number,
+    updatedAt: Date,
+    tenantId = ''
+  ): Promise<boolean> {
+    const result = await this.collection.updateOne(
+      { guid, tenantId },
+      { $set: { powerState, osPowerSavingState, powerStateUpdatedAt: updatedAt } }
+    )
+    // matchedCount, not modifiedCount: re-writing an unchanged power state is a successful no-op
+    return result.matchedCount > 0
+  }
+
   async clearInstanceStatus(mpsInstance: string): Promise<boolean> {
     const result = await this.collection.updateMany(
       { mpsInstance },
