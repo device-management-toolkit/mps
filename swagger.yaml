@@ -3932,6 +3932,23 @@ components:
         lastDisconnected:
           type: string
           format: date-time
+        powerState:
+          type: integer
+          readOnly: true
+          description: Last known AMT power state, cached by MPS from
+            CIM_AssociatedPowerManagementService PowerState. Server-owned - ignored
+            if supplied in a create or update request body.
+        osPowerSavingState:
+          type: integer
+          readOnly: true
+          description: Last known OS power saving state, cached by MPS from
+            IPS_PowerManagementService OSPowerSavingState. Server-owned - ignored
+            if supplied in a create or update request body.
+        powerStateUpdatedAt:
+          type: string
+          format: date-time
+          readOnly: true
+          description: When the cached power state values were last refreshed.
         deviceInfo:
           type: object
           properties:
@@ -4051,6 +4068,23 @@ components:
         lastDisconnected:
           type: string
           format: date-time
+        powerState:
+          type: integer
+          readOnly: true
+          description: Last known AMT power state, cached by MPS from
+            CIM_AssociatedPowerManagementService PowerState. Server-owned - ignored
+            if supplied in a create or update request body.
+        osPowerSavingState:
+          type: integer
+          readOnly: true
+          description: Last known OS power saving state, cached by MPS from
+            IPS_PowerManagementService OSPowerSavingState. Server-owned - ignored
+            if supplied in a create or update request body.
+        powerStateUpdatedAt:
+          type: string
+          format: date-time
+          readOnly: true
+          description: When the cached power state values were last refreshed.
         deviceInfo:
           type: object
           properties:
