@@ -78,6 +78,8 @@ export class PowerStateRefresher {
     this.state.set(guid, entry)
     try {
       const reading = await this.limiter.schedule(async () => await this.read(device))
+      // A completion from an old connection must not update the cache.
+      if (this.state.get(guid) !== entry) return false
       await this.db.devices.updatePowerState(
         guid,
         reading.powerState,
@@ -96,7 +98,6 @@ export class PowerStateRefresher {
       return false
     } finally {
       entry.inFlight = false
-      this.state.set(guid, entry)
     }
   }
 

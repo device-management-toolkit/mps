@@ -167,6 +167,53 @@ describe('PowerStateRefresher', () => {
     expect(refresher.state.has(guid)).toBe(false)
   })
 
+  it.each([false, true])('should discard an old refresh after disconnect (reconnect: %s)', async (reconnect) => {
+    let release: (value: { powerState: number; osPowerSavingState: number }) => void
+    const reading = new Promise<{ powerState: number; osPowerSavingState: number }>((resolve) => {
+      release = resolve
+    })
+    vi.spyOn(refresher, 'read').mockReturnValue(reading)
+    const pending = refresher.maybeRefresh(guid, device)
+
+    refresher.onDisconnect(guid)
+    if (reconnect) {
+      Environment.Config.power_state_refresh_jitter = 60
+      vi.spyOn(Math, 'random').mockReturnValue(0.5)
+      refresher.onConnect(guid)
+    }
+    const newEntry = refresher.state.get(guid)
+    const snapshot = newEntry == null ? undefined : { ...newEntry }
+    release({ powerState: 4, osPowerSavingState: 0 })
+
+    expect(await pending).toBe(false)
+    expect(updatePowerStateSpy).not.toHaveBeenCalled()
+    expect(refresher.state.get(guid)).toBe(newEntry)
+    expect(refresher.state.get(guid)).toEqual(snapshot)
+  })
+
+  it('should not restore disconnected state when an old refresh fails', async () => {
+    let reject: (error: Error) => void
+    const reading = new Promise<{ powerState: number; osPowerSavingState: number }>((resolve, fail) => {
+      reject = fail
+    })
+    let markStarted: () => void
+    const started = new Promise<void>((resolve) => {
+      markStarted = resolve
+    })
+    vi.spyOn(refresher, 'read').mockImplementation(() => {
+      markStarted()
+      return reading
+    })
+    const pending = refresher.maybeRefresh(guid, device)
+    await started
+    refresher.onDisconnect(guid)
+    reject(new Error('old connection closed'))
+
+    expect(await pending).toBe(false)
+    expect(refresher.state.has(guid)).toBe(false)
+    expect(updatePowerStateSpy).not.toHaveBeenCalled()
+  })
+
   describe('read', () => {
     const pullResponse = (powerState: any): any => ({
       PullResponse: { Items: { CIM_AssociatedPowerManagementService: { PowerState: powerState } } }
