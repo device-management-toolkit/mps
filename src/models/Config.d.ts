@@ -48,6 +48,9 @@ export interface configType {
   consul_port: string
   consul_key_prefix: string
   cira_last_seen: boolean
+  power_state_refresh_interval: number
+  power_state_refresh_jitter: number
+  power_state_max_concurrent: number
   timeout_ms_default: string
   cira_window_size: number
   mps_cert_key_size?: number
