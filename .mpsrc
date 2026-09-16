@@ -61,6 +61,9 @@
   "consul_port": "8500",
   "consul_key_prefix": "MPS",
   "cira_last_seen": true,
+  "power_state_refresh_interval": 300,
+  "power_state_refresh_jitter": 60,
+  "power_state_max_concurrent": 20,
   "timeout_ms_default": "10000",
   "cira_window_size": 81920
 }
