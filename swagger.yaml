@@ -1,6 +1,6 @@
 ﻿openapi: 3.0.3
 info:
-  version: 2.22.3
+  version: 2.35.1
   title: Management Presence Server (MPS) API
   license:
     name: Apache 2.0
