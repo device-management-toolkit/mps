@@ -488,6 +488,27 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/PowerStateResponse'
+        400:
+          description: 'Device answered without a power state'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        404:
+          description: 'Device not connected, or connected but did not answer within the request timeout'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: 'Device not found/connected. Please connect again using CIRA.'
+                errorDescription: 'Exception during Power State request'
+        500:
+          description: 'Internal server error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
   /api/v1/amt/power/capabilities/{guid}:
     get:
       summary: Return Available Power Actions

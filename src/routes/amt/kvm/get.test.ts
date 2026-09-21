@@ -42,17 +42,19 @@ describe('getScreenSettingData', () => {
     await getScreenSettingData(req, res)
     expect(statusSpy).toHaveBeenCalledWith(404)
     expect(jsonSpy).toHaveBeenCalledWith({
-      error: expect.objectContaining({
-        alarm: expect.any(String),
-        device: expect.any(String),
-        method: expect.any(String),
-        noMethod: expect.any(String),
-        payload: expect.any(String),
-        guid: expect.any(String),
-        action: expect.any(String),
-        invalidGuid: expect.any(String)
-      }),
+      error: 'Not Found',
       errorDescription: 'KVM Screen Setting Data not found'
+    })
+  })
+
+  it('should return 404 and error response if no KVM redirection data', async () => {
+    req.deviceAction.getScreenSettingData.mockResolvedValue({ IPS_ScreenSettingDataItems: [] })
+    req.deviceAction.getKVMRedirectionSettingData.mockResolvedValue(null)
+    await getScreenSettingData(req, res)
+    expect(statusSpy).toHaveBeenCalledWith(404)
+    expect(jsonSpy).toHaveBeenCalledWith({
+      error: 'Not Found',
+      errorDescription: 'KVM Redirection Setting Data not found'
     })
   })
 

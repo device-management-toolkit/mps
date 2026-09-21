@@ -45,7 +45,7 @@ export async function powerState(req: Request, res: Response): Promise<void> {
     MqttProvider.publishEvent('fail', ['AMT_PowerState'], messages.INTERNAL_SERVICE_ERROR)
 
     if (error instanceof TimeoutError) {
-      res.status(404).json(ErrorResponse(404, messages.POWER_STATE_EXCEPTION))
+      res.status(404).json(ErrorResponse(404, messages.POWER_STATE_EXCEPTION, 'device'))
     } else {
       res.status(500).json(ErrorResponse(500, messages.POWER_STATE_EXCEPTION))
     }

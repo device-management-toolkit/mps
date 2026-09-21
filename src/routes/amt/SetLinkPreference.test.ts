@@ -98,7 +98,7 @@ describe('Link Preference', () => {
     const errMsg = `Set Link Preference failed: No WiFi port found for guid : ${guid}.`
 
     expect(resSpy.status).toHaveBeenCalledWith(404)
-    expect(resSpy.json).toHaveBeenCalledWith(ErrorResponse(404, `${errMsg} for guid : ${guid}.`))
+    expect(resSpy.json).toHaveBeenCalledWith({ error: 'Not Found', errorDescription: `${errMsg} for guid : ${guid}.` })
     expect(mqttSpy).toHaveBeenCalledWith('fail', ['AMT_LinkPreference'], errMsg)
   })
 
