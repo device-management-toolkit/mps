@@ -219,6 +219,144 @@ describe('getCertificates', () => {
   })
 })
 
+describe('reissueServerCertificateIfUndersized', () => {
+  // Earlier describes leave spies on forge.pki (vitest clearAllMocks keeps
+  // implementations), and these tests need real key generation and PEM encoding.
+  beforeEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  const config3072 = {
+    common_name: 'mps.example.com',
+    country: 'US',
+    organization: 'TestOrg',
+    mps_tls_config: { minVersion: 'TLSv1.2', mps_cert_key_size: 3072 }
+  }
+
+  /** A stored secret as an older deployment would have left it: 2048-bit leaf. */
+  const storedCertificates = (keySize: 2048 | 3072): certificatesType => {
+    const subject = new Certificates(config3072 as any, secrets)
+    const root: certAndKeyType = subject.GenerateRootCertificate(true, 'MPSRoot', null, null, true)
+    const leaf: certAndKeyType = subject.IssueWebServerCertificate(
+      root,
+      false,
+      'mps.example.com',
+      'US',
+      'TestOrg',
+      null,
+      keySize === 3072
+    )
+    const leafPem = forge.pki.certificateToPem(leaf.cert)
+    return {
+      mps_tls_config: {
+        cert: leafPem,
+        key: forge.pki.privateKeyToPem(leaf.key),
+        minVersion: 'TLSv1.2',
+        requestCert: true,
+        rejectUnauthorized: false,
+        ciphers: 'TLS_AES_256_GCM_SHA384'
+      },
+      web_tls_config: {
+        ca: forge.pki.certificateToPem(root.cert),
+        cert: leafPem,
+        key: forge.pki.privateKeyToPem(leaf.key)
+      },
+      root_key: forge.pki.privateKeyToPem(root.key)
+    }
+  }
+
+  it('reissues the server certificate at the configured size under the existing root', () => {
+    const stored = storedCertificates(2048)
+    const subject = new Certificates(config3072 as any, secrets)
+
+    const result = subject.reissueServerCertificateIfUndersized(stored)
+
+    expect(result).not.toBeNull()
+    expect(subject.getCertificateKeySize(result.mps_tls_config.cert)).toBe(3072)
+    // The root is what devices trust; it must survive untouched.
+    expect(result.web_tls_config.ca).toBe(stored.web_tls_config.ca)
+    expect(result.root_key).toBe(stored.root_key)
+    // And the new leaf must actually chain to it.
+    const root = forge.pki.certificateFromPem(stored.web_tls_config.ca as string)
+    const reissued = forge.pki.certificateFromPem(result.mps_tls_config.cert)
+    expect(root.verify(reissued)).toBe(true)
+  })
+
+  it('keeps the rest of the TLS configuration and matches the web server key', () => {
+    const stored = storedCertificates(2048)
+    const subject = new Certificates(config3072 as any, secrets)
+
+    const result = subject.reissueServerCertificateIfUndersized(stored)
+
+    expect(result.mps_tls_config.ciphers).toBe('TLS_AES_256_GCM_SHA384')
+    expect(result.mps_tls_config.minVersion).toBe('TLSv1.2')
+    expect(result.mps_tls_config.cert).not.toBe(stored.mps_tls_config.cert)
+    expect(result.web_tls_config.cert).toBe(result.mps_tls_config.cert)
+    expect(result.web_tls_config.key).toBe(result.mps_tls_config.key)
+  })
+
+  it('does nothing when the stored certificate already meets the configured size', () => {
+    const subject = new Certificates(config3072 as any, secrets)
+    expect(subject.reissueServerCertificateIfUndersized(storedCertificates(3072))).toBeNull()
+  })
+
+  it('does nothing when the configuration does not ask for a larger key', () => {
+    const stored = storedCertificates(2048)
+    const config2048 = { ...config3072, mps_tls_config: { minVersion: 'TLSv1.2', mps_cert_key_size: 2048 } }
+    expect(new Certificates(config2048 as any, secrets).reissueServerCertificateIfUndersized(stored)).toBeNull()
+  })
+
+  it('refuses to reissue without the stored root key rather than minting a new root', () => {
+    const stored = storedCertificates(2048)
+    delete stored.root_key
+    const subject = new Certificates(config3072 as any, secrets)
+    expect(subject.reissueServerCertificateIfUndersized(stored)).toBeNull()
+  })
+
+  it('reissues even when the root is smaller than the configured size', () => {
+    const subject = new Certificates(config3072 as any, secrets)
+    const weakRoot: certAndKeyType = subject.GenerateRootCertificate(true, 'MPSRoot', null, null, false)
+    const leaf: certAndKeyType = subject.IssueWebServerCertificate(
+      weakRoot,
+      false,
+      'mps.example.com',
+      'US',
+      'TestOrg',
+      null,
+      false
+    )
+    const stored: certificatesType = {
+      mps_tls_config: { cert: forge.pki.certificateToPem(leaf.cert) } as any,
+      web_tls_config: { ca: forge.pki.certificateToPem(weakRoot.cert) } as any,
+      root_key: forge.pki.privateKeyToPem(weakRoot.key)
+    }
+
+    const result = subject.reissueServerCertificateIfUndersized(stored)
+
+    expect(subject.getCertificateKeySize(result.mps_tls_config.cert)).toBe(3072)
+  })
+
+  it('leaves unreadable stored certificates alone', () => {
+    const subject = new Certificates(config3072 as any, secrets)
+    expect(subject.getCertificateKeySize('not a certificate')).toBeNull()
+    expect(subject.getCertificateKeySize(undefined)).toBeNull()
+    expect(subject.reissueServerCertificateIfUndersized({ mps_tls_config: { cert: 'garbage' } } as any)).toBeNull()
+  })
+
+  it('is applied and persisted by getCertificates', async () => {
+    const stored = storedCertificates(2048)
+    const subject = new Certificates(config3072 as any, secrets)
+    const getSpy = vi.spyOn(secrets, 'getMPSCerts').mockResolvedValue(stored as any)
+    const storeSpy = vi.spyOn(subject, 'storeCertificates').mockResolvedValue(undefined)
+
+    const result = await subject.getCertificates()
+
+    expect(getSpy).toHaveBeenCalled()
+    expect(subject.getCertificateKeySize(result.mps_tls_config.cert)).toBe(3072)
+    expect(storeSpy).toHaveBeenCalledWith(result)
+  })
+})
+
 describe('storeCertificates', () => {
   it('should store certificates', async () => {
     const certificatesData: certificatesType = {
