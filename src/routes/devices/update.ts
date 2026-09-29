@@ -17,7 +17,9 @@ export async function updateDevice(req: Request, res: Response): Promise<void> {
         .json({ error: 'NOT FOUND', message: `Device ID ${guid} not found` })
         .end()
     } else {
-      device = { ...device, ...req.body }
+      // power state is server-owned, so it never comes from the request body
+      const { powerState, osPowerSavingState, powerStateUpdatedAt, ...updatable } = req.body
+      device = { ...device, ...updatable }
       const results = await req.db.devices.update(device)
       res.status(200).json(results).end()
     }
