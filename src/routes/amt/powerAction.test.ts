@@ -24,11 +24,14 @@ describe('Power Capabilities', () => {
   let setBootConfigurationSpy: MockInstance
   let osPowerStateChangeSpy: MockInstance
   let osPowerStateGetSpy: MockInstance
+  let powerStateSpy: MockInstance
+  let updatePowerStateSpy: MockInstance
   let device: DeviceAction
 
   beforeEach(() => {
     const handler = new CIRAHandler(new HttpHandler(), 'admin', 'P@ssw0rd')
     device = new DeviceAction(handler, null)
+    updatePowerStateSpy = vi.fn().mockResolvedValue(true)
     req = {
       params: {
         guid: '123456'
@@ -36,7 +39,9 @@ describe('Power Capabilities', () => {
       body: {
         action: 8
       },
-      deviceAction: device
+      deviceAction: device,
+      db: { devices: { updatePowerState: updatePowerStateSpy } },
+      tenantId: ''
     }
     resSpy = createSpyObj('Response', [
       'status',
@@ -54,15 +59,20 @@ describe('Power Capabilities', () => {
 
     osPowerStateGetSpy = vi.spyOn(device, 'getOSPowerSavingState').mockResolvedValue({
       Body: {
-        CreationClassName: 'IPS_PowerManagementService',
-        ElementName: 'Intel(r) AMT Power Management Service',
-        EnabledState: '5',
-        Name: 'Intel(r) AMT Power Management Service',
-        OSPowerSavingState: '3',
-        RequestedState: '12',
-        SystemCreationClassName: 'CIM_ComputerSystem',
-        SystemName: 'Intel(r) AMT'
+        IPS_PowerManagementService: {
+          CreationClassName: 'IPS_PowerManagementService',
+          ElementName: 'Intel(r) AMT Power Management Service',
+          EnabledState: '5',
+          Name: 'Intel(r) AMT Power Management Service',
+          OSPowerSavingState: '3',
+          RequestedState: '12',
+          SystemCreationClassName: 'CIM_ComputerSystem',
+          SystemName: 'Intel(r) AMT'
+        }
       }
+    } as any)
+    powerStateSpy = vi.spyOn(device, 'getPowerState').mockResolvedValue({
+      PullResponse: { Items: { CIM_AssociatedPowerManagementService: { PowerState: '8' } } }
     } as any)
     osPowerActionFromDevice = { Body: { RequestOSPowerSavingStateChange_OUTPUT: { ReturnValue: 0 } } }
     osPowerStateChangeSpy = vi
@@ -84,6 +94,16 @@ describe('Power Capabilities', () => {
     expect(resSpy.json).toHaveBeenCalledWith(expectedResponse)
     expect(resSpy.end).toHaveBeenCalled()
     expect(mqttSpy).toHaveBeenCalled()
+    expect(powerStateSpy).toHaveBeenCalled()
+    expect(updatePowerStateSpy).toHaveBeenCalledWith('123456', 8, 3, expect.any(Date), '')
+  })
+
+  it('Should still respond when the cache refresh after the action fails', async () => {
+    vi.spyOn(device, 'sendPowerAction').mockResolvedValue(powerActionFromDevice)
+    powerStateSpy.mockRejectedValueOnce(new Error('read failed'))
+    await powerAction(req as any, resSpy)
+    expect(resSpy.status).toHaveBeenCalledWith(200)
+    expect(updatePowerStateSpy).not.toHaveBeenCalled()
   })
 
   it('Should send power action with unknown error', async () => {
@@ -105,6 +125,7 @@ describe('Power Capabilities', () => {
     expect(resSpy.json).toHaveBeenCalledWith(expectedResponse)
     expect(resSpy.end).toHaveBeenCalled()
     expect(mqttSpy).toHaveBeenCalled()
+    expect(updatePowerStateSpy).not.toHaveBeenCalled()
   })
 
   it('Should handle error', async () => {
@@ -126,7 +147,9 @@ describe('Power Capabilities', () => {
       body: {
         action: 500
       },
-      deviceAction: device
+      deviceAction: device,
+      db: { devices: { updatePowerState: updatePowerStateSpy } },
+      tenantId: ''
     }
 
     const expectedResponse = {
@@ -148,6 +171,7 @@ describe('Power Capabilities', () => {
     expect(resSpy.status).toHaveBeenCalledWith(200)
     expect(resSpy.json).toHaveBeenCalledWith(expectedResponse)
     expect(resSpy.end).toHaveBeenCalled()
+    expect(updatePowerStateSpy).toHaveBeenCalledWith('123456', 8, 3, expect.any(Date), '')
   })
 
   it('Should send OS Power Action (501 - From OS Full Power to OS Power Saving Mode)', async () => {
@@ -158,7 +182,9 @@ describe('Power Capabilities', () => {
       body: {
         action: 501
       },
-      deviceAction: device
+      deviceAction: device,
+      db: { devices: { updatePowerState: updatePowerStateSpy } },
+      tenantId: ''
     }
 
     const expectedResponse = {
@@ -177,5 +203,6 @@ describe('Power Capabilities', () => {
     expect(resSpy.status).toHaveBeenCalledWith(200)
     expect(resSpy.json).toHaveBeenCalledWith(expectedResponse)
     expect(resSpy.end).toHaveBeenCalled()
+    expect(updatePowerStateSpy).toHaveBeenCalledWith('123456', 8, 2, expect.any(Date), '')
   })
 })

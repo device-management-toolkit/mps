@@ -9,6 +9,7 @@ import { logger, messages } from '../../logging/index.js'
 import { ErrorResponse } from '../../utils/amtHelper.js'
 import { AMTStatusCodes, DMTFPowerStates, OSPowerSavingStateStatusCodes } from '../../utils/constants.js'
 import { MqttProvider } from '../../utils/MqttProvider.js'
+import { refreshCachedPowerState } from '../../utils/powerStateCache.js'
 
 const UNKNOWN: IPS.Types.PowerManagementService.OSPowerSavingState = 0
 const UNSUPPORTED: IPS.Types.PowerManagementService.OSPowerSavingState = 1
@@ -57,6 +58,9 @@ export async function powerAction(req: Request, res: Response): Promise<void> {
     powerAction.Body = powerAction.Body.RequestPowerStateChange_OUTPUT
     MqttProvider.publishEvent('success', ['AMT_PowerAction'], messages.POWER_ACTION_REQUESTED)
     res.status(200).json(powerAction).end()
+    if (powerAction.Body.ReturnValue === 0) {
+      await refreshCachedPowerState(req, req.params.guid)
+    }
   } catch (error) {
     logger.error(`${messages.POWER_ACTION_EXCEPTION} : ${error}`)
     MqttProvider.publishEvent('fail', ['AMT_PowerAction'], messages.INTERNAL_SERVICE_ERROR)
@@ -136,6 +140,7 @@ async function handleOSPowerSavingStateChange(req: Request, res: Response, actio
 
   if (returnValue === 0) {
     sendOSPowerResponse(res, 0, OSPowerSavingStateStatusCodesToString(0))
+    await refreshCachedPowerState(req, req.params.guid)
   } else {
     logger.error(messages.OS_POWER_SAVING_STATE_CHANGE_FAILED)
     const result = returnValue || -1

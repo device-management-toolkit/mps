@@ -475,6 +475,14 @@ export const MAX_CIRA_WINDOW = 1 * 1024 * 1024 // 1048576 (1 MB)
 export const CIRA_KEEPALIVE_INTERVAL = 30 // 30 seconds is typical keepalive interval for AMT CIRA connection
 export const CIRA_MAX_IDLE_TIME = 90 // 90 seconds max idle time, higher than the typical CIRA_KEEPALIVE_INTERVAL of 30 seconds
 
+// Power state refresh constants
+export const DEFAULT_POWER_STATE_REFRESH_INTERVAL = 300 // 5 minutes between power state reads for a device
+export const MIN_POWER_STATE_REFRESH_INTERVAL = 30 // never poll faster than the CIRA keepalive interval
+export const MAX_POWER_STATE_REFRESH_INTERVAL = 86400 // 24 hours
+export const DEFAULT_POWER_STATE_REFRESH_JITTER = 60 // spread the first read after connect over 60 seconds
+export const DEFAULT_POWER_STATE_MAX_CONCURRENT = 20 // process wide cap on background power state reads
+export const MAX_POWER_STATE_MAX_CONCURRENT = 500 // upper bound to keep background reads off the CIRA path
+
 // Certificate key size constants
 export const DEFAULT_MPS_CERT_KEY_SIZE = 2048 // Default 2048-bit for backward compatibility
 export const ALLOWED_MPS_CERT_KEY_SIZES = [2048, 3072] // Supported key sizes
