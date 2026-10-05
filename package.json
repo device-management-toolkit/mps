@@ -55,7 +55,7 @@
     "pg": "^8.23.0",
     "rc": "^1.2.8",
     "winston": "^3.19.0",
-    "ws": "^8.21.3",
+    "ws": "^8.22.0",
     "xml2js": "^0.6.2"
   },
   "devDependencies": {
@@ -75,7 +75,7 @@
     "prettier-plugin-multiline-arrays": "^4.1.11",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.3",
-    "typescript-eslint": "8.70.1",
+    "typescript-eslint": "8.71.0",
     "vitest": "^5.0.0"
   },
   "optionalDependencies": {
