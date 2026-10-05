@@ -49,7 +49,7 @@
     "got": "^16.0.0",
     "http-z": "7.0.0",
     "jws": "^4.0.1",
-    "mongodb": "^7.6.0",
+    "mongodb": "^7.7.0",
     "mqtt": "^5.16.0",
     "node-forge": "^1.4.0",
     "pg": "^8.23.0",
@@ -75,7 +75,7 @@
     "prettier-plugin-multiline-arrays": "^4.1.11",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.3",
-    "typescript-eslint": "8.70.1",
+    "typescript-eslint": "8.71.0",
     "vitest": "^5.0.0"
   },
   "optionalDependencies": {
