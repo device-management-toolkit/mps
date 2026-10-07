@@ -115,10 +115,40 @@ describe('MPS Server', function () {
     expect(emitSpy).toHaveBeenCalledWith('disconnected', '123')
   })
   it('should handle onAPFKeepAliveRequest', async () => {
+    Environment.Config = { cira_last_seen: true } as any
     const lastSeenUpdateSpy = vi.spyOn(mps, 'handleLastSeenUpdate')
     devices['123'] = { ciraSocket: { tag: { id: 'ABC123XYZ', nodeid: '123' } } } as any
     await mps.onAPFKeepAliveRequest('123')
     expect(lastSeenUpdateSpy).toHaveBeenCalledWith('123')
+  })
+  it('should offer the device to the power state refresher on keepalive', async () => {
+    const refreshSpy = vi.spyOn(mps.powerStateRefresher, 'maybeRefresh').mockResolvedValue(true)
+    devices['123'] = { ciraSocket: { tag: { id: 'ABC123XYZ', nodeid: '123' } } } as any
+    await mps.onAPFKeepAliveRequest('123')
+    expect(refreshSpy).toHaveBeenCalledWith('123', devices['123'])
+  })
+  it('should still update last seen when the power state refresh throws', async () => {
+    Environment.Config = { cira_last_seen: true } as any
+    const lastSeenUpdateSpy = vi.spyOn(mps, 'handleLastSeenUpdate')
+    vi.spyOn(mps.powerStateRefresher, 'maybeRefresh').mockRejectedValue(new Error('refresh blew up'))
+    devices['123'] = { ciraSocket: { tag: { id: 'ABC123XYZ', nodeid: '123' } } } as any
+    await mps.onAPFKeepAliveRequest('123')
+    expect(lastSeenUpdateSpy).toHaveBeenCalledWith('123')
+  })
+  it('should skip the last seen update but still offer the device to the refresher when cira_last_seen is off', async () => {
+    Environment.Config = { cira_last_seen: false } as any
+    const lastSeenUpdateSpy = vi.spyOn(mps, 'handleLastSeenUpdate')
+    const refreshSpy = vi.spyOn(mps.powerStateRefresher, 'maybeRefresh').mockResolvedValue(true)
+    devices['123'] = { ciraSocket: { tag: { id: 'ABC123XYZ', nodeid: '123' } } } as any
+    await mps.onAPFKeepAliveRequest('123')
+    expect(lastSeenUpdateSpy).not.toHaveBeenCalled()
+    expect(refreshSpy).toHaveBeenCalledWith('123', devices['123'])
+  })
+  it('should drop refresher state when a device disconnects', async () => {
+    const onDisconnectSpy = vi.spyOn(mps.powerStateRefresher, 'onDisconnect')
+    devices['123'] = { ciraSocket: { tag: { id: 'ABC123XYZ', nodeid: '123' } } } as any
+    await mps.handleDeviceDisconnect('123')
+    expect(onDisconnectSpy).toHaveBeenCalledWith('123')
   })
   it('should allow device to connect if exists in db', async () => {
     await mps.onAPFProtocolVersion(socket)
