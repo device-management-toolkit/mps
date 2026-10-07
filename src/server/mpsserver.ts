@@ -64,6 +64,15 @@ export class MPSServer {
   }
 
   listen(): void {
+    // Log the TLS posture this listener was built with, omitting the cert and key material themselves.
+    const { cert, key, ...tlsConfig } = this.certs.mps_tls_config
+    logger.debug(
+      `MPS TLS listener on port ${Environment.Config.port}: ${JSON.stringify({
+        ...tlsConfig,
+        certPresent: cert != null && cert.length > 0,
+        keyPresent: key != null && key.length > 0
+      })}`
+    )
     this.server.listen(Environment.Config.port, this.listeningListener)
   }
 
@@ -138,6 +147,9 @@ export class MPSServer {
 
   onTLSConnection = (socket: TLSSocket): void => {
     logger.debug(messages.MPS_NEW_TLS_CONNECTION) // New TLS connection detected
+    // Whether the device sent an SNI server_name extension. `servername` is string |
+    // false | null, so treat anything falsy as absent.
+    logger.debug(`CIRA TLS connection: sni=${!socket.servername ? 'none' : socket.servername}`)
     ;(socket as CIRASocket).tag = {
       id: randomBytes(16).toString('hex'),
       first: true,
