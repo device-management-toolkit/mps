@@ -9,7 +9,6 @@ import Common from '../utils/common.js'
 import { type CIRASocket } from '../models/models.js'
 import { type CIRAChannel } from './CIRAChannel.js'
 import { EventEmitter } from 'node:events'
-import { Environment } from '../utils/Environment.js'
 import { CIRA_KEEPALIVE_INTERVAL, MAX_CIRA_WINDOW } from '../utils/constants.js'
 
 export enum APFProtocol {
@@ -435,9 +434,7 @@ const APFProcessor = {
     if (length < 5) {
       return 0
     }
-    if (Environment.Config.cira_last_seen) {
-      APFProcessor.APFEvents.emit('keepAliveRequest', socket.tag.nodeid)
-    }
+    APFProcessor.APFEvents.emit('keepAliveRequest', socket.tag.nodeid)
     logger.verbose(`${messages.MPS_KEEPALIVE_REQUEST}: ${socket.tag.nodeid}`)
     APFProcessor.SendKeepAliveReply(socket, Common.ReadInt(data, 1))
     return 5

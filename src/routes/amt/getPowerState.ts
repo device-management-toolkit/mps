@@ -8,12 +8,15 @@ import { logger, messages } from '../../logging/index.js'
 import { ErrorResponse } from '../../utils/amtHelper.js'
 import { MqttProvider } from '../../utils/MqttProvider.js'
 import { operationWithTimeout, TIMEOUT_MS_DEFAULT, TimeoutError } from '../../utils/timeoutOpManagement.js'
+import { cachePowerState } from '../../utils/powerStateCache.js'
 
 export async function powerState(req: Request, res: Response): Promise<void> {
   try {
     const guid: string = req.params.guid
     let osPowerSavingState = 0
     MqttProvider.publishEvent('request', ['AMT_PowerState'], messages.POWER_STATE_GET_REQUESTED, guid)
+    // timestamp for the cached value, same convention as the refresher
+    const readStartedAt = new Date()
 
     try {
       logger.info(messages.OS_POWER_SAVING_STATE_GET_REQUESTED)
@@ -31,10 +34,12 @@ export async function powerState(req: Request, res: Response): Promise<void> {
     const response = await operationWithTimeout(req.deviceAction.getPowerState(), TIMEOUT_MS_DEFAULT)
 
     if (response?.PullResponse?.Items?.CIM_AssociatedPowerManagementService?.PowerState) {
+      const rawPowerState = response.PullResponse.Items.CIM_AssociatedPowerManagementService.PowerState
       res.status(200).send({
-        powerstate: response.PullResponse.Items.CIM_AssociatedPowerManagementService.PowerState,
+        powerstate: rawPowerState,
         OSPowerSavingState: osPowerSavingState
       })
+      await cachePowerState(req, guid, Number(rawPowerState), Number(osPowerSavingState), readStartedAt)
     } else {
       MqttProvider.publishEvent('fail', ['AMT_PowerState'], messages.POWER_STATE_REQUEST_FAILED, guid)
       logger.error(`${messages.POWER_STATE_REQUEST_FAILED} for guid : ${guid}.`)
@@ -51,3 +56,4 @@ export async function powerState(req: Request, res: Response): Promise<void> {
     }
   }
 }
+
