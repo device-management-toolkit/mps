@@ -64,14 +64,17 @@ export class MPSServer {
   }
 
   listen(): void {
-    // Log the TLS posture this listener was built with, omitting the cert and key material themselves.
-    const { cert, key, ...tlsConfig } = this.certs.mps_tls_config
+    const { cert, key, minVersion, ciphers, requestCert, rejectUnauthorized } = this.certs.mps_tls_config
+    const minimumProtocol =
+      minVersion === 'TLSv1' ? 'TLS 1.0' : minVersion != null ? minVersion.replace('TLSv', 'TLS ') : 'Node default'
+    const cipherPolicy = ciphers?.includes('HIGH') ? 'HIGH-strength cipher preset' : 'custom cipher list'
+    const securityLevel = ciphers?.match(/@SECLEVEL=(\d+)/)?.[1]
+    const clientCertificate = requestCert
+      ? `requested (verification ${rejectUnauthorized ? 'enabled' : 'disabled'})`
+      : 'not requested'
+
     logger.debug(
-      `MPS TLS listener on port ${Environment.Config.port}: ${JSON.stringify({
-        ...tlsConfig,
-        certPresent: cert != null && cert.length > 0,
-        keyPresent: key != null && key.length > 0
-      })}`
+      `MPS TLS listener configuration: port=${Environment.Config.port}, minimumProtocol=${minimumProtocol}, cipherPolicy=${cipherPolicy}, ${securityLevel != null ? `OpenSSL security level=${securityLevel}${securityLevel === '0' ? ' (legacy compatibility)' : ''}, ` : ''}clientCertificate=${clientCertificate}, serverCertificate=${cert != null && cert.length > 0 ? 'present' : 'missing'}, privateKey=${key != null && key.length > 0 ? 'present' : 'missing'}`
     )
     this.server.listen(Environment.Config.port, this.listeningListener)
   }

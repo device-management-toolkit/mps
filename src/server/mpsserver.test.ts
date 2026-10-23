@@ -98,6 +98,25 @@ describe('MPS Server', function () {
     mps.listen()
     expect(listenSpy).toHaveBeenCalledWith(3000, mps.listeningListener)
   })
+  it('should log a readable summary of the MPS TLS listener configuration', () => {
+    certs.mps_tls_config = {
+      cert: 'server-certificate',
+      key: 'private-key',
+      minVersion: 'TLSv1',
+      ciphers: 'HIGH:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!SRP:!CAMELLIA:@SECLEVEL=0',
+      requestCert: true,
+      rejectUnauthorized: false
+    } as any
+    const debugSpy = vi.spyOn(logger, 'debug')
+    vi.spyOn(mps.server, 'listen').mockReturnValue(null)
+    Environment.Config = { port: 4433 } as any
+
+    mps.listen()
+
+    expect(debugSpy).toHaveBeenCalledWith(
+      'MPS TLS listener configuration: port=4433, minimumProtocol=TLS 1.0, cipherPolicy=HIGH-strength cipher preset, OpenSSL security level=0 (legacy compatibility), clientCertificate=requested (verification disabled), serverCertificate=present, privateKey=present'
+    )
+  })
   it('should log what port the server is listening on', () => {
     const infoSpy = vi.spyOn(logger, 'info')
     Environment.Config = { common_name: 'localhost', port: 3000 } as any
