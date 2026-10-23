@@ -117,6 +117,17 @@ describe('MPS Server', function () {
       'MPS TLS listener configuration: port=4433, minimumProtocol=TLS 1.0, cipherPolicy=HIGH-strength cipher preset, OpenSSL security level=0 (legacy compatibility), clientCertificate=requested (verification disabled), serverCertificate=present, privateKey=present'
     )
   })
+  it('should log the key size of the MPS server and root certificates at info level', () => {
+    certs.mps_tls_config = { cert: 'server-certificate' } as any
+    certs.web_tls_config = { ca: 'root-certificate' } as any
+    const infoSpy = vi.spyOn(logger, 'info')
+    vi.spyOn(mps.server, 'listen').mockReturnValue(null)
+    Environment.Config = { port: 4433 } as any
+
+    mps.listen()
+
+    expect(infoSpy).toHaveBeenCalledWith('MPS server certificate key: unknown, root certificate key: unknown')
+  })
   it('should log what port the server is listening on', () => {
     const infoSpy = vi.spyOn(logger, 'info')
     Environment.Config = { common_name: 'localhost', port: 3000 } as any
@@ -207,6 +218,35 @@ describe('MPS Server', function () {
     expect(devices['123']).toBeUndefined()
     expect(deviceConnectSpy).not.toHaveBeenCalledWith('123')
     expect(sendUserAuthFailSpy).toHaveBeenCalledWith(socket)
+  })
+  it('should log the device address and the key size in use for a CIRA connection', () => {
+    vi.spyOn(mps, 'addHandlers').mockReturnValue(null)
+    certs.mps_tls_config = { cert: 'server-certificate' } as any
+    const infoSpy = vi.spyOn(logger, 'info')
+    Object.assign(socket, {
+      remoteAddress: '10.1.2.3',
+      remotePort: 16992,
+      remoteFamily: 'IPv4',
+      getProtocol: () => 'TLSv1.2',
+      getCipher: () => ({ name: 'AES128-GCM-SHA256' })
+    })
+    delete socket.tag
+    mps.onTLSConnection(socket)
+    expect(infoSpy).toHaveBeenCalledWith(
+      'CIRA connection from 10.1.2.3:16992 (IPv4): server certificate key=unknown, protocol=TLSv1.2, cipher=AES128-GCM-SHA256'
+    )
+  })
+  it('should log a CIRA TLS handshake that the device rejects, with the key size offered', () => {
+    certs.mps_tls_config = { cert: 'server-certificate' } as any
+    const warnSpy = vi.spyOn(logger, 'warn')
+    const err = Object.assign(new Error('sslv3 alert certificate unknown'), {
+      code: 'ERR_SSL_SSLV3_ALERT_CERTIFICATE_UNKNOWN'
+    })
+    mps.server.emit('tlsClientError', err, { remoteAddress: '10.1.2.3', remotePort: 16992, remoteFamily: 'IPv4' })
+    expect(warnSpy).toHaveBeenCalledWith(
+      'CIRA TLS handshake failed from 10.1.2.3:16992 (IPv4): server certificate key=unknown, ' +
+        'code=ERR_SSL_SSLV3_ALERT_CERTIFICATE_UNKNOWN, reason=sslv3 alert certificate unknown'
+    )
   })
   it('should connect with TLS', () => {
     const addHandlersSpy = vi.spyOn(mps, 'addHandlers').mockReturnValue(null)

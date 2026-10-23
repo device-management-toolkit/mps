@@ -20,8 +20,24 @@ import {
   type configType
 } from '../models/Config.js'
 import forge from 'node-forge'
+import { X509Certificate } from 'node:crypto'
 import { type ISecretManagerService } from '../interfaces/ISecretManagerService.js'
 import { DEFAULT_MPS_CERT_KEY_SIZE } from './constants.js'
+
+/** Human-readable public key of a PEM certificate, e.g. `RSA-4096` or `EC-secp384r1`; `unknown` if unreadable. */
+export function describeCertificateKey(certificate: string | Buffer | (string | Buffer)[] | undefined): string {
+  // A TLS `ca` entry may be a list; the first is the one reported.
+  const pem = Array.isArray(certificate) ? certificate[0] : certificate
+  if (pem == null || pem.length === 0) return 'unknown'
+  try {
+    const { asymmetricKeyType, asymmetricKeyDetails } = new X509Certificate(pem).publicKey
+    if (asymmetricKeyType === 'rsa') return `RSA-${asymmetricKeyDetails?.modulusLength ?? 'unknown'}`
+    if (asymmetricKeyType === 'ec') return `EC-${asymmetricKeyDetails?.namedCurve ?? 'unknown'}`
+    return asymmetricKeyType ?? 'unknown'
+  } catch {
+    return 'unknown'
+  }
+}
 
 export class Certificates {
   constructor(

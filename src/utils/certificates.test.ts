@@ -4,7 +4,7 @@
  **********************************************************************/
 
 import { vi, type MockInstance } from 'vitest'
-import { Certificates } from './certificates.js'
+import { Certificates, describeCertificateKey } from './certificates.js'
 import { type certAndKeyType, type certificatesType } from '../models/Config.js'
 import forge from 'node-forge'
 import { type ISecretManagerService } from '../interfaces/ISecretManagerService.js'
@@ -508,5 +508,42 @@ describe('IssueWebServerCertificate', () => {
     )
     expect(result.cert).toBeTruthy()
     expect(result.key).toBeTruthy()
+  })
+})
+
+describe('describeCertificateKey', () => {
+  // Earlier describes leave spies on forge.pki; this one needs real PEM encoding.
+  beforeEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  const selfSignedPem = (bits: number): string => {
+    const keys = forge.pki.rsa.generateKeyPair(bits)
+    const cert = forge.pki.createCertificate()
+    cert.publicKey = keys.publicKey
+    cert.serialNumber = '01'
+    cert.validity.notBefore = new Date()
+    cert.validity.notAfter = new Date(Date.now() + 86400000)
+    cert.setSubject([{ name: 'commonName', value: 'test' }])
+    cert.setIssuer([{ name: 'commonName', value: 'test' }])
+    cert.sign(keys.privateKey)
+    return forge.pki.certificateToPem(cert)
+  }
+
+  it('reports the RSA modulus size of a certificate', () => {
+    expect(describeCertificateKey(selfSignedPem(1024))).toBe('RSA-1024')
+  })
+
+  it('reports the first certificate of a list', () => {
+    expect(describeCertificateKey([selfSignedPem(1024)])).toBe('RSA-1024')
+  })
+
+  it.each([
+    undefined,
+    '',
+    'not a certificate',
+    []
+  ])('returns unknown for %j', (input) => {
+    expect(describeCertificateKey(input as any)).toBe('unknown')
   })
 })

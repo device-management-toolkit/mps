@@ -33,6 +33,7 @@ import { type ISecretManagerService } from '../interfaces/ISecretManagerService.
 import { ConnectedDevice } from '../amt/ConnectedDevice.js'
 import { MqttProvider } from '../utils/MqttProvider.js'
 import { CIRA_MAX_IDLE_TIME } from '../utils/constants.js'
+import { describeCertificateKey } from '../utils/certificates.js'
 
 const devices: Record<string, ConnectedDevice> = {}
 
@@ -61,6 +62,10 @@ export class MPSServer {
       logger.error(`${messages.PORT_NOT_AVAILABLE} : ${Environment.Config.port}`)
       if (err) logger.error(JSON.stringify(err))
     })
+
+    // A device that rejects the server certificate aborts the handshake, so onTLSConnection never
+    // runs for it. Log the attempt here, with the key size that was offered.
+    this.server.on('tlsClientError', this.onTLSClientError)
   }
 
   listen(): void {
@@ -75,6 +80,11 @@ export class MPSServer {
 
     logger.debug(
       `MPS TLS listener configuration: port=${Environment.Config.port}, minimumProtocol=${minimumProtocol}, cipherPolicy=${cipherPolicy}, ${securityLevel != null ? `OpenSSL security level=${securityLevel}${securityLevel === '0' ? ' (legacy compatibility)' : ''}, ` : ''}clientCertificate=${clientCertificate}, serverCertificate=${cert != null && cert.length > 0 ? 'present' : 'missing'}, privateKey=${key != null && key.length > 0 ? 'present' : 'missing'}`
+    )
+    const rootCertificate = this.certs.web_tls_config?.ca
+    logger.info(
+      `MPS server certificate key: ${describeCertificateKey(cert)}` +
+        (rootCertificate != null ? `, root certificate key: ${describeCertificateKey(rootCertificate)}` : '')
     )
     this.server.listen(Environment.Config.port, this.listeningListener)
   }
@@ -148,11 +158,24 @@ export class MPSServer {
     }
   }
 
+  onTLSClientError = (err: NodeJS.ErrnoException, socket: TLSSocket): void => {
+    logger.warn(
+      `CIRA TLS handshake failed from ${socket?.remoteAddress}:${socket?.remotePort} (${socket?.remoteFamily}): ` +
+        `server certificate key=${describeCertificateKey(this.certs.mps_tls_config.cert)}, ` +
+        `${err.code != null ? `code=${err.code}, ` : ''}reason=${err.message}`
+    )
+  }
+
   onTLSConnection = (socket: TLSSocket): void => {
     logger.debug(messages.MPS_NEW_TLS_CONNECTION) // New TLS connection detected
     // Whether the device sent an SNI server_name extension. `servername` is string |
     // false | null, so treat anything falsy as absent.
     logger.debug(`CIRA TLS connection: sni=${!socket.servername ? 'none' : socket.servername}`)
+    logger.info(
+      `CIRA connection from ${socket.remoteAddress}:${socket.remotePort} (${socket.remoteFamily}): ` +
+        `server certificate key=${describeCertificateKey(this.certs.mps_tls_config.cert)}, ` +
+        `protocol=${socket.getProtocol?.() ?? 'unknown'}, cipher=${socket.getCipher?.()?.name ?? 'unknown'}`
+    )
     ;(socket as CIRASocket).tag = {
       id: randomBytes(16).toString('hex'),
       first: true,
