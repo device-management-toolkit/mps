@@ -55,7 +55,7 @@ export class Certificates {
       await this.storeCertificates(generated)
       return generated
     }
-    const reissued = this.reissueServerCertificateIfUndersized(certificates)
+    const reissued = this.reissueServerCertificateIfSizeDiffers(certificates)
     if (reissued != null) {
       await this.storeCertificates(reissued)
       return reissued
@@ -64,11 +64,11 @@ export class Certificates {
   }
 
   /**
-   * Raise the stored server certificate to the configured key size *without*
-   * minting a new root.
+   * Bring the stored server certificate to the configured key size, up or down,
+   * *without* minting a new root.
    *
    * `mps_cert_key_size` only took effect on first start, because `getCertificates`
-   * returns the cached secret untouched once it exists. Raising it afterwards had
+   * returns the cached secret untouched once it exists. Changing it afterwards had
    * no effect, and the obvious remedy — clearing the secret so
    * `generateCertificates` runs again — is destructive: that path also mints a new
    * root, and every provisioned device holds the old root in its AMT trusted-root
@@ -83,13 +83,13 @@ export class Certificates {
    * the TLS handshake — a deployment that first started on the 2048-bit default
    * cannot complete CIRA until its server certificate is reissued at 3072 bits.
    *
-   * Returns null when nothing needs to change, or when the reissue cannot be done
+   * Returns null when the stored size already matches, or when the reissue cannot be done
    * safely; startup is never blocked on it.
    */
-  reissueServerCertificateIfUndersized(certificates: certificatesType): certificatesType | null {
+  reissueServerCertificateIfSizeDiffers(certificates: certificatesType): certificatesType | null {
     const desiredKeySize = this.config.mps_tls_config?.mps_cert_key_size ?? DEFAULT_MPS_CERT_KEY_SIZE
     const currentKeySize = this.getCertificateKeySize(certificates.mps_tls_config?.cert)
-    if (currentKeySize == null || currentKeySize >= desiredKeySize) {
+    if (currentKeySize == null || currentKeySize === desiredKeySize) {
       return null
     }
 

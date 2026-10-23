@@ -247,7 +247,7 @@ describe('getCertificates', () => {
   })
 })
 
-describe('reissueServerCertificateIfUndersized', () => {
+describe('reissueServerCertificateIfSizeDiffers', () => {
   // Earlier describes leave spies on forge.pki (vitest clearAllMocks keeps
   // implementations), and these tests need real key generation and PEM encoding.
   beforeEach(() => {
@@ -297,7 +297,7 @@ describe('reissueServerCertificateIfUndersized', () => {
     const stored = storedCertificates(2048)
     const subject = new Certificates(config3072 as any, secrets)
 
-    const result = subject.reissueServerCertificateIfUndersized(stored)
+    const result = subject.reissueServerCertificateIfSizeDiffers(stored)
 
     expect(result).not.toBeNull()
     expect(subject.getCertificateKeySize(result.mps_tls_config.cert)).toBe(3072)
@@ -314,7 +314,7 @@ describe('reissueServerCertificateIfUndersized', () => {
     const stored = storedCertificates(2048)
     const subject = new Certificates(config3072 as any, secrets)
 
-    const result = subject.reissueServerCertificateIfUndersized(stored)
+    const result = subject.reissueServerCertificateIfSizeDiffers(stored)
 
     expect(result.mps_tls_config.ciphers).toBe('TLS_AES_256_GCM_SHA384')
     expect(result.mps_tls_config.minVersion).toBe('TLSv1.2')
@@ -334,7 +334,7 @@ describe('reissueServerCertificateIfUndersized', () => {
     } as any
     const issueSpy = vi.spyOn(subject, 'IssueWebServerCertificate').mockReturnValue(leaf)
 
-    const result = subject.reissueServerCertificateIfUndersized(stored)
+    const result = subject.reissueServerCertificateIfSizeDiffers(stored)
 
     expect(result).not.toBeNull()
     expect(issueSpy).toHaveBeenCalledWith(expect.anything(), false, 'mps.example.com', 'US', 'TestOrg', null, 4096)
@@ -343,22 +343,38 @@ describe('reissueServerCertificateIfUndersized', () => {
     expect(result.root_key).toBe(stored.root_key)
   })
 
-  it('does nothing when the stored certificate already meets the configured size', () => {
+  it('does nothing when the stored certificate already has the configured size', () => {
     const subject = new Certificates(config3072 as any, secrets)
-    expect(subject.reissueServerCertificateIfUndersized(storedCertificates(3072))).toBeNull()
+    expect(subject.reissueServerCertificateIfSizeDiffers(storedCertificates(3072))).toBeNull()
   })
 
-  it('does nothing when the configuration does not ask for a larger key', () => {
+  it('reissues a larger server certificate at a smaller configured size under the existing root', () => {
+    const stored = storedCertificates(3072)
+    const config2048 = { ...config3072, mps_tls_config: { minVersion: 'TLSv1.2', mps_cert_key_size: 2048 } }
+    const subject = new Certificates(config2048 as any, secrets)
+
+    const result = subject.reissueServerCertificateIfSizeDiffers(stored)
+
+    expect(result).not.toBeNull()
+    expect(subject.getCertificateKeySize(result.mps_tls_config.cert)).toBe(2048)
+    // The root is what devices trust; it must survive untouched.
+    expect(result.web_tls_config.ca).toBe(stored.web_tls_config.ca)
+    expect(result.root_key).toBe(stored.root_key)
+    const root = forge.pki.certificateFromPem(stored.web_tls_config.ca as string)
+    expect(root.verify(forge.pki.certificateFromPem(result.mps_tls_config.cert))).toBe(true)
+  })
+
+  it('does nothing when the stored size equals the configured size', () => {
     const stored = storedCertificates(2048)
     const config2048 = { ...config3072, mps_tls_config: { minVersion: 'TLSv1.2', mps_cert_key_size: 2048 } }
-    expect(new Certificates(config2048 as any, secrets).reissueServerCertificateIfUndersized(stored)).toBeNull()
+    expect(new Certificates(config2048 as any, secrets).reissueServerCertificateIfSizeDiffers(stored)).toBeNull()
   })
 
   it('refuses to reissue without the stored root key rather than minting a new root', () => {
     const stored = storedCertificates(2048)
     delete stored.root_key
     const subject = new Certificates(config3072 as any, secrets)
-    expect(subject.reissueServerCertificateIfUndersized(stored)).toBeNull()
+    expect(subject.reissueServerCertificateIfSizeDiffers(stored)).toBeNull()
   })
 
   it('reissues even when the root is smaller than the configured size', () => {
@@ -379,7 +395,7 @@ describe('reissueServerCertificateIfUndersized', () => {
       root_key: forge.pki.privateKeyToPem(weakRoot.key)
     }
 
-    const result = subject.reissueServerCertificateIfUndersized(stored)
+    const result = subject.reissueServerCertificateIfSizeDiffers(stored)
 
     expect(subject.getCertificateKeySize(result.mps_tls_config.cert)).toBe(3072)
   })
@@ -388,7 +404,7 @@ describe('reissueServerCertificateIfUndersized', () => {
     const subject = new Certificates(config3072 as any, secrets)
     expect(subject.getCertificateKeySize('not a certificate')).toBeNull()
     expect(subject.getCertificateKeySize(undefined)).toBeNull()
-    expect(subject.reissueServerCertificateIfUndersized({ mps_tls_config: { cert: 'garbage' } } as any)).toBeNull()
+    expect(subject.reissueServerCertificateIfSizeDiffers({ mps_tls_config: { cert: 'garbage' } } as any)).toBeNull()
   })
 
   it('is applied and persisted by getCertificates', async () => {
