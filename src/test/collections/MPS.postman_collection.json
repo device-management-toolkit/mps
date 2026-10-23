@@ -1342,6 +1342,7 @@
             }
           ],
           "request": {
+            "description": "Issues a redirection token only when the device belongs to the request tenant resolved by trusted middleware. An unset tenant resolves to the empty tenant. A missing device or a device owned by another tenant returns 404 without a token.",
             "auth": {
               "type": "bearer",
               "bearer": [
@@ -4183,6 +4184,7 @@
             }
           ],
           "request": {
+            "description": "Issues a redirection token only when the device belongs to the request tenant resolved by trusted middleware. An unset tenant resolves to the empty tenant. A missing device or a device owned by another tenant returns 404 without a token.",
             "method": "GET",
             "header": [],
             "url": {
