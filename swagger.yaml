@@ -81,6 +81,8 @@ paths:
       description: |
         Authenticate Redirection (KVM or SOL) sessions between the management console and MPS to allow only authenticated and authorized users to initiate.
 
+        The device must belong to the request tenant resolved by trusted middleware. When no tenant is set, the empty tenant is used. No token is issued for a device outside that tenant.
+
         **If using Kong**, make sure to use the prefix `/mps`, **NOT** `/mps/login`.  Authorize Redirection does not use the login route.
       tags:
         - Auth
@@ -101,6 +103,8 @@ paths:
                 properties:
                   token:
                     type: string
+        404:
+          description: Device not found in the request tenant. No token is returned.
   /api/v1/amt/log/audit/{guid}:
     get:
       summary: Return Intel┬« AMT Audit Log
