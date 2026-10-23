@@ -122,7 +122,35 @@ describe('generateCertificates', () => {
       'US',
       'TestOrg',
       null,
-      true
+      3072
+    )
+  })
+
+  it('should generate certificates with 4096-bit key size when configured', () => {
+    const config4096 = {
+      common_name: 'test',
+      country: 'US',
+      organization: 'TestOrg',
+      mps_tls_config: {
+        minVersion: 'TLSv1.2',
+        mps_cert_key_size: 4096
+      }
+    }
+    const certificates4096 = new Certificates(config4096 as any, secrets)
+    vi.spyOn(certificates4096, 'GenerateRootCertificate').mockReturnValue({})
+    const issueWebServerCertificateSpy = vi.spyOn(certificates4096, 'IssueWebServerCertificate').mockReturnValue({})
+    vi.spyOn(forge.pki, 'certificateToPem').mockReturnValue('certificate')
+    vi.spyOn(forge.pki, 'privateKeyToPem').mockReturnValue('private key')
+    const result: certificatesType = certificates4096.generateCertificates()
+    expect(result).toBeTruthy()
+    expect(issueWebServerCertificateSpy).toHaveBeenCalledWith(
+      expect.anything(),
+      false,
+      'test',
+      'US',
+      'TestOrg',
+      null,
+      4096
     )
   })
 
@@ -150,7 +178,7 @@ describe('generateCertificates', () => {
       'US',
       'TestOrg',
       null,
-      false
+      2048
     )
   })
 })
@@ -244,7 +272,7 @@ describe('reissueServerCertificateIfUndersized', () => {
       'US',
       'TestOrg',
       null,
-      keySize === 3072
+      keySize
     )
     const leafPem = forge.pki.certificateToPem(leaf.cert)
     return {
@@ -295,6 +323,26 @@ describe('reissueServerCertificateIfUndersized', () => {
     expect(result.web_tls_config.key).toBe(result.mps_tls_config.key)
   })
 
+  it('reissues a 3072-bit server certificate at 4096 bits under the existing root', () => {
+    const stored = storedCertificates(3072)
+    const config4096 = { ...config3072, mps_tls_config: { minVersion: 'TLSv1.2', mps_cert_key_size: 4096 } }
+    const subject = new Certificates(config4096 as any, secrets)
+    // Generating a real RSA-4096 key in JS is slow; only the requested size matters here.
+    const leaf: certAndKeyType = {
+      cert: forge.pki.certificateFromPem(stored.mps_tls_config.cert),
+      key: forge.pki.privateKeyFromPem(stored.mps_tls_config.key)
+    } as any
+    const issueSpy = vi.spyOn(subject, 'IssueWebServerCertificate').mockReturnValue(leaf)
+
+    const result = subject.reissueServerCertificateIfUndersized(stored)
+
+    expect(result).not.toBeNull()
+    expect(issueSpy).toHaveBeenCalledWith(expect.anything(), false, 'mps.example.com', 'US', 'TestOrg', null, 4096)
+    // The root is what devices trust; it must survive untouched.
+    expect(result.web_tls_config.ca).toBe(stored.web_tls_config.ca)
+    expect(result.root_key).toBe(stored.root_key)
+  })
+
   it('does nothing when the stored certificate already meets the configured size', () => {
     const subject = new Certificates(config3072 as any, secrets)
     expect(subject.reissueServerCertificateIfUndersized(storedCertificates(3072))).toBeNull()
@@ -323,7 +371,7 @@ describe('reissueServerCertificateIfUndersized', () => {
       'US',
       'TestOrg',
       null,
-      false
+      2048
     )
     const stored: certificatesType = {
       mps_tls_config: { cert: forge.pki.certificateToPem(leaf.cert) } as any,
@@ -406,7 +454,7 @@ describe('IssueWebServerCertificate', () => {
     const extKeyUsage = {
       serverAuth: true
     }
-    const strong = true
+    const keySize = 3072
     const result = certificates.IssueWebServerCertificate(
       rootcert,
       addThumbPrintToName,
@@ -414,7 +462,7 @@ describe('IssueWebServerCertificate', () => {
       country,
       organization,
       extKeyUsage,
-      strong
+      keySize
     )
     expect(result.cert).toBeTruthy()
     expect(result.key).toBeTruthy()
@@ -448,7 +496,7 @@ describe('IssueWebServerCertificate', () => {
     const country = 'us'
     const organization = 'rhbe'
     const extKeyUsage = null
-    const strong = false
+    const keySize = 2048
     const result = certificates.IssueWebServerCertificate(
       rootcert,
       addThumbPrintToName,
@@ -456,7 +504,7 @@ describe('IssueWebServerCertificate', () => {
       country,
       organization,
       extKeyUsage,
-      strong
+      keySize
     )
     expect(result.cert).toBeTruthy()
     expect(result.key).toBeTruthy()

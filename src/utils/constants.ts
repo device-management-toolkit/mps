@@ -477,4 +477,8 @@ export const CIRA_MAX_IDLE_TIME = 90 // 90 seconds max idle time, higher than th
 
 // Certificate key size constants
 export const DEFAULT_MPS_CERT_KEY_SIZE = 2048 // Default 2048-bit for backward compatibility
-export const ALLOWED_MPS_CERT_KEY_SIZES = [2048, 3072] // Supported key sizes
+export const ALLOWED_MPS_CERT_KEY_SIZES = [
+  2048,
+  3072,
+  4096
+] // Supported key sizes

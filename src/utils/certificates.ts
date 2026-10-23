@@ -107,7 +107,7 @@ export class Certificates {
       this.config.country,
       this.config.organization,
       null,
-      desiredKeySize === 3072
+      desiredKeySize
     )
     const mpsCertificate = forge.pki.certificateToPem(mpsCertAndKey.cert)
     const mpsPrivateKey = forge.pki.privateKeyToPem(mpsCertAndKey.key)
@@ -159,7 +159,7 @@ export class Certificates {
     logger.info(messages.GENERATING_MPS_CERTIFICATE)
 
     // Use configured key size (default 2048 for backward compatibility)
-    const mpsKeySize = this.config.mps_tls_config?.mps_cert_key_size === 3072
+    const mpsKeySize = this.config.mps_tls_config?.mps_cert_key_size ?? DEFAULT_MPS_CERT_KEY_SIZE
 
     const mpsCertAndKey: certAndKeyType = this.IssueWebServerCertificate(
       rootCertAndKey,
@@ -280,9 +280,8 @@ export class Certificates {
     country: string,
     organization: string,
     extKeyUsage,
-    strong: boolean
+    keySize: number = DEFAULT_MPS_CERT_KEY_SIZE
   ): any => {
-    const keySize = strong ? 3072 : DEFAULT_MPS_CERT_KEY_SIZE
     const keys = forge.pki.rsa.generateKeyPair(keySize)
     const cert = forge.pki.createCertificate()
     cert.publicKey = keys.publicKey
