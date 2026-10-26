@@ -121,6 +121,13 @@ test('should get AMT credentials for a specific device', async () => {
   expect(secretAtPathSpy).toHaveBeenCalledWith(`devices/${secretPath}`)
 })
 
+test('should read AMT credentials from the tenant-scoped device path', async () => {
+  const secretAtPathSpy = vi.spyOn(secretManagerService, 'getSecretAtPath').mockResolvedValue(secretCreds.data)
+  const result = await secretManagerService.getAMTCredentials(secretPath, 'tenant-a')
+  expect(result).toEqual(['admin', 'P@ssw0rd'])
+  expect(secretAtPathSpy).toHaveBeenCalledWith(`tenants/tenant-a/devices/${secretPath}`)
+})
+
 test('should return null if AMT credentials for a specific device does not exists', async () => {
   const secretAtPathSpy = vi.spyOn(secretManagerService, 'getSecretAtPath').mockResolvedValue(null)
   const result = await secretManagerService.getAMTCredentials(secretPath)

@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  **********************************************************************/
 
+import { Environment } from '../../utils/Environment.js'
+
 import { vi, type MockInstance } from 'vitest'
 import { deactivate } from './deactivate.js'
 import { messages } from '../../logging/index.js'
@@ -49,6 +51,13 @@ describe('deactivate', () => {
     expect(deleteSpy).toHaveBeenCalled()
     expect(deleteSecretAtPathSpy).toHaveBeenCalled()
     expect(deprovisionDeviceSpy).toHaveBeenCalled()
+  })
+  it('should delete the device secret from the tenant-scoped path', async () => {
+    Environment.Config = { ...Environment.Config, secrets_tenant_partition: true } as any
+    req.tenantId = 'tenant-a'
+    await deactivate(req, resSpy)
+    expect(deleteSpy).toHaveBeenCalledWith(req.params.guid, 'tenant-a')
+    expect(deleteSecretAtPathSpy).toHaveBeenCalledWith(`tenants/tenant-a/devices/${req.params.guid}`)
   })
   it('should return 200, even if return value is not zero', async () => {
     deprovisionDeviceSpy = vi.spyOn(req.deviceAction, 'unprovisionDevice').mockResolvedValue({
