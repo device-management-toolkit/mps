@@ -55,9 +55,11 @@ export class MongoDeviceTable implements IDeviceTable {
   }
 
   async update(item: Device): Promise<WithId<Device>> {
+    // power state is server-owned; only updatePowerState writes it
+    const { powerState, osPowerSavingState, powerStateUpdatedAt, ...updatable } = item
     const result = await this.collection.findOneAndUpdate(
       { guid: item.guid, tenantId: item.tenantId },
-      { $set: item },
+      { $set: updatable },
       { returnDocument: 'after', includeResultMetadata: false }
     )
     return result as any
@@ -94,6 +96,26 @@ export class MongoDeviceTable implements IDeviceTable {
 
   async getByHostname(hostname: string, tenantId = ''): Promise<Device[]> {
     return this.collection.find({ hostname, tenantId }).toArray() as unknown as WithId<Device>[]
+  }
+
+  async updatePowerState(
+    guid: string,
+    powerState: number,
+    osPowerSavingState: number,
+    updatedAt: Date,
+    tenantId = ''
+  ): Promise<boolean> {
+    const result = await this.collection.updateOne(
+      {
+        guid,
+        tenantId,
+        $or: [{ powerStateUpdatedAt: null }, { powerStateUpdatedAt: { $lte: updatedAt } }]
+      },
+      { $set: { powerState, osPowerSavingState, powerStateUpdatedAt: updatedAt } }
+    )
+    // null matches missing timestamps too; newer readings are never overwritten
+    // matchedCount, not modifiedCount: re-writing an unchanged power state is a successful no-op
+    return result.matchedCount > 0
   }
 
   async clearInstanceStatus(mpsInstance: string): Promise<boolean> {
