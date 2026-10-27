@@ -10,8 +10,10 @@ import { Certificates, OCRData, type CIRASocket } from '../models/models.js'
 import { type CIRAHandler } from './CIRAHandler.js'
 import {
   BOOT_SERVICE_STATE_BOTH_OFF,
-  BOOT_SERVICE_STATE_RPE_ONLY
+  BOOT_SERVICE_STATE_RPE_ONLY,
+  MAX_SSD_PASSWORD_LENGTH
 } from '../routes/amt/rpeConstants.js'
+import { MPSValidationError } from '../utils/MPSValidationError.js'
 
 // Per-device mutex registry. Keyed by the CIRASocket instance (one per device
 // connection) so that concurrent requests to the same device are serialized for
@@ -250,128 +252,151 @@ export class DeviceAction {
     logger.silly(`setRPE ${messages.COMPLETE}`)
   }
 
-  async sendRPE(eraseMask: number, ssdPassword?: string): Promise<void> {
+  async sendRPE(eraseMask: number, ssdPassword?: string, psid?: string): Promise<void> {
+    for (const [name, value] of [
+      ['SSD password', ssdPassword],
+      ['PSID', psid]
+    ]) {
+      if (value != null && Buffer.byteLength(value, 'utf8') > MAX_SSD_PASSWORD_LENGTH) {
+        throw new MPSValidationError(`${name} must not exceed ${MAX_SSD_PASSWORD_LENGTH} bytes`, 400)
+      }
+    }
     await this.withDeviceLock(async () => {
       logger.silly(`sendRPE ${messages.REQUEST}`)
 
-    // CSME sentinel bit: 0x10000 maps to ConfigurationDataReset, not a hardware erase target
-    const CSME_BIT = 0x10000
-    const wantCSMEReset = (eraseMask & CSME_BIT) !== 0
-    const tlvMask = eraseMask & ~CSME_BIT
+      // CSME sentinel bit: 0x10000 maps to ConfigurationDataReset, not a hardware erase target
+      const CSME_BIT = 0x10000
+      const wantCSMEReset = (eraseMask & CSME_BIT) !== 0
+      const tlvMask = eraseMask & ~CSME_BIT
 
-    const xmlIdleMode = this.cim.BootService.RequestStateChange(BOOT_SERVICE_STATE_BOTH_OFF)
-    const idleResult = await this.ciraHandler.Send(this.ciraSocket, xmlIdleMode)
-    if (idleResult?.Envelope?.Body?.RequestStateChange_OUTPUT?.ReturnValue !== 0) {
-      throw new Error(`sendRPE RequestStateChange(${BOOT_SERVICE_STATE_BOTH_OFF}) failed: ${JSON.stringify(idleResult?.Envelope?.Body)}`)
-    }
-
-    let bootOptions = await this.getBootOptions()
-    let current = bootOptions.AMT_BootSettingData
-    const rpeValue = (current as any).RPEEnabled ?? (current as any).RPE
-    const rpeEnabled = rpeValue === true || rpeValue === 'true' || rpeValue === 1 || rpeValue === '1'
-    if (!rpeEnabled) {
-      await this.setRPE(true)
-      bootOptions = await this.getBootOptions()
-      current = bootOptions.AMT_BootSettingData
-    }
-
-    if (wantCSMEReset && tlvMask === 0) {
-      await this.changeBootOrder()
-    }
-
-    const xmlRpeMode = this.cim.BootService.RequestStateChange(BOOT_SERVICE_STATE_RPE_ONLY)
-    const rscResult = await this.ciraHandler.Send(this.ciraSocket, xmlRpeMode)
-    if (rscResult?.Envelope?.Body?.RequestStateChange_OUTPUT?.ReturnValue !== 0) {
-      throw new Error(`sendRPE RequestStateChange(${BOOT_SERVICE_STATE_RPE_ONLY}) failed: ${JSON.stringify(rscResult?.Envelope?.Body)}`)
-    }
-
-    // Step 2: Build a strict, schema-safe payload with deterministic values.
-    // Avoid carrying mutable values from GET (for example BIOSSetup=true) that can
-    // make PUT fail validation on some firmware generations.
-    const putBody: any = {
-      InstanceID: current.InstanceID,
-      ElementName: current.ElementName,
-      OwningEntity: current.OwningEntity,
-      BIOSPause: false,
-      BIOSSetup: false,
-      BootMediaIndex: 0,
-      ConfigurationDataReset: wantCSMEReset,
-      FirmwareVerbosity: 0,
-      ForcedProgressEvents: false,
-      IDERBootDevice: 0,
-      LockKeyboard: false,
-      LockPowerButton: false,
-      LockResetButton: false,
-      LockSleepButton: false,
-      PlatformErase: tlvMask !== 0,
-      ReflashBIOS: false,
-      SecureErase: false,
-      UseIDER: false,
-      UseSOL: false,
-      UseSafeMode: false,
-      UserPasswordBypass: false
-    }
-
-    if (tlvMask !== 0) {
-      // AMT RPE expects an Intel TLV payload for erase targets.
-      // Parameter format: [vendor:0x8086][type:1][len:4][value:eraseMask]
-      const buf = Buffer.alloc(12)
-      buf.writeUInt16LE(0x8086, 0)
-      buf.writeUInt16LE(1, 2)
-      buf.writeUInt32LE(4, 4)
-      buf.writeUInt32LE(tlvMask, 8)
-      putBody.UefiBootParametersArray = buf.toString('base64')
-      putBody.UefiBootNumberOfParams = 1
-
-      if (ssdPassword != null && ssdPassword !== '') {
-        putBody.RSEPassword = ssdPassword
+      const xmlIdleMode = this.cim.BootService.RequestStateChange(BOOT_SERVICE_STATE_BOTH_OFF)
+      const idleResult = await this.ciraHandler.Send(this.ciraSocket, xmlIdleMode)
+      if (idleResult?.Envelope?.Body?.RequestStateChange_OUTPUT?.ReturnValue !== 0) {
+        throw new Error(
+          `sendRPE RequestStateChange(${BOOT_SERVICE_STATE_BOTH_OFF}) failed: ${JSON.stringify(idleResult?.Envelope?.Body)}`
+        )
       }
-    } else {
-      delete putBody.UefiBootParametersArray
-      delete putBody.UefiBootNumberOfParams
-    }
 
-    // Remove conflicting schema variants and read-only fields if present.
-    delete putBody.UEFIBootParametersArray
-    delete putBody.UEFIBootNumberOfParams
-    delete putBody.RPEEnabled
-    delete putBody.OptionsCleared
-    delete putBody.BIOSLastStatus
+      let bootOptions = await this.getBootOptions()
+      let current = bootOptions.AMT_BootSettingData
+      const rpeValue = (current as any).RPEEnabled ?? (current as any).RPE
+      const rpeEnabled = rpeValue === true || rpeValue === 'true' || rpeValue === 1 || rpeValue === '1'
+      if (!rpeEnabled) {
+        await this.setRPE(true)
+        bootOptions = await this.getBootOptions()
+        current = bootOptions.AMT_BootSettingData
+      }
 
-    const xmlPut = this.amt.BootSettingData.Put(putBody as AMT.Models.BootSettingData)
-    if (process.env.MPS_RPE_LOG_REDACTED_XML != null && process.env.MPS_RPE_LOG_REDACTED_XML !== '') {
-      const redactedXml = xmlPut.replace(/(<h:RSEPassword>)([\s\S]*?)(<\/h:RSEPassword>)/g, '$1***$3')
-      logger.info(`sendRPE BootSettingData PUT XML (redacted): ${redactedXml}`)
-    }
-    const putResult = await this.ciraHandler.Send(this.ciraSocket, xmlPut)
-    if (putResult?.Envelope?.Body?.Fault) {
-      logger.error(`sendRPE BootSettingData PUT failed: ${JSON.stringify(putResult.Envelope.Body.Fault)}`)
-      throw new Error(`BootSettingData PUT failed: ${JSON.stringify(putResult.Envelope.Body.Fault)}`)
-    }
+      if (wantCSMEReset && tlvMask === 0) {
+        await this.changeBootOrder()
+      }
 
-    // Step 4: Activate boot configuration
-    const forceBootResult = await this.forceBootMode(1)
-    if (forceBootResult?.Envelope?.Body?.SetBootConfigRole_OUTPUT?.ReturnValue !== 0) {
-      throw new Error(`sendRPE SetBootConfigRole failed: ${JSON.stringify(forceBootResult?.Envelope?.Body)}`)
-    }
+      const xmlRpeMode = this.cim.BootService.RequestStateChange(BOOT_SERVICE_STATE_RPE_ONLY)
+      const rscResult = await this.ciraHandler.Send(this.ciraSocket, xmlRpeMode)
+      if (rscResult?.Envelope?.Body?.RequestStateChange_OUTPUT?.ReturnValue !== 0) {
+        throw new Error(
+          `sendRPE RequestStateChange(${BOOT_SERVICE_STATE_RPE_ONLY}) failed: ${JSON.stringify(rscResult?.Envelope?.Body)}`
+        )
+      }
 
-    // Step 5: Determine the appropriate power action by querying live power state.
-    // Off states (aligned with Console) → Power On (2):
-    //   6  = Off - Hard
-    //   8  = Off - Soft (S5)
-    //   12 = Off - Soft Graceful
-    //   13 = Off - Hard Graceful
-    // All other states (On=2, sleeping=3/4/7, unknown/null) → Master Bus Reset (10)
-    // so that a connected system is reliably rebooted into the erase sequence.
-    const powerStateResult = await this.getPowerState()
-    const currentState = powerStateResult?.PullResponse?.Items?.CIM_AssociatedPowerManagementService?.PowerState
-    const OFF_STATES = new Set([6, 8, 12, 13])
-    const action: CIM.Types.PowerManagementService.PowerState = OFF_STATES.has(Number(currentState)) ? 2 : 10
-    logger.info(`sendRPE: dispatching power action=${action}`)
-    const powerActionResult = await this.sendPowerAction(action)
-    if (powerActionResult?.Body?.RequestPowerStateChange_OUTPUT?.ReturnValue !== 0) {
-      throw new Error(`sendRPE power action ${action} failed: ${JSON.stringify(powerActionResult?.Body)}`)
-    }
+      // Step 2: Build a strict, schema-safe payload with deterministic values.
+      // Avoid carrying mutable values from GET (for example BIOSSetup=true) that can
+      // make PUT fail validation on some firmware generations.
+      const putBody: AMT.Models.BootSettingData & {
+        UefiBootParametersArray?: string
+        UefiBootNumberOfParams?: number
+      } = {
+        InstanceID: current.InstanceID,
+        ElementName: current.ElementName,
+        OwningEntity: current.OwningEntity,
+        BIOSPause: false,
+        BIOSSetup: false,
+        BootMediaIndex: 0,
+        ConfigurationDataReset: wantCSMEReset,
+        FirmwareVerbosity: 0,
+        ForcedProgressEvents: false,
+        IDERBootDevice: 0,
+        LockKeyboard: false,
+        LockPowerButton: false,
+        LockResetButton: false,
+        LockSleepButton: false,
+        PlatformErase: tlvMask !== 0,
+        ReflashBIOS: false,
+        SecureErase: false,
+        UseIDER: false,
+        UseSOL: false,
+        UseSafeMode: false,
+        UserPasswordBypass: false
+      }
+
+      if (tlvMask !== 0) {
+        // Each Intel TLV is [vendor:2 LE][type:2 LE][length:4 LE][value].
+        const buf = Buffer.alloc(12)
+        buf.writeUInt16LE(0x8086, 0)
+        buf.writeUInt16LE(1, 2)
+        buf.writeUInt32LE(4, 4)
+        buf.writeUInt32LE(tlvMask, 8)
+        const params = [buf]
+        putBody.UefiBootNumberOfParams = 1
+
+        for (const { type, value } of [
+          { type: 10, value: psid },
+          { type: 20, value: ssdPassword }
+        ]) {
+          if (value == null || value === '') continue
+          const credential = Buffer.from(value, 'utf8')
+          const header = Buffer.alloc(8)
+          header.writeUInt16LE(0x8086, 0)
+          header.writeUInt16LE(type, 2)
+          header.writeUInt32LE(credential.length, 4)
+          params.push(header, credential)
+          putBody.UefiBootNumberOfParams++
+        }
+        putBody.UefiBootParametersArray = Buffer.concat(params).toString('base64')
+      }
+
+      const xmlPut = this.amt.BootSettingData.Put(putBody)
+      if (process.env.MPS_RPE_LOG_REDACTED_XML != null && process.env.MPS_RPE_LOG_REDACTED_XML !== '') {
+        const redactedXml = xmlPut.replace(
+          /(<h:UefiBootParametersArray>)[\s\S]*?(<\/h:UefiBootParametersArray>)/g,
+          '$1***$2'
+        )
+        logger.info(`sendRPE BootSettingData PUT XML (redacted): ${redactedXml}`)
+      }
+      const putResult = await this.ciraHandler.Send(this.ciraSocket, xmlPut)
+      if (putResult?.Envelope?.Body?.Fault) {
+        logger.error(`sendRPE BootSettingData PUT failed: ${JSON.stringify(putResult.Envelope.Body.Fault)}`)
+        throw new Error(`BootSettingData PUT failed: ${JSON.stringify(putResult.Envelope.Body.Fault)}`)
+      }
+
+      // Step 4: Activate boot configuration
+      const forceBootResult = await this.forceBootMode(1)
+      if (forceBootResult?.Envelope?.Body?.SetBootConfigRole_OUTPUT?.ReturnValue !== 0) {
+        throw new Error(`sendRPE SetBootConfigRole failed: ${JSON.stringify(forceBootResult?.Envelope?.Body)}`)
+      }
+
+      // Step 5: Determine the appropriate power action by querying live power state.
+      // Off states (aligned with Console) → Power On (2):
+      //   6  = Off - Hard
+      //   8  = Off - Soft (S5)
+      //   12 = Off - Soft Graceful
+      //   13 = Off - Hard Graceful
+      // All other states (On=2, sleeping=3/4/7, unknown/null) → Master Bus Reset (10)
+      // so that a connected system is reliably rebooted into the erase sequence.
+      const powerStateResult = await this.getPowerState()
+      const currentState = powerStateResult?.PullResponse?.Items?.CIM_AssociatedPowerManagementService?.PowerState
+      const OFF_STATES = new Set([
+        6,
+        8,
+        12,
+        13
+      ])
+      const action: CIM.Types.PowerManagementService.PowerState = OFF_STATES.has(Number(currentState)) ? 2 : 10
+      logger.info(`sendRPE: dispatching power action=${action}`)
+      const powerActionResult = await this.sendPowerAction(action)
+      if (powerActionResult?.Body?.RequestPowerStateChange_OUTPUT?.ReturnValue !== 0) {
+        throw new Error(`sendRPE power action ${action} failed: ${JSON.stringify(powerActionResult?.Body)}`)
+      }
 
       logger.silly(`sendRPE ${messages.COMPLETE}`)
     }) // end withDeviceLock

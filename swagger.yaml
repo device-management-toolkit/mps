@@ -339,9 +339,11 @@ paths:
         - `tpmClear` — Clear TPM (bit 0x40)
         - `restoreBIOSToEOM` — Reload BIOS golden configuration (bit 0x4000000)
         - `unconfigureCSME` — CSME unconfigure; can be combined with hardware bits
-        - `ssdPassword` — Optional password for encrypted SSD erase (max 64 bytes)
+        - `ssdPassword` — Optional SSD master password (max 64 UTF-8 bytes, carried in UEFI TLV type 20)
+        - `psid` — Optional Pyrite drive revert/clear PSID (max 64 bytes, carried in UEFI TLV type 10)
 
         Returns 400 if the device does not support RPE or the requested options are not supported.
+        A successful response confirms submission, not BIOS erase completion.
       tags:
         - AMT
       parameters:
@@ -366,11 +368,40 @@ paths:
               schema:
                 $ref: '#/components/schemas/RPEStatusResponse'
         400:
-          description: 'Device does not support RPE, requested options not supported, or password too long'
+          description: 'Device does not support RPE, requested options not supported, or credentials invalid/too long'
         404:
           description: 'Device not found/connected'
         500:
           description: 'Internal server error'
+  /api/v1/amt/boot/remoteErase/{guid}/status:
+    get:
+      summary: Get Last BIOS Erase Status
+      description: |
+        Reads BIOSLastStatus from AMT_BootSettingData and returns pending, succeeded,
+        failed, or unknown with a diagnostic message. This is the last BIOS boot result,
+        not an operation-specific result. Observe pending after submission before
+        attributing a terminal result to that request. Missing or unrecognized status
+        is unknown; connectivity errors do not imply success.
+      tags:
+        - AMT
+      parameters:
+        - name: guid
+          in: path
+          description: GUID of device
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Last BIOS erase outcome
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RemoteEraseStatus'
+        404:
+          description: Device not found/connected
+        500:
+          description: Failed to query BIOS erase status
   /api/v1/amt/alarmOccurrences/{guid}:
     post:
       summary: Set new Alarm Clock Occurence
@@ -4583,7 +4614,10 @@ components:
           description: 'CSME unconfigure — sets ConfigurationDataReset; can be combined with hardware bits'
         ssdPassword:
           type: string
-          description: 'Optional password for encrypted SSD erase (max 64 bytes)'
+          description: 'Optional SSD master password, limited to 64 UTF-8 bytes with no separate character limit'
+        psid:
+          type: string
+          description: 'Optional Pyrite drive revert/clear PSID, limited to 64 bytes'
           maxLength: 64
       example:
         secureEraseAllSSDs: true
@@ -4591,6 +4625,26 @@ components:
         restoreBIOSToEOM: false
         unconfigureCSME: false
         ssdPassword: ''
+        psid: ''
+    RemoteEraseStatus:
+      title: RemoteEraseStatus
+      type: object
+      required:
+        - status
+        - message
+      properties:
+        status:
+          type: string
+          enum:
+            - pending
+            - succeeded
+            - failed
+            - unknown
+        message:
+          type: string
+      example:
+        status: pending
+        message: Waiting for the BIOS erase result.
     RPEStatusResponse:
       title: RPEStatusResponse
       properties:

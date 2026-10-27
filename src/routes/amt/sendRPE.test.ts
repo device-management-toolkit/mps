@@ -13,9 +13,7 @@ import { HttpHandler } from '../../amt/HttpHandler.js'
 import { messages } from '../../logging/index.js'
 import { vi, type MockInstance } from 'vitest'
 
-import {
-  PLATFORM_ERASE_ALL_SSDS
-} from './rpeConstants.js'
+import { PLATFORM_ERASE_ALL_SSDS } from './rpeConstants.js'
 
 describe('Send Remote Erase', () => {
   let req: any
@@ -54,7 +52,7 @@ describe('Send Remote Erase', () => {
     sendEraseSpy.mockResolvedValue(undefined)
 
     await sendRPE(req, resSpy)
-    expect(sendEraseSpy).toHaveBeenCalledWith(PLATFORM_ERASE_ALL_SSDS, 'mypassword')
+    expect(sendEraseSpy).toHaveBeenCalledWith(PLATFORM_ERASE_ALL_SSDS, 'mypassword', undefined)
     expect(resSpy.status).toHaveBeenCalledWith(200)
     expect(resSpy.json).toHaveBeenCalledWith({ status: 'success' })
   })
@@ -65,7 +63,7 @@ describe('Send Remote Erase', () => {
     sendEraseSpy.mockResolvedValue(undefined)
 
     await sendRPE(req, resSpy)
-    expect(sendEraseSpy).toHaveBeenCalledWith(0, undefined)
+    expect(sendEraseSpy).toHaveBeenCalledWith(0, undefined, undefined)
     expect(resSpy.status).toHaveBeenCalledWith(200)
   })
 
@@ -96,7 +94,7 @@ describe('Send Remote Erase', () => {
     sendEraseSpy.mockResolvedValue(undefined)
 
     await sendRPE(req, resSpy)
-    expect(sendEraseSpy).toHaveBeenCalledWith(0x10004, undefined)
+    expect(sendEraseSpy).toHaveBeenCalledWith(0x10004, undefined, undefined)
     expect(resSpy.status).toHaveBeenCalledWith(200)
   })
 
@@ -118,5 +116,17 @@ describe('Send Remote Erase', () => {
     await sendRPE(req, resSpy)
     expect(resSpy.status).toHaveBeenCalledWith(500)
     expect(resSpy.json).toHaveBeenCalledWith(ErrorResponse(500, messages.AMT_FEATURES_SET_EXCEPTION))
+  })
+
+  it('should forward both SSD credentials', async () => {
+    req.body.ssdPassword = 'master-password'
+    req.body.psid = 'drive-psid'
+    bootCapsSpy.mockResolvedValue({ Body: { AMT_BootCapabilities: { PlatformErase: 0x4 } } })
+    sendEraseSpy.mockResolvedValue(undefined)
+
+    await sendRPE(req, resSpy)
+
+    expect(sendEraseSpy).toHaveBeenCalledWith(PLATFORM_ERASE_ALL_SSDS, 'master-password', 'drive-psid')
+    expect(resSpy.status).toHaveBeenCalledWith(200)
   })
 })

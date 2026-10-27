@@ -19,7 +19,7 @@ export async function sendRPE(req: Request, res: Response): Promise<void> {
   try {
     const guid: string = req.params.guid
 
-    const { secureEraseAllSSDs, ssdPassword, tpmClear, restoreBIOSToEOM, unconfigureCSME } = req.body
+    const { secureEraseAllSSDs, ssdPassword, psid, tpmClear, restoreBIOSToEOM, unconfigureCSME } = req.body
     const mask =
       (secureEraseAllSSDs ? PLATFORM_ERASE_ALL_SSDS : 0) |
       (tpmClear ? PLATFORM_ERASE_TPM_CLEAR : 0) |
@@ -39,7 +39,7 @@ export async function sendRPE(req: Request, res: Response): Promise<void> {
       throw new MPSValidationError('Requested erase capabilities are not supported by this device', 400)
     }
 
-    await req.deviceAction.sendRPE(mask, ssdPassword)
+    await req.deviceAction.sendRPE(mask, ssdPassword, psid)
 
     MqttProvider.publishEvent('success', ['AMT_BootSettingData'], messages.AMT_FEATURES_SET_SUCCESS, guid)
     res.status(200).json({ status: 'success' }).end()
