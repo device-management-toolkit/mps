@@ -43,6 +43,7 @@ import {
 import { CIRAHandler } from './CIRAHandler.js'
 import { DeviceAction } from './DeviceAction.js'
 import { HttpHandler } from './HttpHandler.js'
+import { logger } from '../logging/index.js'
 
 describe('Device Action Tests', () => {
   let enumerateSpy: MockInstance
@@ -540,7 +541,16 @@ describe('Device Action Tests', () => {
       expect(putXml).toContain('<h:SecureErase>false</h:SecureErase>')
       expect(putXml).toContain('<h:ReflashBIOS>false</h:ReflashBIOS>')
     })
-    it('should include RSEPassword when provided for encrypted SSD erase', async () => {
+    it.each([
+      { password: 'mypassword', psid: undefined },
+      { password: undefined, psid: 'drive-psid' },
+      { password: 'master-password', psid: 'drive-psid' },
+      { password: '', psid: '' },
+      { password: 'p'.repeat(33), psid: undefined },
+      { password: 'p'.repeat(64), psid: 's'.repeat(64) },
+      { password: '\u00e9'.repeat(32), psid: undefined },
+      { password: '\u00e9'.repeat(16) + 'p'.repeat(32), psid: undefined }
+    ])('should encode RPE credentials in UEFI TLVs: $password / $psid', async ({ password, psid }) => {
       getSpy.mockResolvedValueOnce({
         Envelope: { Body: { AMT_BootSettingData: { ElementName: 'test', RPESupported: true, RPE: true } } }
       })
@@ -552,13 +562,96 @@ describe('Device Action Tests', () => {
       sendSpy.mockResolvedValueOnce({ Envelope: { Body: {} } }) // Put(putBody)
       sendSpy.mockResolvedValueOnce({ Envelope: { Body: { SetBootConfigRole_OUTPUT: { ReturnValue: 0 } } } }) // forceBootMode(1)
 
-      await device.sendRPE(0x4, 'mypassword')
+      await device.sendRPE(0x4, password, psid)
 
       const putXml = sendSpy.mock.calls[2][1] as string
-      expect(putXml).toContain('<h:RSEPassword>mypassword</h:RSEPassword>')
+      expect(putXml).not.toContain('RSEPassword')
+      const encoded = putXml.match(/<h:UefiBootParametersArray>([^<]+)<\/h:UefiBootParametersArray>/)?.[1]
+      expect(encoded).toBeDefined()
+      const raw = Buffer.from(encoded!, 'base64')
+      expect(raw.subarray(0, 12)).toEqual(Buffer.from('868001000400000004000000', 'hex'))
+      let offset = 12
+      let count = 1
+      for (const { type, value } of [
+        { type: 10, value: psid },
+        { type: 20, value: password }
+      ]) {
+        if (!value) continue
+        expect(raw.readUInt16LE(offset)).toBe(0x8086)
+        expect(raw.readUInt16LE(offset + 2)).toBe(type)
+        const length = raw.readUInt32LE(offset + 4)
+        expect(length).toBe(Buffer.byteLength(value, 'utf8'))
+        expect(raw.subarray(offset + 8, offset + 8 + length)).toEqual(Buffer.from(value, 'utf8'))
+        offset += 8 + length
+        count++
+      }
+      expect(offset).toBe(raw.length)
+      expect(putXml).toContain(`<h:UefiBootNumberOfParams>${count}</h:UefiBootNumberOfParams>`)
+    })
+    it.each([
+      ['p'.repeat(65), undefined],
+      ['\u00e9'.repeat(33), undefined],
+      [undefined, 's'.repeat(65)]
+    ])('should reject oversized credentials before changing device state', async (password, psid) => {
+      await expect(device.sendRPE(4, password, psid)).rejects.toThrow('must not exceed 64 bytes')
+      expect(sendSpy).not.toHaveBeenCalled()
+      expect(getSpy).not.toHaveBeenCalled()
+    })
+    it('should omit hardware TLVs and credentials for CSME-only requests', async () => {
+      vi.spyOn(device, 'changeBootOrder').mockResolvedValue({})
+      getSpy.mockResolvedValueOnce({
+        Envelope: { Body: { AMT_BootSettingData: { ElementName: 'test', RPE: true } } }
+      })
+      vi.spyOn(device, 'getPowerState').mockResolvedValue(serviceAvailableToElement.Envelope.Body)
+      vi.spyOn(device, 'sendPowerAction').mockResolvedValue({
+        Body: { RequestPowerStateChange_OUTPUT: { ReturnValue: 0 } }
+      })
+      sendSpy
+        .mockResolvedValueOnce({ Envelope: { Body: { RequestStateChange_OUTPUT: { ReturnValue: 0 } } } })
+        .mockResolvedValueOnce({ Envelope: { Body: { RequestStateChange_OUTPUT: { ReturnValue: 0 } } } })
+        .mockResolvedValueOnce({ Envelope: { Body: {} } })
+        .mockResolvedValueOnce({ Envelope: { Body: { SetBootConfigRole_OUTPUT: { ReturnValue: 0 } } } })
+
+      await device.sendRPE(0x10000, 'password', 'psid')
+
+      const putXml = sendSpy.mock.calls[2][1] as string
+      expect(putXml).toContain('<h:ConfigurationDataReset>true</h:ConfigurationDataReset>')
+      expect(putXml).not.toContain('UefiBootParametersArray')
+      expect(putXml).not.toContain('RSEPassword')
+    })
+    it('should redact credential-bearing UEFI parameters from diagnostic XML', async () => {
+      vi.stubEnv('MPS_RPE_LOG_REDACTED_XML', '1')
+      const logSpy = vi.spyOn(logger, 'info')
+      getSpy.mockResolvedValueOnce({
+        Envelope: { Body: { AMT_BootSettingData: { ElementName: 'test', RPE: true } } }
+      })
+      vi.spyOn(device, 'getPowerState').mockResolvedValue(serviceAvailableToElement.Envelope.Body)
+      vi.spyOn(device, 'sendPowerAction').mockResolvedValue({
+        Body: { RequestPowerStateChange_OUTPUT: { ReturnValue: 0 } }
+      })
+      sendSpy
+        .mockResolvedValueOnce({ Envelope: { Body: { RequestStateChange_OUTPUT: { ReturnValue: 0 } } } })
+        .mockResolvedValueOnce({ Envelope: { Body: { RequestStateChange_OUTPUT: { ReturnValue: 0 } } } })
+        .mockResolvedValueOnce({ Envelope: { Body: {} } })
+        .mockResolvedValueOnce({ Envelope: { Body: { SetBootConfigRole_OUTPUT: { ReturnValue: 0 } } } })
+
+      try {
+        await device.sendRPE(4, 'password', 'psid')
+        const putXml = sendSpy.mock.calls[2][1] as string
+        const encoded = putXml.match(/<h:UefiBootParametersArray>([^<]+)<\/h:UefiBootParametersArray>/)?.[1]
+        const diagnostic = logSpy.mock.calls.find(([message]) => String(message).includes('PUT XML'))?.[0]
+        expect(diagnostic).toContain('<h:UefiBootParametersArray>***</h:UefiBootParametersArray>')
+        expect(diagnostic).not.toContain(encoded)
+        expect(diagnostic).not.toContain('password')
+        expect(diagnostic).not.toContain('psid')
+      } finally {
+        vi.unstubAllEnvs()
+      }
     })
     it('should query live power state and send Power On (2) when system is off (state 8)', async () => {
-      const sendPowerActionSpy = vi.spyOn(device, 'sendPowerAction').mockResolvedValue({ Body: { RequestPowerStateChange_OUTPUT: { ReturnValue: 0 } } } as any)
+      const sendPowerActionSpy = vi
+        .spyOn(device, 'sendPowerAction')
+        .mockResolvedValue({ Body: { RequestPowerStateChange_OUTPUT: { ReturnValue: 0 } } } as any)
       getSpy.mockResolvedValueOnce({
         Envelope: { Body: { AMT_BootSettingData: { ElementName: 'test', RPESupported: true, RPE: true } } }
       })
@@ -583,7 +676,9 @@ describe('Device Action Tests', () => {
       expect(sendPowerActionSpy).toHaveBeenCalledWith(2)
     })
     it('should query live power state and send Power On (2) when system is off-hard (state 6)', async () => {
-      const sendPowerActionSpy = vi.spyOn(device, 'sendPowerAction').mockResolvedValue({ Body: { RequestPowerStateChange_OUTPUT: { ReturnValue: 0 } } } as any)
+      const sendPowerActionSpy = vi
+        .spyOn(device, 'sendPowerAction')
+        .mockResolvedValue({ Body: { RequestPowerStateChange_OUTPUT: { ReturnValue: 0 } } } as any)
       getSpy.mockResolvedValueOnce({
         Envelope: { Body: { AMT_BootSettingData: { ElementName: 'test', RPESupported: true, RPE: true } } }
       })
@@ -608,7 +703,9 @@ describe('Device Action Tests', () => {
       expect(sendPowerActionSpy).toHaveBeenCalledWith(2)
     })
     it('should query live power state and send Master Bus Reset (10) when system is on (state 2)', async () => {
-      const sendPowerActionSpy = vi.spyOn(device, 'sendPowerAction').mockResolvedValue({ Body: { RequestPowerStateChange_OUTPUT: { ReturnValue: 0 } } } as any)
+      const sendPowerActionSpy = vi
+        .spyOn(device, 'sendPowerAction')
+        .mockResolvedValue({ Body: { RequestPowerStateChange_OUTPUT: { ReturnValue: 0 } } } as any)
       getSpy.mockResolvedValueOnce({
         Envelope: { Body: { AMT_BootSettingData: { ElementName: 'test', RPESupported: true, RPE: true } } }
       })

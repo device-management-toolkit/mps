@@ -18,6 +18,30 @@ async function getValidationErrors(body: any): Promise<any[]> {
 }
 
 describe('sendRPE validator', () => {
+  describe.each(['ssdPassword', 'psid'])('%s byte limits', (field) => {
+    it.each([
+      '',
+      'p'.repeat(33),
+      'p'.repeat(64),
+      '\u00e9'.repeat(32),
+      '\u00e9'.repeat(16) + 'p'.repeat(32)
+    ])('accepts credentials up to 64 UTF-8 bytes (%s)', async (value) => {
+      expect(await getValidationErrors({ secureEraseAllSSDs: true, [field]: value })).toHaveLength(0)
+    })
+
+    it.each([
+      null,
+      123,
+      {},
+      'p'.repeat(65),
+      '\u00e9'.repeat(33),
+      '\u00e9'.repeat(32) + 'p'
+    ])('rejects invalid or oversized credentials (%s)', async (value) => {
+      const errors = await getValidationErrors({ secureEraseAllSSDs: true, [field]: value })
+      expect(errors.some((error) => error.path === field)).toBe(true)
+    })
+  })
+
   describe('valid requests', () => {
     it('accepts a single boolean erase option', async () => {
       const errors = await getValidationErrors({ secureEraseAllSSDs: true })
