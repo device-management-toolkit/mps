@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  **********************************************************************/
 
+import { Environment } from '../../utils/Environment.js'
+
 import { vi, type MockInstance } from 'vitest'
 import { logger } from '../../logging/index.js'
 import { deleteDevice } from './delete.js'
@@ -116,6 +118,23 @@ describe('delete', () => {
       message: `Device ID ${scopedReq.params.guid} not found`
     })
     expect(endSpy).toHaveBeenCalled()
+  })
+
+  it('should delete the secret from the tenant-scoped path when the device exists', async () => {
+    Environment.Config = { ...Environment.Config, secrets_tenant_partition: true } as any
+    const deleteSecretAtPath = vi.fn().mockResolvedValue(true)
+    const scopedReq = {
+      params: { guid: '11111111-1111-1111-1111-111111111111' },
+      tenantId: 'tenantB',
+      query: { isSecretToBeDeleted: 'true' },
+      db: { devices: { getById: vi.fn().mockReturnValue({}), delete: vi.fn().mockReturnValue(1) } },
+      secrets: { deleteSecretAtPath }
+    } as any
+
+    await deleteDevice(scopedReq, res as any)
+
+    expect(deleteSecretAtPath).toHaveBeenCalledWith('tenants/tenantB/devices/11111111-1111-1111-1111-111111111111')
+    expect(statusSpy).toHaveBeenCalledWith(204)
   })
 
   it('should return 404 when device exists but secrets deletion fails', async () => {

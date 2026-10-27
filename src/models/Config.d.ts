@@ -51,6 +51,7 @@ export interface configType {
   timeout_ms_default: string
   cira_window_size: number
   mps_cert_key_size?: number
+  secrets_tenant_partition?: boolean
 }
 
 export interface certificatesType {

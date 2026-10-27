@@ -22,6 +22,7 @@ export const config: configType = {
   mqtt_address: '',
   secrets_path: 'secret/data/',
   secrets_provider: 'vault',
+  secrets_tenant_partition: true,
   cert_format: 'file',
   jwt_secret: 'supersecret',
   jwt_issuer: '9EmRJTbIiIb4bIeSsmgcWIjrR6HyETqc',

@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  **********************************************************************/
 
+import { deviceSecretPath } from '../../utils/secretPaths.js'
+
 import { type Response, type Request } from 'express'
 import { logger, messages } from '../../logging/index.js'
 import { ErrorResponse } from '../../utils/amtHelper.js'
@@ -15,7 +17,7 @@ export async function deactivate(req: Request, res: Response): Promise<void> {
     const result = await req.deviceAction.unprovisionDevice()
     if (result.Body?.Unprovision_OUTPUT?.ReturnValue === 0) {
       await req.db.devices.delete(guid, req.tenantId)
-      await req.secrets.deleteSecretAtPath(`devices/${guid}`)
+      await req.secrets.deleteSecretAtPath(deviceSecretPath(guid, req.tenantId))
       res.status(200).json({ status: 'SUCCESS' })
     } else {
       res.status(200).json(result.Body?.Unprovision_OUTPUT)
