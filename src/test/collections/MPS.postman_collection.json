@@ -3192,6 +3192,7 @@
         },
         {
           "name": "Send Remote Erase",
+          "description": "Submits RPE; success confirms submission, not BIOS completion. Optional SSD master password and PSID are limited to 64 UTF-8 bytes each.",
           "event": [
             {
               "listen": "test",
@@ -3208,7 +3209,7 @@
             "header": [],
             "body": {
               "mode": "raw",
-              "raw": "{\r\n    \"secureEraseAllSSDs\": true,\r\n    \"tpmClear\": false,\r\n    \"restoreBIOSToEOM\": false,\r\n    \"unconfigureCSME\": false\r\n}",
+              "raw": "{\r\n    \"secureEraseAllSSDs\": true,\r\n    \"tpmClear\": false,\r\n    \"restoreBIOSToEOM\": false,\r\n    \"unconfigureCSME\": false,\r\n    \"ssdPassword\": \"\",\r\n    \"psid\": \"\"\r\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -3228,6 +3229,42 @@
                 "boot",
                 "remoteErase",
                 "1"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Last BIOS Erase Status",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Disconnected device returns 404\", function () { pm.response.to.have.status(404); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "description": "Last BIOS boot result, not operation-specific. Observe pending after submission before accepting succeeded or failed. Password/authentication failures are failed; unknown or unreachable does not mean success.",
+            "url": {
+              "raw": "{{protocol}}://{{host}}/api/v1/amt/boot/remoteErase/1/status",
+              "protocol": "{{protocol}}",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "amt",
+                "boot",
+                "remoteErase",
+                "1",
+                "status"
               ]
             }
           },

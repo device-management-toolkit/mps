@@ -18,6 +18,38 @@ async function getValidationErrors(body: any): Promise<any[]> {
 }
 
 describe('sendRPE validator', () => {
+  describe.each(['ssdPassword', 'psid'])('%s byte limits', (field) => {
+    it('does not expose oversized credentials in validation errors', async () => {
+      const credential = 'secret-credential'.repeat(5)
+      const errors = await getValidationErrors({ secureEraseAllSSDs: true, [field]: credential })
+
+      expect(errors.some((error) => error.path === field)).toBe(true)
+      expect(JSON.stringify(errors)).not.toContain(credential)
+    })
+
+    it.each([
+      '',
+      'p'.repeat(33),
+      'p'.repeat(64),
+      '\u00e9'.repeat(32),
+      '\u00e9'.repeat(16) + 'p'.repeat(32)
+    ])('accepts credentials up to 64 UTF-8 bytes (%s)', async (value) => {
+      expect(await getValidationErrors({ secureEraseAllSSDs: true, [field]: value })).toHaveLength(0)
+    })
+
+    it.each([
+      null,
+      123,
+      {},
+      'p'.repeat(65),
+      '\u00e9'.repeat(33),
+      '\u00e9'.repeat(32) + 'p'
+    ])('rejects invalid or oversized credentials (%s)', async (value) => {
+      const errors = await getValidationErrors({ secureEraseAllSSDs: true, [field]: value })
+      expect(errors.some((error) => error.path === field)).toBe(true)
+    })
+  })
+
   describe('valid requests', () => {
     it('accepts a single boolean erase option', async () => {
       const errors = await getValidationErrors({ secureEraseAllSSDs: true })
@@ -68,6 +100,17 @@ describe('sendRPE validator', () => {
       expect(errors.some((e) => e.msg === 'At least one erase option must be enabled')).toBe(true)
     })
 
+    it('does not expose credentials in the whole-body validation error', async () => {
+      const password = 'secret-password'
+      const psid = 'secret-psid'
+      const errors = await getValidationErrors({ ssdPassword: password, psid })
+
+      expect(errors).toHaveLength(1)
+      expect(errors[0]).not.toHaveProperty('value')
+      expect(JSON.stringify(errors)).not.toContain(password)
+      expect(JSON.stringify(errors)).not.toContain(psid)
+    })
+
     it('rejects when all erase options are false', async () => {
       const errors = await getValidationErrors({
         secureEraseAllSSDs: false,
@@ -110,6 +153,13 @@ describe('sendRPE validator', () => {
     it('rejects non-string ssdPassword', async () => {
       const errors = await getValidationErrors({ secureEraseAllSSDs: true, ssdPassword: 12345 })
       expect(errors.some((e) => e.path === 'ssdPassword')).toBe(true)
+    })
+
+    it('does not expose oversized ssdPassword in validation errors', async () => {
+      const password = 'secret-password'.repeat(5)
+      const errors = await getValidationErrors({ secureEraseAllSSDs: true, ssdPassword: password })
+      expect(errors.some((e) => e.path === 'ssdPassword')).toBe(true)
+      expect(JSON.stringify(errors)).not.toContain(password)
     })
 
     it('rejects ssdPassword exceeding max byte length', async () => {
