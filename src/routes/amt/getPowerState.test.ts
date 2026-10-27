@@ -68,7 +68,13 @@ describe('power state', () => {
     powerStateSpy.mockResolvedValueOnce(serviceAvailableToElement.Envelope.Body)
     await powerState(req, resSpy)
     expect(updatePowerStateSpy).toHaveBeenCalledTimes(1)
-    const [guid, cachedPowerState, cachedOsPowerSavingState, readStartedAt, tenantId] = updatePowerStateSpy.mock.calls[0]
+    const [
+      guid,
+      cachedPowerState,
+      cachedOsPowerSavingState,
+      readStartedAt,
+      tenantId
+    ] = updatePowerStateSpy.mock.calls[0]
     expect(guid).toBe('4c4c4544-004b-4210-8033-b6c04f504633')
     expect(cachedPowerState).toBe(4)
     expect(cachedOsPowerSavingState).toBe(3)

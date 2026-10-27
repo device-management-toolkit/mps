@@ -46,7 +46,13 @@ describe('power state cache', () => {
       await refreshCachedPowerState(req, guid)
       expect(powerStateSpy).toHaveBeenCalled()
       expect(osPowerStateGetSpy).toHaveBeenCalled()
-      const [g, powerState, osPowerSavingState, readStartedAt, tenantId] = updatePowerStateSpy.mock.calls[0]
+      const [
+        g,
+        powerState,
+        osPowerSavingState,
+        readStartedAt,
+        tenantId
+      ] = updatePowerStateSpy.mock.calls[0]
       expect(g).toBe(guid)
       expect(powerState).toBe(4)
       expect(osPowerSavingState).toBe(3)

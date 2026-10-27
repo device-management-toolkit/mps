@@ -29,7 +29,9 @@ export async function refreshCachedPowerState(req: Request, guid: string): Promi
     const response = await operationWithTimeout(req.deviceAction.getPowerState(), TIMEOUT_MS_DEFAULT)
     const rawPowerState = response?.PullResponse?.Items?.CIM_AssociatedPowerManagementService?.PowerState
     if (rawPowerState == null) {
-      logger.warn(`${messages.POWER_STATE_CACHE_UPDATE_FAILED} for guid : ${guid}. ${messages.POWER_STATE_REQUEST_FAILED}`)
+      logger.warn(
+        `${messages.POWER_STATE_CACHE_UPDATE_FAILED} for guid : ${guid}. ${messages.POWER_STATE_REQUEST_FAILED}`
+      )
       return
     }
 

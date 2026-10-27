@@ -56,4 +56,3 @@ export async function powerState(req: Request, res: Response): Promise<void> {
     }
   }
 }
-
