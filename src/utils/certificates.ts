@@ -21,7 +21,7 @@ import {
 } from '../models/Config.js'
 import forge from 'node-forge'
 import { type ISecretManagerService } from '../interfaces/ISecretManagerService.js'
-import { DEFAULT_MPS_CERT_KEY_SIZE } from './constants.js'
+import { DEFAULT_MPS_CERT_KEY_SIZE, ALLOWED_MPS_CERT_KEY_SIZES } from './constants.js'
 
 export class Certificates {
   constructor(
@@ -37,8 +37,85 @@ export class Certificates {
     if (certificates == null) {
       certificates = this.generateCertificates()
       await this.storeCertificates(certificates)
+    } else {
+      certificates = await this.reissueLeafIfNeeded(certificates)
     }
+    this.logCertificateKeySizes(certificates)
     return certificates // return mps and web certificates
+  }
+
+  // logs the leaf and root key sizes being served at startup, so the configured size can be confirmed from the log rather than assumed from config.
+  logCertificateKeySizes(certificates: certificatesType): void {
+    const leafKeySize = this.getPemKeySize(certificates.web_tls_config?.cert)
+    const rootKeySize = this.getPemKeySize(certificates.web_tls_config?.ca)
+    logger.info(
+      `${messages.MPS_CERTIFICATE_KEY_SIZES}: leaf=${leafKeySize ?? 'unknown'}-bit, root=${rootKeySize ?? 'unknown'}-bit`
+    )
+  }
+
+  private getPemKeySize(pem: string | string[] | undefined): number | null {
+    const certPem = Array.isArray(pem) ? pem[0] : pem
+    if (typeof certPem !== 'string') {
+      return null
+    }
+    try {
+      const cert = forge.pki.certificateFromPem(certPem)
+      return (cert.publicKey as forge.pki.rsa.PublicKey).n.bitLength()
+    } catch (error) {
+      return null
+    }
+  }
+
+  // reissue the leaf alone under the existing root when mps_cert_key_size is raised; never downgrades, never regenerates the root.
+  async reissueLeafIfNeeded(certificates: certificatesType): Promise<certificatesType> {
+    const configuredKeySize = this.config.mps_tls_config?.mps_cert_key_size
+    const targetKeySize = ALLOWED_MPS_CERT_KEY_SIZES.includes(configuredKeySize) ? configuredKeySize : DEFAULT_MPS_CERT_KEY_SIZE
+    const rootCertificatePem = certificates.web_tls_config?.ca
+    if (typeof rootCertificatePem !== 'string' || certificates.root_key == null) {
+      return certificates
+    }
+
+    let rootCert: forge.pki.Certificate
+    let rootKey: forge.pki.rsa.PrivateKey
+    let currentKeySize: number
+    try {
+      rootCert = forge.pki.certificateFromPem(rootCertificatePem)
+      rootKey = forge.pki.privateKeyFromPem(certificates.root_key) as forge.pki.rsa.PrivateKey
+      const leafCert = forge.pki.certificateFromPem(certificates.web_tls_config.cert)
+      currentKeySize = (leafCert.publicKey as forge.pki.rsa.PublicKey).n.bitLength()
+    } catch (error) {
+      logger.warn(messages.MPS_ROOT_CERTIFICATE_UNREADABLE)
+      return certificates
+    }
+
+    if (currentKeySize >= targetKeySize) {
+      return certificates // upwards only - same size or a lowered setting is a no-op
+    }
+
+    logger.info(`${messages.REISSUING_MPS_LEAF_CERTIFICATE}: ${currentKeySize}-bit -> ${targetKeySize}-bit`)
+    const leafCertAndKey: certAndKeyType = this.IssueWebServerCertificate(
+      { cert: rootCert, key: rootKey },
+      false,
+      this.config.common_name,
+      this.config.country,
+      this.config.organization,
+      null,
+      targetKeySize
+    )
+    const mpsCertificate = forge.pki.certificateToPem(leafCertAndKey.cert)
+    const mpsPrivateKey = forge.pki.privateKeyToPem(leafCertAndKey.key)
+
+    const updatedCertificates: certificatesType = {
+      ...certificates,
+      mps_tls_config: { ...certificates.mps_tls_config, cert: mpsCertificate, key: mpsPrivateKey },
+      web_tls_config: { ...certificates.web_tls_config, cert: mpsCertificate, key: mpsPrivateKey }
+    }
+    try {
+      await this.storeCertificates(updatedCertificates)
+    } catch (error) {
+      logger.warn(`${messages.MPS_LEAF_CERTIFICATE_PERSIST_FAILED}: ${error}`)
+    }
+    return updatedCertificates
   }
 
   generateCertificates(): certificatesType {
@@ -50,7 +127,8 @@ export class Certificates {
     logger.info(messages.GENERATING_MPS_CERTIFICATE)
 
     // Use configured key size (default 2048 for backward compatibility)
-    const mpsKeySize = this.config.mps_tls_config?.mps_cert_key_size === 3072
+    const configuredKeySize = this.config.mps_tls_config?.mps_cert_key_size
+    const mpsKeySize = ALLOWED_MPS_CERT_KEY_SIZES.includes(configuredKeySize) ? configuredKeySize : DEFAULT_MPS_CERT_KEY_SIZE
 
     const mpsCertAndKey: certAndKeyType = this.IssueWebServerCertificate(
       rootCertAndKey,
@@ -171,9 +249,8 @@ export class Certificates {
     country: string,
     organization: string,
     extKeyUsage,
-    strong: boolean
+    keySize: number = DEFAULT_MPS_CERT_KEY_SIZE
   ): any => {
-    const keySize = strong ? 3072 : DEFAULT_MPS_CERT_KEY_SIZE
     const keys = forge.pki.rsa.generateKeyPair(keySize)
     const cert = forge.pki.createCertificate()
     cert.publicKey = keys.publicKey
