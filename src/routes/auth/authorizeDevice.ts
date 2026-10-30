@@ -10,8 +10,8 @@ import { signature } from './signature.js'
 
 export async function authorizeDevice(req: Request, res: Response): Promise<void> {
   const guid: string = req.params.guid
-  const device = await req.db.devices.getById(guid)
   const tenantId = (req.tenantId as string) ?? ''
+  const device = await req.db.devices.getById(guid, tenantId)
   if (device) {
     const expirationMinutes = Number(Environment.Config.redirection_expiration_time)
     res.status(200).send({ token: signature(expirationMinutes, guid, tenantId) })

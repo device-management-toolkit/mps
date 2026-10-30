@@ -1,3 +1,12 @@
+## [2.36.1](https://github.com/device-management-toolkit/mps/compare/v2.36.0...v2.36.1) (2026-10-24)
+
+# [2.36.0](https://github.com/device-management-toolkit/mps/compare/v2.35.1...v2.36.0) (2026-10-23)
+
+
+### Features
+
+* **redir:** scope token issuance to request tenant ([#2723](https://github.com/device-management-toolkit/mps/issues/2723)) ([efc0b1a](https://github.com/device-management-toolkit/mps/commit/efc0b1aa479aced51c11216138a8b0adf4ea03f6)), closes [device-management-toolkit/deployment#711](https://github.com/device-management-toolkit/deployment/issues/711)
+
 ## [2.35.1](https://github.com/device-management-toolkit/mps/compare/v2.35.0...v2.35.1) (2026-09-21)
 
 # [2.35.0](https://github.com/device-management-toolkit/mps/compare/v2.34.2...v2.35.0) (2026-08-27)

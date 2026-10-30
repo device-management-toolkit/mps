@@ -214,23 +214,35 @@ export class WebServer {
       const decodedToken = this.jws.decode(info.req.headers['sec-websocket-protocol'])
       const currentTimestamp = Math.floor(Date.now() / 1000) // Current timestamp in seconds
       const deviceId = decodedToken.payload.deviceId
+      const tenantId = decodedToken.payload.tenantId
 
       const queryString = info.req.url.split('?')[1] as string
       const params = new URLSearchParams(queryString)
+      if (params.getAll('host').length !== 1) {
+        logger.error('Redirection request must contain exactly one host parameter')
+        return false
+      }
       params.forEach((value, key) => {
         reqParams[key] = value
       })
 
+      const tenantMatches = typeof tenantId === 'string' && tenantId === (devices[reqParams.host]?.tenantId ?? '')
       if (
         !valid ||
         !(decodedToken.payload.exp && decodedToken.payload.exp > currentTimestamp) ||
-        !(deviceId === reqParams.host)
+        !(deviceId === reqParams.host) ||
+        !tenantMatches
       ) {
+        logger.debug(
+          `Redirection verification failed: ${JSON.stringify({ deviceId: reqParams.host, mode: reqParams.mode, signatureValid: valid, expirationValid: !!(decodedToken.payload.exp && decodedToken.payload.exp > currentTimestamp), deviceMatches: deviceId === reqParams.host, tenantMatches })}`
+        )
         logger.error('Redirection token invalid')
         return false // reject connection if problem with verify
       }
+      logger.debug(`Redirection tenant verified: ${JSON.stringify({ deviceId, mode: reqParams.mode, tenantId })}`)
     } catch (error) {
       logger.error(`Error verifying the token: ${error.message}`)
+      return false
     }
 
     const guid = reqParams.host as string
