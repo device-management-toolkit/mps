@@ -12,6 +12,7 @@ import { IncomingMessage } from 'node:http'
 import { Socket } from 'node:net'
 import { devices } from './mpsserver.js'
 import { signature } from '../routes/auth/signature.js'
+import { logger } from '../logging/index.js'
 Environment.Config = config
 
 let certs: certificatesType
@@ -66,6 +67,130 @@ describe('webserver tests', () => {
   })
 
   describe('verify client token', () => {
+    it.each([
+      'host=device-b&host=device-a',
+      'host=device-a&host=device-b',
+      'host=device-a&host=device-a',
+      'host=device-b&%68ost=device-a',
+      '%68ost=device-b&host=device-a',
+      'mode=kvm'
+    ])('should reject ambiguous or missing hosts before reserving a connection: %s', (query) => {
+      devices['device-a'] = { tenantId: 'tenant-a', kvmConnect: false } as any
+      devices['device-b'] = { tenantId: 'tenant-a', kvmConnect: false } as any
+      const reserveSpy = vi.spyOn(web, 'updateDeviceConnection')
+
+      try {
+        expect(
+          web.verifyClientToken({
+            req: {
+              url: `/relay/webrelay.ashx?${query}&port=16994&mode=kvm&p=2&tls=0`,
+              headers: { 'sec-websocket-protocol': signature(5, 'device-a', 'tenant-a') }
+            }
+          })
+        ).toBe(false)
+        expect(reserveSpy).not.toHaveBeenCalled()
+        expect(devices['device-a'].kvmConnect).toBe(false)
+        expect(devices['device-b'].kvmConnect).toBe(false)
+      } finally {
+        reserveSpy.mockRestore()
+        delete devices['device-a']
+        delete devices['device-b']
+      }
+    })
+
+    it.each([
+      [
+        'matching tenants',
+        'tenant-a',
+        'tenant-a',
+        true
+      ],
+      [
+        'different tenants',
+        'tenant-a',
+        'tenant-b',
+        false
+      ],
+      [
+        'empty token tenant for a tenant device',
+        '',
+        'tenant-a',
+        false
+      ],
+      [
+        'tenant token for a single-tenant device',
+        'tenant-a',
+        '',
+        false
+      ],
+      [
+        'empty tenants',
+        '',
+        '',
+        true
+      ],
+      [
+        'unset device tenant',
+        '',
+        undefined,
+        true
+      ],
+      [
+        'missing token tenant',
+        undefined,
+        '',
+        false
+      ],
+      [
+        'null token tenant',
+        null,
+        '',
+        false
+      ]
+    ])('should validate %s before reserving a connection', (_name, tokenTenant, deviceTenant, expected) => {
+      const guid = 'tenant-verification-device'
+      devices[guid] = { tenantId: deviceTenant, kvmConnect: false } as any
+      const info = {
+        req: {
+          url: `/relay/webrelay.ashx?host=${guid}&mode=kvm`,
+          headers: { 'sec-websocket-protocol': signature(5, guid, tokenTenant as string) }
+        }
+      }
+      const debugSpy = vi.spyOn(logger, 'debug').mockImplementation(() => {})
+
+      try {
+        expect(web.verifyClientToken(info)).toBe(expected)
+        expect(devices[guid].kvmConnect).toBe(expected)
+        if (!expected) expect(debugSpy).toHaveBeenCalledWith(expect.stringContaining('"tenantMatches":false'))
+        expect(JSON.stringify(debugSpy.mock.calls)).not.toContain(info.req.headers['sec-websocket-protocol'])
+      } finally {
+        debugSpy.mockRestore()
+        delete devices[guid]
+      }
+    })
+
+    it('should reject verification errors even when the requested device exists', () => {
+      const guid = 'verification-error-device'
+      devices[guid] = { tenantId: '', kvmConnect: false } as any
+      vi.spyOn(web.jws, 'decode').mockImplementationOnce(() => {
+        throw new Error('Invalid token')
+      })
+
+      try {
+        expect(
+          web.verifyClientToken({
+            req: {
+              url: `/relay/webrelay.ashx?host=${guid}&mode=kvm`,
+              headers: { 'sec-websocket-protocol': signature(5, guid, '') }
+            }
+          })
+        ).toBe(false)
+        expect(devices[guid].kvmConnect).toBe(false)
+      } finally {
+        delete devices[guid]
+      }
+    })
+
     it('should return false when client jwt token is invalid', () => {
       const jwsSpy = vi.spyOn(web.jws, 'verify')
       jwsSpy.mockImplementationOnce(() => false)

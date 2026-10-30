@@ -23,6 +23,20 @@ import forge from 'node-forge'
 import { type ISecretManagerService } from '../interfaces/ISecretManagerService.js'
 import { DEFAULT_MPS_CERT_KEY_SIZE, ALLOWED_MPS_CERT_KEY_SIZES } from './constants.js'
 
+// RSA key size in bits of a PEM certificate (the first one, if given a list), or null if it can't be read.
+export function getPemKeySize(pem: string | string[] | undefined): number | null {
+  const certPem = Array.isArray(pem) ? pem[0] : pem
+  if (typeof certPem !== 'string') {
+    return null
+  }
+  try {
+    const cert = forge.pki.certificateFromPem(certPem)
+    return (cert.publicKey as forge.pki.rsa.PublicKey).n.bitLength()
+  } catch (error) {
+    return null
+  }
+}
+
 export class Certificates {
   constructor(
     private readonly config: configType,
@@ -46,32 +60,23 @@ export class Certificates {
 
   // logs the leaf and root key sizes being served at startup, so the configured size can be confirmed from the log rather than assumed from config.
   logCertificateKeySizes(certificates: certificatesType): void {
-    const leafKeySize = this.getPemKeySize(certificates.web_tls_config?.cert)
-    const rootKeySize = this.getPemKeySize(certificates.web_tls_config?.ca)
+    const leafKeySize = getPemKeySize(certificates.web_tls_config?.cert)
+    const rootKeySize = getPemKeySize(certificates.web_tls_config?.ca)
     logger.info(
       `${messages.MPS_CERTIFICATE_KEY_SIZES}: leaf=${leafKeySize ?? 'unknown'}-bit, root=${rootKeySize ?? 'unknown'}-bit`
     )
   }
 
-  private getPemKeySize(pem: string | string[] | undefined): number | null {
-    const certPem = Array.isArray(pem) ? pem[0] : pem
-    if (typeof certPem !== 'string') {
-      return null
-    }
-    try {
-      const cert = forge.pki.certificateFromPem(certPem)
-      return (cert.publicKey as forge.pki.rsa.PublicKey).n.bitLength()
-    } catch (error) {
-      return null
-    }
-  }
-
-  // reissue the leaf alone under the existing root when mps_cert_key_size is raised; never downgrades, never regenerates the root.
+  // reissue the leaf alone under the existing root whenever its key size differs from mps_cert_key_size, up or down
+  // (AMT 12 refuses 3072, so lowering must work too); the root is never regenerated.
   async reissueLeafIfNeeded(certificates: certificatesType): Promise<certificatesType> {
     const configuredKeySize = this.config.mps_tls_config?.mps_cert_key_size
-    const targetKeySize = ALLOWED_MPS_CERT_KEY_SIZES.includes(configuredKeySize) ? configuredKeySize : DEFAULT_MPS_CERT_KEY_SIZE
+    const targetKeySize = ALLOWED_MPS_CERT_KEY_SIZES.includes(configuredKeySize)
+      ? configuredKeySize
+      : DEFAULT_MPS_CERT_KEY_SIZE
     const rootCertificatePem = certificates.web_tls_config?.ca
     if (typeof rootCertificatePem !== 'string' || certificates.root_key == null) {
+      logger.warn(messages.MPS_ROOT_CERTIFICATE_MISSING)
       return certificates
     }
 
@@ -88,8 +93,8 @@ export class Certificates {
       return certificates
     }
 
-    if (currentKeySize >= targetKeySize) {
-      return certificates // upwards only - same size or a lowered setting is a no-op
+    if (currentKeySize === targetKeySize) {
+      return certificates
     }
 
     logger.info(`${messages.REISSUING_MPS_LEAF_CERTIFICATE}: ${currentKeySize}-bit -> ${targetKeySize}-bit`)
@@ -128,7 +133,9 @@ export class Certificates {
 
     // Use configured key size (default 2048 for backward compatibility)
     const configuredKeySize = this.config.mps_tls_config?.mps_cert_key_size
-    const mpsKeySize = ALLOWED_MPS_CERT_KEY_SIZES.includes(configuredKeySize) ? configuredKeySize : DEFAULT_MPS_CERT_KEY_SIZE
+    const mpsKeySize = ALLOWED_MPS_CERT_KEY_SIZES.includes(configuredKeySize)
+      ? configuredKeySize
+      : DEFAULT_MPS_CERT_KEY_SIZE
 
     const mpsCertAndKey: certAndKeyType = this.IssueWebServerCertificate(
       rootCertAndKey,
@@ -185,7 +192,11 @@ export class Certificates {
     const data = {
       data: certificates
     }
-    await this.secrets.writeSecretWithObject('MPSCerts', data)
+    // the secret provider reports a failed write by resolving false rather than rejecting
+    const written = await this.secrets.writeSecretWithObject('MPSCerts', data)
+    if (!written) {
+      throw new Error(messages.MPS_CERTIFICATES_WRITE_FAILED)
+    }
   }
 
   GenerateRootCertificate = (

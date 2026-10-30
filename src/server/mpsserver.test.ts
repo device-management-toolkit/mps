@@ -11,7 +11,7 @@ import { type Device } from '../models/models.js'
 import { type IDeviceTable } from '../interfaces/IDeviceTable.js'
 import { type IDB } from '../interfaces/IDb.js'
 import { Environment } from '../utils/Environment.js'
-import { logger } from '../logging/index.js'
+import { logger, messages } from '../logging/index.js'
 import APFProcessor from '../amt/APFProcessor.js'
 let certs: certificatesType
 let db: IDB
@@ -79,7 +79,11 @@ describe('MPS Server', function () {
       setTimeout: vi.fn(),
       on: vi.fn(),
       addListener: vi.fn(),
-      getPeerCertificate: vi.fn()
+      getPeerCertificate: vi.fn(),
+      getProtocol: vi.fn().mockReturnValue('TLSv1.2'),
+      getCipher: vi.fn().mockReturnValue({ name: 'ECDHE-RSA-AES256-GCM-SHA384' }),
+      remoteAddress: '10.0.0.5',
+      remotePort: 50123
     } as any
     delete devices['123']
     mps = new MPSServer(certs, db, secrets)
@@ -191,10 +195,48 @@ describe('MPS Server', function () {
   })
   it('should connect with TLS', () => {
     const addHandlersSpy = vi.spyOn(mps, 'addHandlers').mockReturnValue(null)
+    const infoSpy = vi.spyOn(logger, 'info')
+    mps.serverKeySize = 3072
     delete socket.tag
     mps.onTLSConnection(socket)
     expect(socket.tag).toBeDefined()
     expect(addHandlersSpy).toHaveBeenCalledWith(socket)
+    expect(infoSpy).toHaveBeenCalledWith(
+      `${messages.MPS_CIRA_TLS_CONNECTION}: device=10.0.0.5:50123, server certificate=3072-bit, protocol=TLSv1.2, cipher=ECDHE-RSA-AES256-GCM-SHA384`
+    )
+  })
+  it('should log the alert code and server key size when a device rejects the TLS handshake', () => {
+    const warnSpy = vi.spyOn(logger, 'warn')
+    mps.serverKeySize = 3072
+    const err = Object.assign(new Error('tlsv1 alert handshake failure'), {
+      code: 'ERR_SSL_TLSV1_ALERT_HANDSHAKE_FAILURE',
+      reason: 'tlsv1 alert handshake failure'
+    })
+    mps.onTLSClientError(err, socket)
+    expect(warnSpy).toHaveBeenCalledWith(
+      `${messages.MPS_CIRA_TLS_HANDSHAKE_FAILED}: device=10.0.0.5:50123, code=ERR_SSL_TLSV1_ALERT_HANDSHAKE_FAILURE, reason=tlsv1 alert handshake failure, server certificate=3072-bit`
+    )
+  })
+  it('should report unknown values when the TLS error has no code and the key size is unreadable', () => {
+    const warnSpy = vi.spyOn(logger, 'warn')
+    mps.onTLSClientError(new Error('socket hang up'), socket)
+    expect(warnSpy).toHaveBeenCalledWith(
+      `${messages.MPS_CIRA_TLS_HANDSHAKE_FAILED}: device=10.0.0.5:50123, code=unknown, reason=socket hang up, server certificate=unknown-bit`
+    )
+  })
+  it('should log a bare TCP reset at debug, with an unknown address, instead of warning', () => {
+    const warnSpy = vi.spyOn(logger, 'warn')
+    const debugSpy = vi.spyOn(logger, 'debug')
+    const closedSocket = { remoteAddress: undefined, remotePort: undefined } as any
+    const err = Object.assign(new Error('read ECONNRESET'), { code: 'ECONNRESET' })
+    mps.onTLSClientError(err, closedSocket)
+    expect(debugSpy).toHaveBeenCalledWith(
+      `${messages.MPS_CIRA_TLS_HANDSHAKE_FAILED}: device=unknown:unknown, code=ECONNRESET, reason=read ECONNRESET, server certificate=unknown-bit`
+    )
+    expect(warnSpy).not.toHaveBeenCalled()
+  })
+  it('should handle tlsClientError events on the CIRA server', () => {
+    expect(mps.server.listeners('tlsClientError')).toContain(mps.onTLSClientError)
   })
   it('should add handlers', () => {
     const setEncodingSpy = vi.spyOn(socket, 'setEncoding')

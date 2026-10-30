@@ -33,6 +33,7 @@ import { type ISecretManagerService } from '../interfaces/ISecretManagerService.
 import { ConnectedDevice } from '../amt/ConnectedDevice.js'
 import { MqttProvider } from '../utils/MqttProvider.js'
 import { CIRA_MAX_IDLE_TIME } from '../utils/constants.js'
+import { getPemKeySize } from '../utils/certificates.js'
 
 const devices: Record<string, ConnectedDevice> = {}
 
@@ -43,11 +44,13 @@ export class MPSServer {
   events: EventEmitter
   db: IDB
   secrets: ISecretManagerService
+  serverKeySize: number | null
   constructor(certs: certificatesType, db: IDB, secrets: ISecretManagerService) {
     this.certs = certs
     this.db = db
     this.secrets = secrets
     this.events = new EventEmitter()
+    this.serverKeySize = getPemKeySize(this.certs.mps_tls_config?.cert)
 
     APFProcessor.APFEvents.on('userAuthRequest', this.onVerifyUserAuth.bind(this))
     APFProcessor.APFEvents.on('protocolVersion', this.onAPFProtocolVersion.bind(this))
@@ -56,6 +59,7 @@ export class MPSServer {
 
     // Creates a TLS server for secure connection
     this.server = tlsCreateServer(this.certs.mps_tls_config, this.onTLSConnection)
+    this.server.on('tlsClientError', this.onTLSClientError)
 
     this.server.on('error', (err) => {
       logger.error(`${messages.PORT_NOT_AVAILABLE} : ${Environment.Config.port}`)
@@ -136,8 +140,22 @@ export class MPSServer {
     }
   }
 
+  // a handshake the device aborts (e.g. AMT 12 refusing a 3072-bit leaf) never reaches onTLSConnection, so log it here
+  onTLSClientError = (err: Error & { code?: string; reason?: string }, socket: TLSSocket): void => {
+    const message = `${messages.MPS_CIRA_TLS_HANDSHAKE_FAILED}: device=${socket.remoteAddress ?? 'unknown'}:${socket.remotePort ?? 'unknown'}, code=${err.code ?? 'unknown'}, reason=${err.reason ?? err.message}, server certificate=${this.serverKeySize ?? 'unknown'}-bit`
+    // a bare TCP connect/close (port scan, load balancer health check) sends no TLS alert and only shows up as ECONNRESET
+    if (err.code === 'ECONNRESET') {
+      logger.debug(message)
+    } else {
+      logger.warn(message)
+    }
+  }
+
   onTLSConnection = (socket: TLSSocket): void => {
     logger.debug(messages.MPS_NEW_TLS_CONNECTION) // New TLS connection detected
+    logger.info(
+      `${messages.MPS_CIRA_TLS_CONNECTION}: device=${socket.remoteAddress}:${socket.remotePort}, server certificate=${this.serverKeySize ?? 'unknown'}-bit, protocol=${socket.getProtocol() ?? 'unknown'}, cipher=${socket.getCipher()?.name ?? 'unknown'}`
+    )
     ;(socket as CIRASocket).tag = {
       id: randomBytes(16).toString('hex'),
       first: true,
