@@ -31,7 +31,7 @@ function resolveRPEStateFromBootService(enabledState: number | undefined, bootDa
   return normalizeRPEState(bootData?.RPEEnabled ?? bootData?.RPE)
 }
 
-export async function getAMTFeatures(req: Request, res: Response): Promise<void> {
+export async function getAMTFeatures(req: Request<{ guid: string }>, res: Response): Promise<void> {
   try {
     const guid: string = req.params.guid
     const amtRedirectionResponse = await req.deviceAction.getRedirectionService()

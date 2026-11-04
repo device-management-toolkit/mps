@@ -16,7 +16,7 @@ import {
 import Common from '../../utils/common.js'
 import { type AMT } from '@device-management-toolkit/wsman-messages'
 
-export async function eventLog(req: Request, res: Response): Promise<void> {
+export async function eventLog(req: Request<{ guid: string }>, res: Response): Promise<void> {
   try {
     const guid: string = req.params.guid
 

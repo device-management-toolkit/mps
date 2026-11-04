@@ -7,7 +7,7 @@ import { logger, messages } from '../../logging/index.js'
 import { type Request, type Response } from 'express'
 import { devices } from '../../server/mpsserver.js'
 
-export async function getRedirStatus(req: Request, res: Response): Promise<void> {
+export async function getRedirStatus(req: Request<{ guid: string }>, res: Response): Promise<void> {
   try {
     const guid = req.params.guid
     let tenantId = req.tenantId

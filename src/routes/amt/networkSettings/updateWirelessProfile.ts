@@ -17,7 +17,7 @@ import {
   type WirelessProfileConfigRequest
 } from './wirelessProfileHelper.js'
 
-export async function updateWirelessProfile(req: Request, res: Response): Promise<void> {
+export async function updateWirelessProfile(req: Request<{ guid: string }>, res: Response): Promise<void> {
   const guid: string = req.params.guid
   try {
     MqttProvider.publishEvent('request', ['AMT_WiFiProfiles'], messages.WIRELESS_PROFILE_UPDATE_REQUESTED, guid)

@@ -16,7 +16,7 @@ import {
   findWiFiPortEnabledState
 } from './helper.js'
 
-export async function requestWirelessStateChange(req: Request, res: Response): Promise<void> {
+export async function requestWirelessStateChange(req: Request<{ guid: string }>, res: Response): Promise<void> {
   const guid: string = req.params.guid
   try {
     MqttProvider.publishEvent('request', ['CIM_WiFiPort'], messages.WIRELESS_STATE_CHANGE_REQUESTED, guid)

@@ -9,7 +9,7 @@ import { ErrorResponse } from '../../../utils/amtHelper.js'
 import { MqttProvider } from '../../../utils/MqttProvider.js'
 import { findWiFiPortEnabledState, mapEnum, WIRELESS_STATE_VALUE_TO_STRING } from './helper.js'
 
-export async function getWirelessState(req: Request, res: Response): Promise<void> {
+export async function getWirelessState(req: Request<{ guid: string }>, res: Response): Promise<void> {
   const guid: string = req.params.guid
   try {
     MqttProvider.publishEvent('request', ['CIM_WiFiPort'], messages.WIRELESS_STATE_GET_REQUESTED, guid)
