@@ -19,10 +19,12 @@ export const sendRPEValidator = (): any => [
     }
     return true
   }),
-  body('ssdPassword').optional().custom((value: string) => {
-    if (typeof value === 'string' && new TextEncoder().encode(value).length > MAX_SSD_PASSWORD_LENGTH) {
-      throw new Error(`SSD password must not exceed ${MAX_SSD_PASSWORD_LENGTH} bytes`)
-    }
-    return true
-  })
+  body('ssdPassword')
+    .optional()
+    .custom((value: string) => {
+      if (typeof value === 'string' && new TextEncoder().encode(value).length > MAX_SSD_PASSWORD_LENGTH) {
+        throw new Error(`SSD password must not exceed ${MAX_SSD_PASSWORD_LENGTH} bytes`)
+      }
+      return true
+    })
 ]
