@@ -8,7 +8,13 @@ import { type Response, type Request } from 'express'
 import { logger, messages } from '../../../logging/index.js'
 import { ErrorResponse } from '../../../utils/amtHelper.js'
 import { MqttProvider } from '../../../utils/MqttProvider.js'
-import { mapEnum, mapEnumReverse, WIRELESS_STATE_VALUE_TO_STRING, hasWiFiPort, findWiFiPortEnabledState } from './helper.js'
+import {
+  mapEnum,
+  mapEnumReverse,
+  WIRELESS_STATE_VALUE_TO_STRING,
+  hasWiFiPort,
+  findWiFiPortEnabledState
+} from './helper.js'
 
 export async function requestWirelessStateChange(req: Request, res: Response): Promise<void> {
   const guid: string = req.params.guid
