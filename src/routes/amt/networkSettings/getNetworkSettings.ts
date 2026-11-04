@@ -25,15 +25,10 @@ import {
  * Returns the combined wired + wireless AMT network settings for a device,
  * matching Console's GET /api/v1/amt/networkSettings/:guid response.
  */
-export async function getNetworkSettings(req: Request, res: Response): Promise<void> {
+export async function getNetworkSettings(req: Request<{ guid: string }>, res: Response): Promise<void> {
   const guid: string = req.params.guid
   try {
-    MqttProvider.publishEvent(
-      'request',
-      ['AMT_EthernetPortSettings'],
-      messages.NETWORK_SETTINGS_GET_REQUESTED,
-      guid
-    )
+    MqttProvider.publishEvent('request', ['AMT_EthernetPortSettings'], messages.NETWORK_SETTINGS_GET_REQUESTED, guid)
 
     const ethernetResponse = await req.deviceAction.getEthernetPortSettings()
     const items = ethernetResponse?.Body?.PullResponse?.Items
@@ -73,12 +68,7 @@ export async function getNetworkSettings(req: Request, res: Response): Promise<v
 
     const response: NetworkSettings = { wired, wireless }
 
-    MqttProvider.publishEvent(
-      'success',
-      ['AMT_EthernetPortSettings'],
-      messages.NETWORK_SETTINGS_GET_SUCCESS,
-      guid
-    )
+    MqttProvider.publishEvent('success', ['AMT_EthernetPortSettings'], messages.NETWORK_SETTINGS_GET_SUCCESS, guid)
     res.status(200).json(response)
   } catch (error) {
     logger.error(`${messages.NETWORK_SETTINGS_EXCEPTION}: ${error}`)

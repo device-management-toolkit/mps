@@ -8,7 +8,7 @@ import { logger, messages } from '../../logging/index.js'
 import { ErrorResponse } from '../../utils/amtHelper.js'
 import { MqttProvider } from '../../utils/MqttProvider.js'
 
-export async function generalSettings(req: Request, res: Response): Promise<void> {
+export async function generalSettings(req: Request<{ guid: string }>, res: Response): Promise<void> {
   try {
     const guid: string = req.params.guid
     MqttProvider.publishEvent('request', ['AMT_GeneralSettings'], messages.GENERAL_SETTINGS_GET_REQUESTED, guid)

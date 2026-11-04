@@ -13,7 +13,6 @@ import { type Socket } from 'node:net'
 
 import express, { type NextFunction, type Request, type RequestHandler, type Response } from 'express'
 import { createServer, type IncomingMessage, type Server } from 'node:http'
-import parser from 'body-parser'
 import jws from 'jws'
 import { type certificatesType } from '../models/Config.js'
 import { ErrorResponse } from '../utils/amtHelper.js'
@@ -46,6 +45,7 @@ export class WebServer {
       this.secrets = secrets
       this.certs = certs
       this.app = express()
+      this.app.set('query parser', 'extended')
 
       const options: ServerOptions = {
         noServer: true,
@@ -58,7 +58,7 @@ export class WebServer {
       this.app.use(cors())
 
       // Handles the Bad JSON exceptions
-      this.app.use(parser.json(), this.appUseJsonParser.bind(this))
+      this.app.use(express.json(), this.appUseJsonParser.bind(this))
       this.app.use(this.appUseCall.bind(this))
 
       // Relay websocket. KVM, IDER & SOL use this websocket.
@@ -116,6 +116,8 @@ export class WebServer {
   }
 
   appUseCall(req: Request, res: Response, next: NextFunction): void {
+    // Preserve Express 4's empty body for requests without a parsed JSON body.
+    req.body ??= {}
     res.on('finish', this.afterResponse.bind(this, req, res))
     res.on('close', this.afterResponse.bind(this, req, res))
     req.on('aborted', this.onAborted.bind(this, req, res))

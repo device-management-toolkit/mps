@@ -9,7 +9,7 @@ import { MqttProvider } from '../../../utils/MqttProvider.js'
 import { type DeviceAction } from '../../../amt/DeviceAction.js'
 import { IPS } from '@device-management-toolkit/wsman-messages/index.js'
 
-export async function setKVMRedirectionSettingData(req: Request, res: Response): Promise<void> {
+export async function setKVMRedirectionSettingData(req: Request<{ guid: string }>, res: Response): Promise<void> {
   try {
     const guid: string = req.params.guid
     const displayIndex: number = req.body.displayIndex

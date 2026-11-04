@@ -23,7 +23,7 @@ const TypeWireless = 'Wireless'
 const TypeWired = 'Wired'
 const TypeTLS = 'TLS'
 
-export async function getAMTCertificates(req: Request, res: Response): Promise<void> {
+export async function getAMTCertificates(req: Request<{ guid: string }>, res: Response): Promise<void> {
   try {
     const guid: string = req.params.guid
     const amtCertificates = await req.deviceAction.getCertificates()

@@ -9,7 +9,7 @@ import { ErrorResponse } from '../../../utils/amtHelper.js'
 import { MqttProvider } from '../../../utils/MqttProvider.js'
 import { buildProfileSyncResponse, hasWiFiPort } from './helper.js'
 
-export async function getWirelessProfileSync(req: Request, res: Response): Promise<void> {
+export async function getWirelessProfileSync(req: Request<{ guid: string }>, res: Response): Promise<void> {
   const guid: string = req.params.guid
   try {
     MqttProvider.publishEvent(
