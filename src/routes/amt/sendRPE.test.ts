@@ -13,9 +13,7 @@ import { HttpHandler } from '../../amt/HttpHandler.js'
 import { messages } from '../../logging/index.js'
 import { vi, type MockInstance } from 'vitest'
 
-import {
-  PLATFORM_ERASE_ALL_SSDS
-} from './rpeConstants.js'
+import { PLATFORM_ERASE_ALL_SSDS } from './rpeConstants.js'
 
 describe('Send Remote Erase', () => {
   let req: any
