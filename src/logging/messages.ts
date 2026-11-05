@@ -180,6 +180,8 @@ export enum messages {
   PORT_NOT_AVAILABLE = 'ERROR: Intel(R) AMT server port is not available',
   POWER_STATE_EXCEPTION = 'Exception during Power State request',
   POWER_STATE_REQUEST_FAILED = 'Power State request failed',
+  POWER_STATE_REFRESH_SUSPENDED = 'Power state refresh suspended until the device reconnects',
+  POWER_STATE_CACHE_UPDATE_FAILED = 'Power state cache update failed',
   POWER_STATE_GET_REQUESTED = 'Power State requested',
   POWER_ACTION_REQUESTED = 'Power Action requested',
   POWER_ACTION_EXCEPTION = 'Exception during Power Action request',

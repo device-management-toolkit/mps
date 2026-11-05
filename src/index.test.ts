@@ -105,6 +105,22 @@ describe('Index', () => {
       expect(waitForServiceManagerSpy).toHaveBeenCalled()
     })
 
+    it('should merge defaults and validate configuration loaded from Consul', async () => {
+      processServiceConfigsSpy.mockImplementationOnce(async () => {
+        Environment.Config = {
+          ...config,
+          power_state_refresh_interval: 'invalid',
+          power_state_max_concurrent: 501
+        }
+      })
+
+      await indexFile.setupServiceManager(config)
+
+      expect(Environment.Config.power_state_refresh_interval).toBe(300)
+      expect(Environment.Config.power_state_refresh_jitter).toBe(60)
+      expect(Environment.Config.power_state_max_concurrent).toBe(20)
+    })
+
     it('should pass with config', () => {
       const result = indexFile.loadConfig(config)
       expect(result.web_tls_config).toEqual(config.web_tls_config)

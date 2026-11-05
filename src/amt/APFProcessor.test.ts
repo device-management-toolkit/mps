@@ -1080,6 +1080,21 @@ describe('APFProcessor Tests', () => {
       expect(result).toEqual(5)
       expect(sendKeepAliveReplySpy).toHaveBeenCalled()
     })
+
+    it('should emit keepAliveRequest even when cira_last_seen is false', () => {
+      const fakeCiraSocket: CIRASocket = {
+        tag: { nodeid: '123' },
+        write: vi.fn()
+      } as any
+      Environment.Config = { cira_last_seen: false } as any
+      const emitSpy = vi.spyOn(APFProcessor.APFEvents, 'emit')
+      vi.spyOn(APFProcessor, 'SendKeepAliveReply').mockReturnValue(null)
+
+      const result = APFProcessor.keepAliveRequest(fakeCiraSocket, 5, '')
+
+      expect(result).toEqual(5)
+      expect(emitSpy).toHaveBeenCalledWith('keepAliveRequest', '123')
+    })
   })
 
   describe('Functions based on calling APFProcessor.Write', () => {
