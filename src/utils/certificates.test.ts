@@ -4,10 +4,11 @@
  **********************************************************************/
 
 import { vi, type MockInstance } from 'vitest'
-import { Certificates } from './certificates.js'
+import { Certificates, getPemKeySize } from './certificates.js'
 import { type certAndKeyType, type certificatesType } from '../models/Config.js'
 import forge from 'node-forge'
 import { type ISecretManagerService } from '../interfaces/ISecretManagerService.js'
+import { logger, messages } from '../logging/index.js'
 let certificates: Certificates
 let certificatesTls12: Certificates
 let generateKeyPairSpy: MockInstance
@@ -40,7 +41,7 @@ const secrets: ISecretManagerService = {
   deleteSecretAtPath: () => undefined,
   health: () => undefined,
   getMPSCerts: () => undefined,
-  writeSecretWithObject: async () => undefined
+  writeSecretWithObject: async () => true
 }
 
 beforeEach(() => {
@@ -122,8 +123,37 @@ describe('generateCertificates', () => {
       'US',
       'TestOrg',
       null,
-      true
+      3072
     )
+  })
+
+  it('should generate certificates with 4096-bit key size when configured', () => {
+    const config4096 = {
+      common_name: 'test',
+      country: 'US',
+      organization: 'TestOrg',
+      mps_tls_config: {
+        minVersion: 'TLSv1.2',
+        mps_cert_key_size: 4096
+      }
+    }
+    const certificates4096 = new Certificates(config4096 as any, secrets)
+    const generateRootCertificateSpy = vi.spyOn(certificates4096, 'GenerateRootCertificate').mockReturnValue({})
+    const issueWebServerCertificateSpy = vi.spyOn(certificates4096, 'IssueWebServerCertificate').mockReturnValue({})
+    vi.spyOn(forge.pki, 'certificateToPem').mockReturnValue('certificate')
+    vi.spyOn(forge.pki, 'privateKeyToPem').mockReturnValue('private key')
+    const result: certificatesType = certificates4096.generateCertificates()
+    expect(result).toBeTruthy()
+    expect(issueWebServerCertificateSpy).toHaveBeenCalledWith(
+      expect.anything(),
+      false,
+      'test',
+      'US',
+      'TestOrg',
+      null,
+      4096
+    )
+    expect(generateRootCertificateSpy).toHaveBeenCalled()
   })
 
   it('should generate certificates with 2048-bit key size by default', () => {
@@ -150,7 +180,7 @@ describe('generateCertificates', () => {
       'US',
       'TestOrg',
       null,
-      false
+      2048
     )
   })
 })
@@ -217,6 +247,230 @@ describe('getCertificates', () => {
     expect(generateCertificatesSpy).toHaveBeenCalled()
     expect(storeCertificatesSpy).toHaveBeenCalled()
   })
+
+  it('should run the leaf through reissueLeafIfNeeded when certificates already exist', async () => {
+    const expectedCertificates = { web_tls_config: {} } as any
+    getMPSCertsSpy.mockReturnValue(expectedCertificates)
+    const reissueLeafIfNeededSpy = vi.spyOn(certificates, 'reissueLeafIfNeeded').mockResolvedValue(expectedCertificates)
+    const result = await certificates.getCertificates()
+    expect(result).toEqual(expectedCertificates)
+    expect(reissueLeafIfNeededSpy).toHaveBeenCalledWith(expectedCertificates)
+  })
+})
+
+describe('reissueLeafIfNeeded', () => {
+  const makeLeaf = (bits: number): any => ({ publicKey: { n: { bitLength: () => bits } } })
+  const storedCertificates: any = {
+    mps_tls_config: { cert: 'leaf-pem', key: 'leaf-key-pem' },
+    web_tls_config: { ca: 'root-pem', cert: 'leaf-pem', key: 'leaf-key-pem' },
+    root_key: 'root-key-pem'
+  }
+
+  it('reissues the leaf under the existing root when the stored key size is smaller than configured', async () => {
+    const certificates3072 = new Certificates(
+      {
+        common_name: 'test',
+        country: 'US',
+        organization: 'TestOrg',
+        mps_tls_config: { mps_cert_key_size: 3072 }
+      } as any,
+      secrets
+    )
+    vi.spyOn(forge.pki, 'certificateFromPem')
+      .mockReturnValueOnce({} as any)
+      .mockReturnValueOnce(makeLeaf(2048))
+    vi.spyOn(forge.pki, 'privateKeyFromPem').mockReturnValue({} as any)
+    const issueSpy = vi
+      .spyOn(certificates3072, 'IssueWebServerCertificate')
+      .mockReturnValue({ cert: {}, key: {} } as any)
+    vi.spyOn(forge.pki, 'certificateToPem').mockReturnValue('new-leaf-pem')
+    vi.spyOn(forge.pki, 'privateKeyToPem').mockReturnValue('new-leaf-key-pem')
+    const storeSpy = vi.spyOn(certificates3072, 'storeCertificates').mockResolvedValue(undefined)
+
+    const result = await certificates3072.reissueLeafIfNeeded(storedCertificates)
+
+    expect(issueSpy).toHaveBeenCalledWith(expect.anything(), false, 'test', 'US', 'TestOrg', null, 3072)
+    expect(result.mps_tls_config.cert).toEqual('new-leaf-pem')
+    expect(result.web_tls_config.cert).toEqual('new-leaf-pem')
+    expect(storeSpy).toHaveBeenCalledWith(result)
+  })
+
+  it('reissues to 4096 when configured, under the existing root', async () => {
+    const certificates4096 = new Certificates(
+      {
+        common_name: 'test',
+        country: 'US',
+        organization: 'TestOrg',
+        mps_tls_config: { mps_cert_key_size: 4096 }
+      } as any,
+      secrets
+    )
+    vi.spyOn(forge.pki, 'certificateFromPem')
+      .mockReturnValueOnce({} as any)
+      .mockReturnValueOnce(makeLeaf(3072))
+    vi.spyOn(forge.pki, 'privateKeyFromPem').mockReturnValue({} as any)
+    const issueSpy = vi
+      .spyOn(certificates4096, 'IssueWebServerCertificate')
+      .mockReturnValue({ cert: {}, key: {} } as any)
+    vi.spyOn(forge.pki, 'certificateToPem').mockReturnValue('new-leaf-pem')
+    vi.spyOn(forge.pki, 'privateKeyToPem').mockReturnValue('new-leaf-key-pem')
+    vi.spyOn(certificates4096, 'storeCertificates').mockResolvedValue(undefined)
+
+    const result = await certificates4096.reissueLeafIfNeeded(storedCertificates)
+
+    expect(issueSpy).toHaveBeenCalledWith(expect.anything(), false, 'test', 'US', 'TestOrg', null, 4096)
+    expect(result.mps_tls_config.cert).toEqual('new-leaf-pem')
+  })
+
+  it('still returns the reissued leaf and warns when the secret provider reports a failed write', async () => {
+    const certificates3072 = new Certificates(
+      {
+        common_name: 'test',
+        country: 'US',
+        organization: 'TestOrg',
+        mps_tls_config: { mps_cert_key_size: 3072 }
+      } as any,
+      secrets
+    )
+    vi.spyOn(forge.pki, 'certificateFromPem')
+      .mockReturnValueOnce({} as any)
+      .mockReturnValueOnce(makeLeaf(2048))
+    vi.spyOn(forge.pki, 'privateKeyFromPem').mockReturnValue({} as any)
+    vi.spyOn(certificates3072, 'IssueWebServerCertificate').mockReturnValue({ cert: {}, key: {} } as any)
+    vi.spyOn(forge.pki, 'certificateToPem').mockReturnValue('new-leaf-pem')
+    vi.spyOn(forge.pki, 'privateKeyToPem').mockReturnValue('new-leaf-key-pem')
+    writeSecretWithObjectSpy.mockResolvedValue(false)
+    const warnSpy = vi.spyOn(logger, 'warn')
+
+    const result = await certificates3072.reissueLeafIfNeeded(storedCertificates)
+
+    expect(writeSecretWithObjectSpy).toHaveBeenCalledWith('MPSCerts', { data: result })
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining(messages.MPS_LEAF_CERTIFICATE_PERSIST_FAILED))
+    expect(result.mps_tls_config.cert).toEqual('new-leaf-pem')
+    expect(result.web_tls_config.cert).toEqual('new-leaf-pem')
+  })
+
+  it('leaves certificates unchanged when the stored key size matches the configured size', async () => {
+    const certificates3072 = new Certificates(
+      {
+        common_name: 'test',
+        country: 'US',
+        organization: 'TestOrg',
+        mps_tls_config: { mps_cert_key_size: 3072 }
+      } as any,
+      secrets
+    )
+    vi.spyOn(forge.pki, 'certificateFromPem')
+      .mockReturnValueOnce({} as any)
+      .mockReturnValueOnce(makeLeaf(3072))
+    vi.spyOn(forge.pki, 'privateKeyFromPem').mockReturnValue({} as any)
+    const storeSpy = vi.spyOn(certificates3072, 'storeCertificates')
+
+    const result = await certificates3072.reissueLeafIfNeeded(storedCertificates)
+
+    expect(result).toEqual(storedCertificates)
+    expect(storeSpy).not.toHaveBeenCalled()
+  })
+
+  it('reissues down to a lower configured size, under the existing root', async () => {
+    const certificates2048 = new Certificates(
+      {
+        common_name: 'test',
+        country: 'US',
+        organization: 'TestOrg',
+        mps_tls_config: { mps_cert_key_size: 2048 }
+      } as any,
+      secrets
+    )
+    const rootCert = { subject: 'existing-root' }
+    const rootKey = { key: 'existing-root-key' }
+    vi.spyOn(forge.pki, 'certificateFromPem')
+      .mockReturnValueOnce(rootCert as any)
+      .mockReturnValueOnce(makeLeaf(3072))
+    vi.spyOn(forge.pki, 'privateKeyFromPem').mockReturnValue(rootKey as any)
+    const generateRootSpy = vi.spyOn(certificates2048, 'GenerateRootCertificate')
+    const issueSpy = vi
+      .spyOn(certificates2048, 'IssueWebServerCertificate')
+      .mockReturnValue({ cert: {}, key: {} } as any)
+    vi.spyOn(forge.pki, 'certificateToPem').mockReturnValue('new-leaf-pem')
+    vi.spyOn(forge.pki, 'privateKeyToPem').mockReturnValue('new-leaf-key-pem')
+    const storeSpy = vi.spyOn(certificates2048, 'storeCertificates').mockResolvedValue(undefined)
+
+    const result = await certificates2048.reissueLeafIfNeeded(storedCertificates)
+
+    expect(issueSpy).toHaveBeenCalledWith({ cert: rootCert, key: rootKey }, false, 'test', 'US', 'TestOrg', null, 2048)
+    expect(generateRootSpy).not.toHaveBeenCalled()
+    expect(result.mps_tls_config.cert).toEqual('new-leaf-pem')
+    expect(result.web_tls_config.cert).toEqual('new-leaf-pem')
+    expect(result.web_tls_config.ca).toEqual('root-pem')
+    expect(result.root_key).toEqual('root-key-pem')
+    expect(storeSpy).toHaveBeenCalledWith(result)
+  })
+
+  it('degrades and leaves certificates unchanged when the root cannot be parsed', async () => {
+    vi.spyOn(forge.pki, 'certificateFromPem').mockImplementation(() => {
+      throw new Error('bad cert')
+    })
+    const warnSpy = vi.spyOn(logger, 'warn')
+
+    const result = await certificates.reissueLeafIfNeeded(storedCertificates)
+
+    expect(result).toEqual(storedCertificates)
+    expect(warnSpy).toHaveBeenCalledWith(messages.MPS_ROOT_CERTIFICATE_UNREADABLE)
+    expect(storeCertificatesSpy).not.toHaveBeenCalled()
+  })
+
+  it('warns and leaves certificates unchanged when root_key is missing', async () => {
+    const certificatesWithoutRootKey = { ...storedCertificates, root_key: undefined }
+    const warnSpy = vi.spyOn(logger, 'warn')
+
+    const result = await certificates.reissueLeafIfNeeded(certificatesWithoutRootKey)
+
+    expect(result).toEqual(certificatesWithoutRootKey)
+    expect(warnSpy).toHaveBeenCalledWith(messages.MPS_ROOT_CERTIFICATE_MISSING)
+    expect(storeCertificatesSpy).not.toHaveBeenCalled()
+  })
+
+  it('warns and leaves certificates unchanged when the root certificate is missing', async () => {
+    const certificatesWithoutRootCert = {
+      ...storedCertificates,
+      web_tls_config: { ...storedCertificates.web_tls_config, ca: undefined }
+    }
+    const warnSpy = vi.spyOn(logger, 'warn')
+
+    const result = await certificates.reissueLeafIfNeeded(certificatesWithoutRootCert)
+
+    expect(result).toEqual(certificatesWithoutRootCert)
+    expect(warnSpy).toHaveBeenCalledWith(messages.MPS_ROOT_CERTIFICATE_MISSING)
+    expect(storeCertificatesSpy).not.toHaveBeenCalled()
+  })
+})
+
+describe('getPemKeySize', () => {
+  it('returns the RSA key size of the certificate', () => {
+    vi.spyOn(forge.pki, 'certificateFromPem').mockReturnValue({ publicKey: { n: { bitLength: () => 4096 } } } as any)
+    expect(getPemKeySize('leaf-pem')).toEqual(4096)
+  })
+
+  it('reads the first certificate when given a list', () => {
+    const certificateFromPemSpy = vi
+      .spyOn(forge.pki, 'certificateFromPem')
+      .mockReturnValue({ publicKey: { n: { bitLength: () => 3072 } } } as any)
+    expect(getPemKeySize(['root-pem', 'other-pem'])).toEqual(3072)
+    expect(certificateFromPemSpy).toHaveBeenCalledWith('root-pem')
+  })
+
+  it('returns null when there is no certificate', () => {
+    expect(getPemKeySize(undefined)).toBeNull()
+    expect(getPemKeySize([])).toBeNull()
+  })
+
+  it('returns null when the certificate cannot be parsed', () => {
+    vi.spyOn(forge.pki, 'certificateFromPem').mockImplementation(() => {
+      throw new Error('bad cert')
+    })
+    expect(getPemKeySize('not-a-pem')).toBeNull()
+  })
 })
 
 describe('storeCertificates', () => {
@@ -225,10 +479,17 @@ describe('storeCertificates', () => {
       mps_tls_config: undefined,
       web_tls_config: undefined
     }
-    writeSecretWithObjectSpy.mockImplementation(() => {})
+    writeSecretWithObjectSpy.mockResolvedValue(true)
     await certificates.storeCertificates(certificatesData)
     const expectedData = { data: certificatesData }
     expect(writeSecretWithObjectSpy).toHaveBeenCalledWith('MPSCerts', expectedData)
+  })
+
+  it('throws when the secret provider reports a failed write', async () => {
+    writeSecretWithObjectSpy.mockResolvedValue(false)
+    await expect(certificates.storeCertificates({} as certificatesType)).rejects.toThrow(
+      messages.MPS_CERTIFICATES_WRITE_FAILED
+    )
   })
 })
 
@@ -268,7 +529,7 @@ describe('IssueWebServerCertificate', () => {
     const extKeyUsage = {
       serverAuth: true
     }
-    const strong = true
+    const strong = 3072
     const result = certificates.IssueWebServerCertificate(
       rootcert,
       addThumbPrintToName,
@@ -310,7 +571,7 @@ describe('IssueWebServerCertificate', () => {
     const country = 'us'
     const organization = 'rhbe'
     const extKeyUsage = null
-    const strong = false
+    const strong = 2048
     const result = certificates.IssueWebServerCertificate(
       rootcert,
       addThumbPrintToName,

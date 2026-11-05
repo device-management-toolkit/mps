@@ -146,8 +146,14 @@ describe('Index', () => {
       expect(result.mps_tls_config.mps_cert_key_size).toEqual(2048)
     })
 
-    it('should use default 2048 for invalid mps_tls_config.mps_cert_key_size', () => {
+    it('should accept valid mps_tls_config.mps_cert_key_size of 4096', () => {
       config.mps_tls_config = { mps_cert_key_size: 4096 }
+      const result = indexFile.loadConfig(config)
+      expect(result.mps_tls_config.mps_cert_key_size).toEqual(4096)
+    })
+
+    it('should use default 2048 for invalid mps_tls_config.mps_cert_key_size', () => {
+      config.mps_tls_config = { mps_cert_key_size: 1024 }
       const result = indexFile.loadConfig(config)
       expect(result.mps_tls_config.mps_cert_key_size).toEqual(2048)
     })
