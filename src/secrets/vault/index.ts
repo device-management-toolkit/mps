@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  **********************************************************************/
 
+import { deviceSecretPath } from '../../utils/secretPaths.js'
+
 import { type ISecretManagerService } from '../../interfaces/ISecretManagerService.js'
 import { type certificatesType } from '../../models/Config.js'
 import got, { type Got } from 'got'
@@ -62,9 +64,9 @@ export class VaultSecretManagerService implements ISecretManagerService {
     }
   }
 
-  async getAMTCredentials(path: string): Promise<string[]> {
+  async getAMTCredentials(guid: string, tenantId = ''): Promise<string[]> {
     const user = 'admin'
-    const secret: { data: DeviceSecrets } = await this.getSecretAtPath(`devices/${path}`)
+    const secret: { data: DeviceSecrets } = await this.getSecretAtPath(deviceSecretPath(guid, tenantId))
     if (secret?.data?.AMT_PASSWORD == null) {
       return null
     }

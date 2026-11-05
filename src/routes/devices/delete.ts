@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  **********************************************************************/
 
+import { deviceSecretPath } from '../../utils/secretPaths.js'
+
 import { type Request, type Response } from 'express'
 import { logger, messages } from '../../logging/index.js'
 
@@ -49,7 +51,7 @@ export async function deleteSecrets(req: Request, guid: string): Promise<boolean
   const queryParams = req.query
   try {
     if (queryParams.isSecretToBeDeleted === 'true') {
-      await req.secrets.deleteSecretAtPath(`devices/${guid}`)
+      await req.secrets.deleteSecretAtPath(deviceSecretPath(guid, req.tenantId))
       return true
     }
   } catch (error) {

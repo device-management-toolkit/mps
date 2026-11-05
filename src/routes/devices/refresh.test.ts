@@ -52,13 +52,27 @@ describe('refresh tests', () => {
         destroy: vi.fn()
       },
       httpHandler: { digestChallenge: 'dumy' },
-      tenantId: { tenantId: '' },
+      tenantId: '',
       kvmConnect: { kvmConnect: false },
       limiter: { limiter: 'dummy' }
     } as any
     await refreshDevice(req, res as any)
-    expect(getCredsSpy).toHaveBeenCalledWith(guid)
+    expect(getCredsSpy).toHaveBeenCalledWith(guid, '')
     expect(jsonSpy).toHaveBeenCalledWith({ success: 200, description: `${messages.DEVICE_REFRESH_SUCCESS} : ${guid}` })
+  })
+
+  it('should refresh credentials from the device tenant', async () => {
+    const guid = req.params.guid
+    devices[guid] = {
+      ciraSocket: { destroy: vi.fn() },
+      httpHandler: { digestChallenge: 'dumy' },
+      tenantId: 'tenant-a',
+      kvmConnect: false,
+      limiter: { limiter: 'dummy' }
+    } as any
+    await refreshDevice(req, res as any)
+    expect(getCredsSpy).toHaveBeenCalledWith(guid, 'tenant-a')
+    expect(devices[guid].tenantId).toBe('tenant-a')
   })
 
   it('should set status to 404 if error occurs when device is not connected', async () => {
@@ -79,7 +93,7 @@ describe('refresh tests', () => {
         destroy: vi.fn()
       },
       httpHandler: { digestChallenge: 'dumy' },
-      tenantId: { tenantId: '' },
+      tenantId: '',
       kvmConnect: { kvmConnect: false },
       limiter: { limiter: 'dummy' }
     } as any

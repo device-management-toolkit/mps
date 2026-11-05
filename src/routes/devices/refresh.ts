@@ -21,7 +21,7 @@ export async function refreshDevice(req: Request, res: Response): Promise<void> 
       const limiter = device.limiter
       delete devices[guid]
 
-      const cred = await req.secrets.getAMTCredentials(guid)
+      const cred = await req.secrets.getAMTCredentials(guid, tenantId)
       devices[guid] = new ConnectedDevice(ciraSocket, cred[0], cred[1], tenantId, httpHandler, kvmConnect, limiter)
 
       res.json({ success: 200, description: `${messages.DEVICE_REFRESH_SUCCESS} : ${guid}` })

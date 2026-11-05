@@ -51,7 +51,7 @@ export class WsRedirect {
     MqttProvider.publishEvent('success', ['handleConnection'], messages.REDIRECTION_SESSION_STARTED)
 
     // Fetch Intel AMT credentials & Setup interceptor
-    const credentials = await this.secrets.getAMTCredentials(params.host)
+    const credentials = await this.secrets.getAMTCredentials(params.host, devices[params.host]?.tenantId)
     if (credentials != null) {
       this.createCredential(params, credentials)
     }

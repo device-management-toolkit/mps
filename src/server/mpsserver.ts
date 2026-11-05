@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  **********************************************************************/
 
+import { deviceSecretPath } from '../utils/secretPaths.js'
+
 /* Construct a Intel AMT MPS server object
     Note:
         Functionality has been modified for standalone operation only (Meshcentral services will not work with this code)
@@ -110,7 +112,10 @@ export class MPSServer {
     // Authenticate device connection using username and password
     try {
       const device = await this.db.devices.getById(socket.tag.SystemId)
-      const pwd = await this.secrets.getSecretFromKey(`devices/${socket.tag.SystemId}`, 'MPS_PASSWORD')
+      const pwd = await this.secrets.getSecretFromKey(
+        deviceSecretPath(socket.tag.SystemId, device?.tenantId),
+        'MPS_PASSWORD'
+      )
       if (username === device?.mpsusername && password === pwd) {
         if (devices[socket.tag.SystemId]) {
           logger.silly(
@@ -120,7 +125,7 @@ export class MPSServer {
           await this.handleDeviceDisconnect(socket.tag.SystemId) // delete and disconnect
         }
         logger.debug(`${messages.MPS_CIRA_AUTHENTICATION_SUCCESS} for: ${username}`)
-        const cred = await this.secrets.getAMTCredentials(socket.tag.SystemId)
+        const cred = await this.secrets.getAMTCredentials(socket.tag.SystemId, device.tenantId)
 
         devices[socket.tag.SystemId] = new ConnectedDevice(socket, cred[0], cred[1], device.tenantId)
         this.events.emit('connected', socket.tag.SystemId)

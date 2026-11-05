@@ -135,10 +135,19 @@ describe('MPS Server', function () {
     await mps.onVerifyUserAuth(socket, 'admin', 'P@ssw0rd')
     expect(deviceSpy).toHaveBeenCalledWith('123')
     expect(getSecretSpy).toHaveBeenCalledWith('devices/123', 'MPS_PASSWORD')
-    expect(getCredsSpy).toHaveBeenCalledWith('123')
+    expect(getCredsSpy).toHaveBeenCalledWith('123', testDevice.tenantId)
     expect(devices['123']).toBeDefined()
     expect(deviceConnectSpy).toHaveBeenCalledWith('123')
     expect(sendUserAuthSpy).toHaveBeenCalledWith(socket)
+  })
+  it('should read the device secrets from the tenant-scoped path on CIRA auth', async () => {
+    Environment.Config = { ...Environment.Config, secrets_tenant_partition: true } as any
+    testDevice.tenantId = 'tenant-a'
+    vi.spyOn(mps, 'handleDeviceConnect').mockResolvedValue(null)
+    await mps.onVerifyUserAuth(socket, 'admin', 'P@ssw0rd')
+    expect(getSecretSpy).toHaveBeenCalledWith('tenants/tenant-a/devices/123', 'MPS_PASSWORD')
+    expect(getCredsSpy).toHaveBeenCalledWith('123', 'tenant-a')
+    expect(devices['123'].tenantId).toBe('tenant-a')
   })
   it('should delete old device connection if a new connection request comes from same device', async () => {
     const deviceConnectSpy = vi.spyOn(mps, 'handleDeviceConnect')
@@ -148,7 +157,7 @@ describe('MPS Server', function () {
     expect(deviceSpy).toHaveBeenCalledWith('123')
     expect(getSecretSpy).toHaveBeenCalledWith('devices/123', 'MPS_PASSWORD')
     expect(deviceDisconnectSpy).toHaveBeenCalledWith('123')
-    expect(getCredsSpy).toHaveBeenCalledWith('123')
+    expect(getCredsSpy).toHaveBeenCalledWith('123', testDevice.tenantId)
     expect(devices['123']).toBeDefined()
     expect(devices['123'].ciraSocket.tag.id).toEqual('ABC123XYZ')
     expect(deviceConnectSpy).toHaveBeenCalledWith('123')
@@ -184,7 +193,7 @@ describe('MPS Server', function () {
     await mps.onVerifyUserAuth(socket, 'admin', 'P@ssw0rd')
     expect(deviceSpy).toHaveBeenCalled()
     expect(getSecretSpy).toHaveBeenCalled()
-    expect(getCredsSpy).toHaveBeenCalledWith('123')
+    expect(getCredsSpy).toHaveBeenCalledWith('123', testDevice.tenantId)
     expect(devices['123']).toBeUndefined()
     expect(deviceConnectSpy).not.toHaveBeenCalledWith('123')
     expect(sendUserAuthFailSpy).toHaveBeenCalledWith(socket)
