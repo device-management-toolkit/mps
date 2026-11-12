@@ -9,7 +9,7 @@ import { ErrorResponse } from '../../utils/amtHelper.js'
 import { MqttProvider } from '../../utils/MqttProvider.js'
 import { getVersion } from './getVersion.js'
 
-export async function powerCapabilities(req: Request, res: Response): Promise<void> {
+export async function powerCapabilities(req: Request<{ guid: string }>, res: Response): Promise<void> {
   try {
     const guid: string = req.params.guid
 

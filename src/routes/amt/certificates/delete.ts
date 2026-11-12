@@ -27,7 +27,10 @@ interface AMTCredentialContext {
   }
 }
 
-export async function deleteAMTCertificate(req: Request, res: Response): Promise<void> {
+export async function deleteAMTCertificate(
+  req: Request<{ guid: string; instanceId?: string }>,
+  res: Response
+): Promise<void> {
   try {
     const guid: string = req.params.guid
     // Handle can come from URL parameter (instanceId) or request body

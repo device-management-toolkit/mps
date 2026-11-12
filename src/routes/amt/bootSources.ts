@@ -18,7 +18,7 @@ function mapBootSource(raw: any): any {
   }
 }
 
-export async function bootSources(req: Request, res: Response): Promise<void> {
+export async function bootSources(req: Request<{ guid: string }>, res: Response): Promise<void> {
   const guid: string = req.params.guid
   try {
     const result = await req.deviceAction.getBootSourceSetting()

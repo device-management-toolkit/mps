@@ -15,7 +15,7 @@ import {
   WIRED_ETHERNET_INSTANCE_ID
 } from './helper.js'
 
-export async function patchWiredNetworkSettings(req: Request, res: Response): Promise<void> {
+export async function patchWiredNetworkSettings(req: Request<{ guid: string }>, res: Response): Promise<void> {
   const guid: string = req.params.guid
   try {
     MqttProvider.publishEvent(

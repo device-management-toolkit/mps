@@ -10,7 +10,7 @@ import { MqttProvider } from '../../utils/MqttProvider.js'
 import { type DeviceAction } from '../../amt/DeviceAction.js'
 import { type Selector } from '@device-management-toolkit/wsman-messages/WSMan.js'
 
-export async function deleteAlarmOccurrence(req: Request, res: Response): Promise<void> {
+export async function deleteAlarmOccurrence(req: Request<{ guid: string }>, res: Response): Promise<void> {
   try {
     const payload = req.body
     const guid: string = req.params.guid

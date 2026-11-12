@@ -45,7 +45,7 @@ interface BootParamsResult {
   paramCount?: number
 }
 
-export async function bootOptions(req: Request, res: Response): Promise<void> {
+export async function bootOptions(req: Request<{ guid: string }>, res: Response): Promise<void> {
   try {
     const payload = req.body // payload.action
     const device = req.deviceAction

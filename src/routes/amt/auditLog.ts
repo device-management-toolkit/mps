@@ -11,7 +11,7 @@ import Common from '../../utils/common.js'
 import { AMTAuditStringTable, RealmNames } from '../../utils/constants.js'
 import { type Common as WsmanMessagesCommon } from '@device-management-toolkit/wsman-messages'
 
-export async function auditLog(req: Request, res: Response): Promise<void> {
+export async function auditLog(req: Request<{ guid: string }>, res: Response): Promise<void> {
   try {
     const queryParams = req.query
     const guid: string = req.params.guid
