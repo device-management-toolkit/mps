@@ -9,6 +9,7 @@ import VaultSecretManagerService from './secrets/vault/index.js'
 import { Environment } from './utils/Environment.js'
 import { type IDB } from './interfaces/IDb.js'
 import { type ISecretManagerService } from './interfaces/ISecretManagerService.js'
+import { CertificateStartupError, Certificates } from './utils/certificates.js'
 const backOffSpy = vi.fn()
 const processServiceConfigsSpy = vi.fn().mockReturnValue(Promise.resolve())
 const waitForServiceManagerSpy = vi.fn().mockReturnValue(Promise.resolve(true))
@@ -146,16 +147,51 @@ describe('Index', () => {
       expect(result.mps_tls_config.mps_cert_key_size).toEqual(2048)
     })
 
-    it('should use default 2048 for invalid mps_tls_config.mps_cert_key_size', () => {
+    it('should accept valid mps_tls_config.mps_cert_key_size of 4096', () => {
       config.mps_tls_config = { mps_cert_key_size: 4096 }
       const result = indexFile.loadConfig(config)
-      expect(result.mps_tls_config.mps_cert_key_size).toEqual(2048)
+      expect(result.mps_tls_config.mps_cert_key_size).toEqual(4096)
     })
 
-    it('should use default 2048 when mps_tls_config.mps_cert_key_size is not provided', () => {
+    it('should use default 4096 for invalid mps_tls_config.mps_cert_key_size', () => {
+      config.mps_tls_config = { mps_cert_key_size: 1024 }
+      const result = indexFile.loadConfig(config)
+      expect(result.mps_tls_config.mps_cert_key_size).toEqual(4096)
+    })
+
+    it('should use default 4096 for an empty mps_tls_config.mps_cert_key_size', () => {
+      config.mps_tls_config = { mps_cert_key_size: '' }
+      const result = indexFile.loadConfig(config)
+      expect(result.mps_tls_config.mps_cert_key_size).toEqual(4096)
+    })
+
+    it('should use default 4096 when mps_tls_config.mps_cert_key_size is not provided', () => {
       config.mps_tls_config = {}
       const result = indexFile.loadConfig(config)
-      expect(result.mps_tls_config.mps_cert_key_size).toEqual(2048)
+      expect(result.mps_tls_config.mps_cert_key_size).toEqual(4096)
+    })
+
+    it.each([
+      [true, true],
+      ['true', true],
+      ['TRUE', true],
+      [false, false],
+      ['false', false],
+      [undefined, false]
+    ])('should read mps_tls_config.mps_cert_reissue_enabled %s as %s', (value, expected) => {
+      config.mps_tls_config = { mps_cert_reissue_enabled: value }
+      const result = indexFile.loadConfig(config)
+      expect(result.mps_tls_config.mps_cert_reissue_enabled).toBe(expected)
+    })
+
+    it.each([
+      'yes',
+      1,
+      ''
+    ])('should use default false for invalid mps_tls_config.mps_cert_reissue_enabled %s', (value) => {
+      config.mps_tls_config = { mps_cert_reissue_enabled: value }
+      const result = indexFile.loadConfig(config)
+      expect(result.mps_tls_config.mps_cert_reissue_enabled).toBe(false)
     })
   })
 
@@ -228,6 +264,72 @@ describe('Index', () => {
     it('should pass with config', async () => {
       const result = await indexFile.loadCertificates(secretManagerService)
       expect(result.mps_tls_config.requestCert).toEqual(true)
+    })
+
+    describe('with generated certificates', () => {
+      beforeEach(() => {
+        Environment.Config = { ...config, generate_certificates: true }
+      })
+
+      it.each([
+        [
+          'the stored certificates cannot be used',
+          { getMPSCerts: async () => ({ web_tls_config: {}, mps_tls_config: {} }) }
+        ],
+        [
+          'the secret store cannot be read',
+          {
+            getMPSCerts: async () => {
+              throw new CertificateStartupError('secret store unavailable')
+            }
+          }
+        ]
+      ])('should exit with code 1 when %s', async (_label, secrets) => {
+        const writeSpy = vi.fn()
+        const mockExit = vi.spyOn(process, 'exit').mockImplementation((code) => {
+          throw new Error('process.exit: ' + code)
+        })
+        const errorSpy = vi.spyOn(logger, 'error')
+
+        await expect(
+          indexFile.loadCertificates({ ...secrets, writeSecretWithObject: writeSpy } as any)
+        ).rejects.toThrow('process.exit: 1')
+
+        expect(mockExit).toHaveBeenCalledWith(1)
+        expect(errorSpy).toHaveBeenCalled()
+        expect(writeSpy).not.toHaveBeenCalled()
+      })
+
+      it('should exit with code 1 when initial certificate persistence fails', async () => {
+        vi.spyOn(Certificates.prototype, 'generateCertificates').mockReturnValue({} as any)
+        const mockExit = vi.spyOn(process, 'exit').mockImplementation((code) => {
+          throw new Error('process.exit: ' + code)
+        })
+        const errorSpy = vi.spyOn(logger, 'error')
+        const secrets = {
+          getMPSCerts: async () => null,
+          writeSecretWithObject: async () => false
+        }
+
+        await expect(indexFile.loadCertificates(secrets as any)).rejects.toThrow('process.exit: 1')
+
+        expect(mockExit).toHaveBeenCalledWith(1)
+        expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining('MPS certificates could not be written'))
+      })
+
+      it('should rethrow other errors without exiting', async () => {
+        const mockExit = vi.spyOn(process, 'exit').mockImplementation((code) => {
+          throw new Error('process.exit: ' + code)
+        })
+        const secrets = {
+          getMPSCerts: async () => {
+            throw new Error('unexpected')
+          }
+        }
+
+        await expect(indexFile.loadCertificates(secrets as any)).rejects.toThrow('unexpected')
+        expect(mockExit).not.toHaveBeenCalled()
+      })
     })
   })
 

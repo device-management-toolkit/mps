@@ -9,6 +9,7 @@ import { logger } from '../../logging/index.js'
 import { config } from '../../test/helper/config.js'
 import { Environment } from '../../utils/Environment.js'
 import { type Got } from 'got'
+import { CertificateStartupError } from '../../utils/certificates.js'
 
 let secretManagerService: VaultSecretManagerService = null
 Environment.Config = config
@@ -154,17 +155,90 @@ test('should return null if secret data for a specific device does not exists', 
 })
 
 test('should get MPS certs', async () => {
-  const secretAtPathSpy = vi.spyOn(secretManagerService, 'getSecretAtPath').mockResolvedValue(secretCert)
+  const getSpy = vi
+    .spyOn(secretManagerService.gotClient, 'get')
+    .mockImplementation(() => ({ json: vi.fn(async () => ({ data: secretCert }) as any) }) as any)
   const result = await secretManagerService.getMPSCerts()
   expect(result).toEqual(secretCert.data)
-  expect(secretAtPathSpy).toHaveBeenCalledWith('MPSCerts')
+  expect(getSpy).toHaveBeenCalledWith('MPSCerts')
 })
 
-test('should return null if MPS certs does not exists', async () => {
-  const secretAtPathSpy = vi.spyOn(secretManagerService, 'getSecretAtPath').mockResolvedValue(null)
+test('should return null if MPS certs does not exist (404, fresh installation)', async () => {
+  vi.spyOn(secretManagerService.gotClient, 'get').mockImplementation(
+    () =>
+      ({
+        json: vi.fn<any>(
+          async () => await Promise.reject(Object.assign(new Error('Not Found'), { response: { statusCode: 404 } }))
+        )
+      }) as any
+  )
   const result = await secretManagerService.getMPSCerts()
   expect(result).toEqual(null)
-  expect(secretAtPathSpy).toHaveBeenCalledWith('MPSCerts')
+})
+
+const reject404 = (body: unknown): void => {
+  vi.spyOn(secretManagerService.gotClient, 'get').mockImplementation(
+    () =>
+      ({
+        json: vi.fn<any>(
+          async () =>
+            await Promise.reject(Object.assign(new Error('Not Found'), { response: { statusCode: 404, body } }))
+        )
+      }) as any
+  )
+}
+
+test.each([
+  ['a string', '{"errors":[]}'],
+  ['an object', { errors: [] }],
+  ['not JSON', 'not json']
+])('should return null for a 404 without version metadata (body as %s)', async (_label, body) => {
+  reject404(body)
+  expect(await secretManagerService.getMPSCerts()).toEqual(null)
+})
+
+test.each([
+  [
+    'soft-deleted (string body)',
+    '{"data":{"data":null,"metadata":{"deletion_time":"2026-11-11T06:21:14Z","destroyed":false,"version":1}}}',
+    'version 1 deleted at 2026-11-11T06:21:14Z'
+  ],
+  [
+    'soft-deleted (buffer body)',
+    Buffer.from(
+      '{"data":{"data":null,"metadata":{"deletion_time":"2026-11-11T06:21:14Z","destroyed":false,"version":2}}}'
+    ),
+    'version 2 deleted at 2026-11-11T06:21:14Z'
+  ],
+  [
+    'destroyed (object body)',
+    { data: { data: null, metadata: { deletion_time: '2026-11-11T06:21:14Z', destroyed: true, version: 3 } } },
+    'version 3 destroyed'
+  ]
+])('should stop startup instead of bootstrapping when MPSCerts is %s', async (_label, body, detail) => {
+  reject404(body)
+  await expect(secretManagerService.getMPSCerts()).rejects.toBeInstanceOf(CertificateStartupError)
+  await expect(secretManagerService.getMPSCerts()).rejects.toThrow(detail)
+})
+
+test.each([
+  ['a 500 response', Object.assign(new Error('Internal Server Error'), { response: { statusCode: 500 } })],
+  ['a 403 response', Object.assign(new Error('Forbidden'), { response: { statusCode: 403 } })],
+  ['a network error', new Error('connect ECONNREFUSED')]
+])('should stop startup instead of reporting no MPS certs on %s', async (_label, failure) => {
+  vi.spyOn(secretManagerService.gotClient, 'get').mockImplementation(
+    () => ({ json: vi.fn<any>(async () => await Promise.reject(failure)) }) as any
+  )
+  await expect(secretManagerService.getMPSCerts()).rejects.toBeInstanceOf(CertificateStartupError)
+  await expect(secretManagerService.getMPSCerts()).rejects.toThrow(failure.message)
+})
+
+test('should return an empty object, not null, when the MPSCerts secret exists without data', async () => {
+  vi.spyOn(secretManagerService.gotClient, 'get').mockImplementation(
+    () => ({ json: vi.fn(async () => ({ data: { data: null } }) as any) }) as any
+  )
+  const result = await secretManagerService.getMPSCerts()
+  expect(result).toEqual({})
 })
 
 test('should get health of vault', async () => {
