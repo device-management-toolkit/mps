@@ -6,8 +6,9 @@
 import { processServiceConfigs, waitForServiceManager } from './consul/serviceManager.js'
 import { logger } from './logging/index.js'
 import { type configType, type certificatesType } from './models/Config.js'
-import { Certificates } from './utils/certificates.js'
+import { Certificates, getPemKeySize, getRootKeySize } from './utils/certificates.js'
 import { web, mps } from './utils/tlsConfiguration.js'
+import { DEFAULT_CIPHERS } from 'node:tls'
 import { parseValue } from './utils/parseEnvValue.js'
 import rc from 'rc'
 import { Environment } from './utils/Environment.js'
@@ -153,6 +154,15 @@ export function loadConfig(config: any): configType {
     config.mps_tls_config.mps_cert_key_size = DEFAULT_MPS_CERT_KEY_SIZE
   }
 
+  const legacyCiphers = config.mps_tls_config.legacy_compatible_ciphers
+  if (legacyCiphers == null || legacyCiphers === true || legacyCiphers === 'true') {
+    config.mps_tls_config.legacy_compatible_ciphers = true
+  } else if (legacyCiphers === false || legacyCiphers === 'false') {
+    config.mps_tls_config.legacy_compatible_ciphers = false
+  } else {
+    throw new Error('mps_tls_config.legacy_compatible_ciphers must be true or false')
+  }
+
   logger.silly(`Updated config... ${JSON.stringify(config, null, 2)}`)
   return config
 }
@@ -226,6 +236,27 @@ export async function loadCertificates(secrets: ISecretManagerService): Promise<
   } else {
     certs = await certificates.getCertificates()
   }
+  const configuredMinVersion = Environment.Config.mps_tls_config.minVersion
+  const storedMinVersion = certs.mps_tls_config.minVersion
+  for (const version of [configuredMinVersion, storedMinVersion]) {
+    if (version != null && ![
+        'TLSv1',
+        'TLSv1.1',
+        'TLSv1.2',
+        'TLSv1.3'
+      ].includes(version)) {
+      throw new Error(`Invalid MPS TLS minVersion: ${version}`)
+    }
+  }
+  const minVersion = configuredMinVersion === 'TLSv1.3' || storedMinVersion === 'TLSv1.3' ? 'TLSv1.3' : 'TLSv1.2'
+  let ciphers = certs.mps_tls_config.ciphers
+  if (Environment.Config.mps_tls_config.legacy_compatible_ciphers !== false) {
+    ciphers = `${ciphers || DEFAULT_CIPHERS}:-AES128-GCM-SHA256:AES128-GCM-SHA256`
+  }
+  certs = { ...certs, mps_tls_config: { ...certs.mps_tls_config, minVersion, ciphers } }
+  const leafSize = getPemKeySize(certs.mps_tls_config.cert)
+  const rootSize = getRootKeySize(certs.web_tls_config?.ca, certs.mps_tls_config.cert)
+  logger.info(`MPS certificate key sizes: leaf=${leafSize ?? 'unknown'} bits, root=${rootSize ?? 'unknown'} bits`)
   logger.debug('certs loaded..')
   return certs
 }

@@ -33,6 +33,7 @@ import { type ISecretManagerService } from '../interfaces/ISecretManagerService.
 import { ConnectedDevice } from '../amt/ConnectedDevice.js'
 import { MqttProvider } from '../utils/MqttProvider.js'
 import { CIRA_MAX_IDLE_TIME } from '../utils/constants.js'
+import { getPemKeySize } from '../utils/certificates.js'
 
 const devices: Record<string, ConnectedDevice> = {}
 
@@ -43,11 +44,13 @@ export class MPSServer {
   events: EventEmitter
   db: IDB
   secrets: ISecretManagerService
+  serverKeySize: number | null
   constructor(certs: certificatesType, db: IDB, secrets: ISecretManagerService) {
     this.certs = certs
     this.db = db
     this.secrets = secrets
     this.events = new EventEmitter()
+    this.serverKeySize = getPemKeySize(certs.mps_tls_config?.cert)
 
     APFProcessor.APFEvents.on('userAuthRequest', this.onVerifyUserAuth.bind(this))
     APFProcessor.APFEvents.on('protocolVersion', this.onAPFProtocolVersion.bind(this))
@@ -56,6 +59,7 @@ export class MPSServer {
 
     // Creates a TLS server for secure connection
     this.server = tlsCreateServer(this.certs.mps_tls_config, this.onTLSConnection)
+    this.server.on('tlsClientError', this.onTLSClientError)
 
     this.server.on('error', (err) => {
       logger.error(`${messages.PORT_NOT_AVAILABLE} : ${Environment.Config.port}`)
@@ -136,8 +140,19 @@ export class MPSServer {
     }
   }
 
+  onTLSClientError = (err: Error & { code?: string; reason?: string }, socket: TLSSocket): void => {
+    logger.warn(
+      `MPS TLS handshake failed: device=${socket.remoteAddress ?? 'unknown'}:${socket.remotePort ?? 'unknown'}, code=${err.code ?? 'unknown'}, reason=${err.reason ?? 'unknown'}, error=${err.message}, server certificate=${this.serverKeySize ?? 'unknown'} bits`
+    )
+  }
+
   onTLSConnection = (socket: TLSSocket): void => {
     logger.debug(messages.MPS_NEW_TLS_CONNECTION) // New TLS connection detected
+    const certificate = socket.getCertificate()
+    const keySize = certificate && 'bits' in certificate ? certificate.bits : this.serverKeySize
+    logger.info(
+      `MPS TLS connection: device=${socket.remoteAddress ?? 'unknown'}:${socket.remotePort ?? 'unknown'}, server certificate=${keySize ?? 'unknown'} bits, protocol=${socket.getProtocol() ?? 'unknown'}, cipher=${socket.getCipher()?.name ?? 'unknown'}`
+    )
     ;(socket as CIRASocket).tag = {
       id: randomBytes(16).toString('hex'),
       first: true,

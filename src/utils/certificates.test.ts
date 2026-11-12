@@ -98,6 +98,19 @@ describe('generateCertificates', () => {
     expect(generateRootCertificateSpy).toHaveBeenCalled()
   })
 
+  it('preserves a configured cipher list when generating certificates', () => {
+    const configWithCiphers = {
+      ...configtls12,
+      mps_tls_config: { ...configtls12.mps_tls_config, ciphers: 'ECDHE-RSA-AES128-GCM-SHA256' }
+    }
+    const generator = new Certificates(configWithCiphers as any, secrets)
+    vi.spyOn(generator, 'GenerateRootCertificate').mockReturnValue({})
+    vi.spyOn(generator, 'IssueWebServerCertificate').mockReturnValue({})
+    vi.spyOn(forge.pki, 'certificateToPem').mockReturnValue('certificate')
+    vi.spyOn(forge.pki, 'privateKeyToPem').mockReturnValue('private key')
+    expect(generator.generateCertificates().mps_tls_config.ciphers).toBe('ECDHE-RSA-AES128-GCM-SHA256')
+  })
+
   it('should generate certificates with 3072-bit key size when configured', () => {
     const config3072 = {
       common_name: 'test',

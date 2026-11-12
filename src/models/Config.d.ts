@@ -63,6 +63,7 @@ export interface mpsConfigType {
   cert: string
   key: string
   minVersion: any
+  legacy_compatible_ciphers?: boolean
   secureOptions?: any
   requestCert: boolean
   rejectUnauthorized: boolean

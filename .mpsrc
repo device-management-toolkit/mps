@@ -32,8 +32,9 @@
     "cert": "../private/mpsserver-cert-public.crt",
     "requestCert": true,
     "rejectUnauthorized": false,
-    "minVersion": "TLSv1",
+    "minVersion": "TLSv1.2",
     "ciphers": null,
+    "legacy_compatible_ciphers": true,
     "mps_cert_key_size": 2048,
     "secureOptions": [
       "SSL_OP_NO_SSLv2",
