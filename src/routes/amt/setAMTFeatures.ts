@@ -31,7 +31,7 @@ function resolveRPEStateFromBootService(enabledState: number | undefined, bootDa
   return normalizeRPEState((bootData as any)?.RPEEnabled ?? (bootData as any)?.RPE)
 }
 
-export async function setAMTFeatures(req: Request, res: Response): Promise<void> {
+export async function setAMTFeatures(req: Request<{ guid: string }>, res: Response): Promise<void> {
   try {
     const payload = req.body
     const guid: string = req.params.guid

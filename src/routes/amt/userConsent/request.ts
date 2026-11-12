@@ -9,7 +9,7 @@ import { ErrorResponse } from '../../../utils/amtHelper.js'
 import { MqttProvider } from '../../../utils/MqttProvider.js'
 import { AMTStatusCodes } from '../../../utils/constants.js'
 
-export async function request(req: Request, res: Response): Promise<void> {
+export async function request(req: Request<{ guid: string }>, res: Response): Promise<void> {
   try {
     const guid: string = req.params.guid
     // Request an opt-in code. Intel(R) AMT generates code internally.

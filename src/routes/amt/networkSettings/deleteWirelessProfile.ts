@@ -10,7 +10,10 @@ import { MqttProvider } from '../../../utils/MqttProvider.js'
 import { extractWirelessSettings } from './helper.js'
 import { findWirelessSettingByProfileName } from './wirelessProfileHelper.js'
 
-export async function deleteWirelessProfile(req: Request, res: Response): Promise<void> {
+export async function deleteWirelessProfile(
+  req: Request<{ guid: string; profileName: string }>,
+  res: Response
+): Promise<void> {
   const guid: string = req.params.guid
   const profileName: string = req.params.profileName
   try {
