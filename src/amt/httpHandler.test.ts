@@ -5,6 +5,8 @@
 
 import { CIM } from '@device-management-toolkit/wsman-messages'
 import { type DigestChallenge } from '@device-management-toolkit/wsman-messages/models/common.js'
+import { vi } from 'vitest'
+import { logger } from '../logging/index.js'
 import { type connectionParams, HttpHandler } from './HttpHandler.js'
 
 const httpHandler = new HttpHandler()
@@ -137,6 +139,30 @@ it('should properly encode UTF8 characters', async () => {
   const result: Buffer = httpHandler.wrapIt(params, xmlRequestBody)
   expect(result.toString('binary')).toContain('<tag>Foo' + String.fromCharCode(0xc3, 0x80) + 'bar</tag>')
   expect(result.toString('binary')).toContain('\r\nContent-Length: 19\r\n')
+})
+it('should not log outgoing request contents when UTF8 encoding changes the byte length', () => {
+  const logSpy = vi.spyOn(logger, 'silly').mockImplementation(() => {})
+  const password = 'secret-ssd-password'
+  const psid = 'secret-psid'
+  const xmlRequestBody = `<tag>Å ${password} ${psid}</tag>`
+  const params: connectionParams = {
+    guid: '4c4c4544-004b-4210-8033-b6c04f504633',
+    port: 16992,
+    username: 'admin',
+    password: 'P@ssw0rd'
+  }
+
+  try {
+    httpHandler.wrapIt(params, xmlRequestBody)
+
+    expect(logSpy).toHaveBeenCalledWith(
+      expect.stringContaining('wrapIt data length mismatch')
+    )
+    expect(logSpy.mock.calls.flat().join(' ')).not.toContain(password)
+    expect(logSpy.mock.calls.flat().join(' ')).not.toContain(psid)
+  } finally {
+    logSpy.mockRestore()
+  }
 })
 it('should return a null when no xml is passed to wrap a WSMan request', async () => {
   const digestChallenge = {
