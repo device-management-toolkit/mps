@@ -79,7 +79,12 @@ describe('MPS Server', function () {
       setTimeout: vi.fn(),
       on: vi.fn(),
       addListener: vi.fn(),
-      getPeerCertificate: vi.fn()
+      getPeerCertificate: vi.fn(),
+      getCertificate: vi.fn().mockReturnValue({ bits: 3072 }),
+      getProtocol: vi.fn().mockReturnValue('TLSv1.2'),
+      getCipher: vi.fn().mockReturnValue({ name: 'AES128-GCM-SHA256' }),
+      remoteAddress: '192.0.2.1',
+      remotePort: 12345
     } as any
     delete devices['123']
     mps = new MPSServer(certs, db, secrets)
@@ -191,10 +196,26 @@ describe('MPS Server', function () {
   })
   it('should connect with TLS', () => {
     const addHandlersSpy = vi.spyOn(mps, 'addHandlers').mockReturnValue(null)
+    const infoSpy = vi.spyOn(logger, 'info')
     delete socket.tag
     mps.onTLSConnection(socket)
     expect(socket.tag).toBeDefined()
     expect(addHandlersSpy).toHaveBeenCalledWith(socket)
+    expect(infoSpy).toHaveBeenCalledWith(
+      expect.stringContaining(
+        'device=192.0.2.1:12345, server certificate=3072 bits, protocol=TLSv1.2, cipher=AES128-GCM-SHA256'
+      )
+    )
+  })
+  it('should warn with the TLS alert details on handshake failure', () => {
+    const warnSpy = vi.spyOn(logger, 'warn')
+    const error = Object.assign(new Error('ssl alert number 42'), {
+      code: 'ERR_SSL_SSLV3_ALERT_BAD_CERTIFICATE',
+      reason: 'sslv3 alert bad certificate'
+    })
+    mps.server.emit('tlsClientError', error, socket)
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('code=ERR_SSL_SSLV3_ALERT_BAD_CERTIFICATE'))
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('ssl alert number 42'))
   })
   it('should add handlers', () => {
     const setEncodingSpy = vi.spyOn(socket, 'setEncoding')

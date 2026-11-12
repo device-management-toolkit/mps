@@ -20,8 +20,50 @@ import {
   type configType
 } from '../models/Config.js'
 import forge from 'node-forge'
+import { X509Certificate } from 'node:crypto'
 import { type ISecretManagerService } from '../interfaces/ISecretManagerService.js'
 import { DEFAULT_MPS_CERT_KEY_SIZE } from './constants.js'
+
+export function getPemKeySize(pem: string): number | null {
+  if (!pem) return null
+  try {
+    return new X509Certificate(pem).publicKey.asymmetricKeyDetails?.modulusLength ?? null
+  } catch {
+    return null
+  }
+}
+
+export function getRootKeySize(ca: string | string[], ciraChain: string): number | null {
+  const parseCertificates = (value: string | string[]): X509Certificate[] =>
+    (Array.isArray(value) ? value : [value])
+      .filter((entry): entry is string => typeof entry === 'string')
+      .flatMap((entry) => entry.match(/-----BEGIN CERTIFICATE-----[\s\S]*?-----END CERTIFICATE-----/g) ?? [])
+      .map((pem) => new X509Certificate(pem))
+
+  try {
+    const chain = parseCertificates(ciraChain)
+    if (chain.length === 0) return null
+    const candidates = [...chain.slice(1), ...parseCertificates(ca)]
+    const pending = [chain[0]]
+    const visited = new Set<string>()
+    while (pending.length > 0) {
+      const cert = pending.pop()
+      if (visited.has(cert.fingerprint256)) continue
+      visited.add(cert.fingerprint256)
+      if (cert.ca && cert.checkIssued(cert) && cert.verify(cert.publicKey)) {
+        return cert.publicKey.asymmetricKeyDetails?.modulusLength ?? null
+      }
+      for (const issuer of candidates) {
+        if (issuer.ca && cert.checkIssued(issuer) && cert.verify(issuer.publicKey)) {
+          pending.push(issuer)
+        }
+      }
+    }
+  } catch {
+    return null
+  }
+  return null
+}
 
 export class Certificates {
   constructor(
@@ -81,7 +123,7 @@ export class Certificates {
         minVersion: this.config.mps_tls_config.minVersion,
         requestCert: true,
         rejectUnauthorized: false,
-        ciphers: secureCiphers
+        ciphers: this.config.mps_tls_config.ciphers || secureCiphers
       }
     } else {
       mpsConfig = {
@@ -90,7 +132,7 @@ export class Certificates {
         minVersion: this.config.mps_tls_config.minVersion,
         requestCert: true,
         rejectUnauthorized: false,
-        ciphers: legacySupportCiphers
+        ciphers: this.config.mps_tls_config.ciphers || legacySupportCiphers
       }
     }
     // Set WebServer TLS Configuration

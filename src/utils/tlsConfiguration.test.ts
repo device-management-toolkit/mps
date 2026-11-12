@@ -30,6 +30,14 @@ afterEach(() => {
 })
 
 describe('web', () => {
+  it('loads existing root CA files for startup certificate diagnostics', () => {
+    const webConfig = { ca: ['root.crt'], cert: 'server.crt', key: 'server.key' }
+    existsSyncSpy.mockReturnValue(true)
+    jsonParseSpy.mockReturnValue(webConfig)
+    readFileSyncSpy.mockImplementation((p: string) => (p.endsWith('root.crt') ? 'root certificate' : 'server material'))
+    expect(web().ca).toEqual(['root certificate'])
+  })
+
   it('should return webConfig (more than one secure options)', () => {
     const webConfig = {
       ca: 'abc',

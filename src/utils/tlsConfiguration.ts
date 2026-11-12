@@ -61,9 +61,7 @@ const web = (): webConfigType => {
       const caCertLocationArr = webConfig.ca
       const caCertArr: string[] = []
       for (const certLocation of caCertLocationArr) {
-        if (!fs.existsSync(join(__dirname, certLocation))) {
-          caCertArr.push(fs.readFileSync(join(__dirname, certLocation), 'utf8'))
-        }
+        caCertArr.push(fs.readFileSync(join(__dirname, certLocation), 'utf8'))
       }
       webConfig.ca = caCertArr
     } else {
