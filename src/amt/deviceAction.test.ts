@@ -558,7 +558,9 @@ describe('Device Action Tests', () => {
       expect(putXml).toContain('<h:RSEPassword>mypassword</h:RSEPassword>')
     })
     it('should query live power state and send Power On (2) when system is off (state 8)', async () => {
-      const sendPowerActionSpy = vi.spyOn(device, 'sendPowerAction').mockResolvedValue({ Body: { RequestPowerStateChange_OUTPUT: { ReturnValue: 0 } } } as any)
+      const sendPowerActionSpy = vi
+        .spyOn(device, 'sendPowerAction')
+        .mockResolvedValue({ Body: { RequestPowerStateChange_OUTPUT: { ReturnValue: 0 } } } as any)
       getSpy.mockResolvedValueOnce({
         Envelope: { Body: { AMT_BootSettingData: { ElementName: 'test', RPESupported: true, RPE: true } } }
       })
@@ -583,7 +585,9 @@ describe('Device Action Tests', () => {
       expect(sendPowerActionSpy).toHaveBeenCalledWith(2)
     })
     it('should query live power state and send Power On (2) when system is off-hard (state 6)', async () => {
-      const sendPowerActionSpy = vi.spyOn(device, 'sendPowerAction').mockResolvedValue({ Body: { RequestPowerStateChange_OUTPUT: { ReturnValue: 0 } } } as any)
+      const sendPowerActionSpy = vi
+        .spyOn(device, 'sendPowerAction')
+        .mockResolvedValue({ Body: { RequestPowerStateChange_OUTPUT: { ReturnValue: 0 } } } as any)
       getSpy.mockResolvedValueOnce({
         Envelope: { Body: { AMT_BootSettingData: { ElementName: 'test', RPESupported: true, RPE: true } } }
       })
@@ -608,7 +612,9 @@ describe('Device Action Tests', () => {
       expect(sendPowerActionSpy).toHaveBeenCalledWith(2)
     })
     it('should query live power state and send Master Bus Reset (10) when system is on (state 2)', async () => {
-      const sendPowerActionSpy = vi.spyOn(device, 'sendPowerAction').mockResolvedValue({ Body: { RequestPowerStateChange_OUTPUT: { ReturnValue: 0 } } } as any)
+      const sendPowerActionSpy = vi
+        .spyOn(device, 'sendPowerAction')
+        .mockResolvedValue({ Body: { RequestPowerStateChange_OUTPUT: { ReturnValue: 0 } } } as any)
       getSpy.mockResolvedValueOnce({
         Envelope: { Body: { AMT_BootSettingData: { ElementName: 'test', RPESupported: true, RPE: true } } }
       })
