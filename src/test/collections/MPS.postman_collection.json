@@ -603,7 +603,14 @@
                   "pm.test(\"Status code is 200\", function () {\r",
                   "    pm.response.to.have.status(200);\r",
                   "});\r",
-                  ""
+                  "",
+                  "",
+                  "pm.test(\"Device exposes valid cached power state fields when available\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    if (jsonData.powerState != null) pm.expect(jsonData.powerState).to.be.a(\"number\");",
+                  "    if (jsonData.osPowerSavingState != null) pm.expect(jsonData.osPowerSavingState).to.be.a(\"number\");",
+                  "    if (jsonData.powerStateUpdatedAt != null) pm.expect(jsonData.powerStateUpdatedAt).to.be.a(\"string\");",
+                  "});"
                 ],
                 "type": "text/javascript"
               }
@@ -1021,6 +1028,59 @@
             "body": {
               "mode": "raw",
               "raw": "{\r\n        \"guid\": \"143e4567-e89b-12d3-a456-426614174000\",\r\n        \"hostname\": \"hostname\",\r\n        \"dnsSuffix\": \"os.suffix.com\",\r\n        \"tags\": [\"acm\"]\r\n    }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{protocol}}://{{host}}/api/v1/devices",
+              "protocol": "{{protocol}}",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "devices"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Device ignores server-owned power state",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Power state is server-owned and not taken from the request body\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.powerState).to.not.be.equal(7);",
+                  "    pm.expect(jsonData.osPowerSavingState).to.not.be.equal(3);",
+                  "    pm.expect(jsonData.powerStateUpdatedAt).to.not.be.equal(\"2020-01-01T00:00:00.000Z\");",
+                  "});",
+                  "pm.test(\"Updatable fields are still applied\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.guid).to.be.equal(\"143e4567-e89b-12d3-a456-426614174000\");",
+                  "    pm.expect(jsonData.hostname).to.be.equal(\"hostname\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n        \"guid\": \"143e4567-e89b-12d3-a456-426614174000\",\n        \"hostname\": \"hostname\",\n        \"powerState\": 7,\n        \"osPowerSavingState\": 3,\n        \"powerStateUpdatedAt\": \"2020-01-01T00:00:00.000Z\"\n    }",
               "options": {
                 "raw": {
                   "language": "json"

@@ -22,6 +22,7 @@ describe('MongoDeviceTable', () => {
       insertOne: vi.fn(),
       findOneAndUpdate: vi.fn(),
       distinct: vi.fn(),
+      updateOne: vi.fn(),
       updateMany: vi.fn()
     } as any
 
@@ -100,6 +101,26 @@ describe('MongoDeviceTable', () => {
     expect(collection.findOneAndUpdate).toHaveBeenCalled()
   })
 
+  it('should not write the power state fields from the generic update', async () => {
+    const device = {
+      guid: 'someGuid',
+      tenantId: 'someTenantId',
+      hostname: 'host',
+      powerState: 4,
+      osPowerSavingState: 2,
+      powerStateUpdatedAt: new Date('2026-08-25T17:00:00.000Z')
+    } as any
+    collection.findOneAndUpdate.mockResolvedValue(device)
+
+    await mongoDeviceTable.update(device)
+
+    expect(collection.findOneAndUpdate).toHaveBeenCalledWith(
+      { guid: 'someGuid', tenantId: 'someTenantId' },
+      { $set: { guid: 'someGuid', tenantId: 'someTenantId', hostname: 'host' } },
+      { returnDocument: 'after', includeResultMetadata: false }
+    )
+  })
+
   it('should return count of connected devices', async () => {
     collection.countDocuments.mockResolvedValue(5)
 
@@ -154,6 +175,77 @@ describe('MongoDeviceTable', () => {
     const result = await mongoDeviceTable.getByHostname('someHostname', 'someTenantId')
 
     expect(result).toEqual(mockData)
+  })
+
+  it('should update the power state for a device', async () => {
+    const updatedAt = new Date('2026-08-25T17:00:00.000Z')
+    collection.updateOne.mockResolvedValue({ matchedCount: 1 } as any)
+
+    const result = await mongoDeviceTable.updatePowerState('someGuid', 4, 2, updatedAt, 'someTenantId')
+
+    expect(result).toBe(true)
+    expect(collection.updateOne).toHaveBeenCalledWith(
+      {
+        guid: 'someGuid',
+        tenantId: 'someTenantId',
+        $or: [{ powerStateUpdatedAt: null }, { powerStateUpdatedAt: { $lte: updatedAt } }]
+      },
+      { $set: { powerState: 4, osPowerSavingState: 2, powerStateUpdatedAt: updatedAt } }
+    )
+  })
+
+  it('should default to an empty tenantId when the power state update omits it', async () => {
+    const updatedAt = new Date('2026-08-25T17:00:00.000Z')
+    collection.updateOne.mockResolvedValue({ matchedCount: 1 } as any)
+
+    await mongoDeviceTable.updatePowerState('someGuid', 4, 2, updatedAt)
+
+    expect(collection.updateOne).toHaveBeenCalledWith(
+      {
+        guid: 'someGuid',
+        tenantId: '',
+        $or: [{ powerStateUpdatedAt: null }, { powerStateUpdatedAt: { $lte: updatedAt } }]
+      },
+      { $set: { powerState: 4, osPowerSavingState: 2, powerStateUpdatedAt: updatedAt } }
+    )
+  })
+
+  it('should return false when no device matches the power state update', async () => {
+    collection.updateOne.mockResolvedValue({ matchedCount: 0 } as any)
+
+    const result = await mongoDeviceTable.updatePowerState('someGuid', 4, 2, new Date(), 'someTenantId')
+
+    expect(result).toBe(false)
+  })
+
+  it('should return false without retrying when a newer cached reading prevents the update', async () => {
+    collection.updateOne.mockResolvedValue({ matchedCount: 0, modifiedCount: 0 } as any)
+    const updatedAt = new Date('2026-08-25T17:00:00.000Z')
+
+    expect(await mongoDeviceTable.updatePowerState('someGuid', 4, 2, updatedAt, 'someTenantId')).toBe(false)
+    expect(collection.updateOne).toHaveBeenCalledTimes(1)
+    expect(collection.updateOne).toHaveBeenCalledWith(
+      {
+        guid: 'someGuid',
+        tenantId: 'someTenantId',
+        $or: [{ powerStateUpdatedAt: null }, { powerStateUpdatedAt: { $lte: updatedAt } }]
+      },
+      { $set: { powerState: 4, osPowerSavingState: 2, powerStateUpdatedAt: updatedAt } }
+    )
+  })
+
+  it('should return true for an unchanged reading with an equal timestamp', async () => {
+    collection.updateOne.mockResolvedValue({ matchedCount: 1, modifiedCount: 0 } as any)
+
+    expect(await mongoDeviceTable.updatePowerState('someGuid', 4, 2, new Date(), 'someTenantId')).toBe(true)
+  })
+
+  it('should reject when the power state update fails so the caller can back off', async () => {
+    collection.updateOne.mockRejectedValue(new Error('mongo is down'))
+
+    await expect(mongoDeviceTable.updatePowerState('someGuid', 4, 2, new Date(), 'someTenantId')).rejects.toThrow(
+      'mongo is down'
+    )
   })
 
   it('should clear instance status', async () => {
