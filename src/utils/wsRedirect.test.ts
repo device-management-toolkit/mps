@@ -62,6 +62,20 @@ describe('WsRedirect tests', () => {
     })
   })
 
+  describe('handleConnection tenant scoping', () => {
+    it('should fetch AMT credentials for the connected device tenant', async () => {
+      const mockIncomingMessage = {
+        url: `https://iotg.com?tls=0&host=${fakeGuid}`
+      }
+      devices[fakeGuid] = new ConnectedDevice(null, 'admin', 'P@ssw0rd', 'tenant-a')
+      const credsSpy = vi.spyOn(wsRedirect.secrets, 'getAMTCredentials')
+      vi.spyOn(wsRedirect, 'setNormalTCP').mockReturnValue()
+      await wsRedirect.handleConnection(mockIncomingMessage as any)
+
+      expect(credsSpy).toHaveBeenCalledWith(fakeGuid, 'tenant-a')
+    })
+  })
+
   it('should handle message', () => {
     const message: any = { data: 'hello' }
 

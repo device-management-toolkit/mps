@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  **********************************************************************/
 
+import { migrateTenantSecrets } from './secrets/tenantMigration.js'
+
 import { processServiceConfigs, waitForServiceManager } from './consul/serviceManager.js'
 import { logger } from './logging/index.js'
 import { type configType, type certificatesType } from './models/Config.js'
@@ -56,6 +58,9 @@ export async function main(): Promise<void> {
 
     // wait for secret provider to be ready
     await waitForSecretProvider(secrets)
+
+    // Move legacy secrets of tenant-owned devices into their tenant partition (no-op when off)
+    await migrateTenantSecrets(db, secrets)
 
     const certs = await loadCertificates(secrets)
     // MQTT Connection - Creates a static connection to be access across MPS
@@ -123,6 +128,10 @@ export function loadConfig(config: any): configType {
   }
 
   config.instance_name = config.instance_name === '{{.Task.Name}}' ? 'mps' : config.instance_name
+
+  // Opt-in tenant partition for secret paths (see utils/secretPaths.ts). Must match RPS.
+  config.secrets_tenant_partition =
+    config.secrets_tenant_partition === true || config.secrets_tenant_partition === 'true'
 
   // cira_window_size check
   const windowsize = Number(config.cira_window_size)
