@@ -1,3 +1,10 @@
+# [2.37.0](https://github.com/device-management-toolkit/mps/compare/v2.36.1...v2.37.0) (2026-11-16)
+
+
+### Features
+
+* **cira:** reissue the CIRA server certificate at the configured key size, keeping the root ([#2734](https://github.com/device-management-toolkit/mps/issues/2734)) ([6f51a29](https://github.com/device-management-toolkit/mps/commit/6f51a298778e91ede9f31072f5d06de6d5bfc4c5))
+
 ## [2.36.1](https://github.com/device-management-toolkit/mps/compare/v2.36.0...v2.36.1) (2026-10-24)
 
 # [2.36.0](https://github.com/device-management-toolkit/mps/compare/v2.35.1...v2.36.0) (2026-10-23)
