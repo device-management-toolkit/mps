@@ -6,7 +6,7 @@
 import { processServiceConfigs, waitForServiceManager } from './consul/serviceManager.js'
 import { logger } from './logging/index.js'
 import { type configType, type certificatesType } from './models/Config.js'
-import { Certificates } from './utils/certificates.js'
+import { Certificates, CertificateStartupError } from './utils/certificates.js'
 import { web, mps } from './utils/tlsConfiguration.js'
 import { parseValue } from './utils/parseEnvValue.js'
 import rc from 'rc'
@@ -153,6 +153,17 @@ export function loadConfig(config: any): configType {
     config.mps_tls_config.mps_cert_key_size = DEFAULT_MPS_CERT_KEY_SIZE
   }
 
+  // mps_cert_reissue_enabled check in mps_tls_config: only an explicit true (or "true" from an env var) enables reissue
+  const reissueEnabled = config.mps_tls_config.mps_cert_reissue_enabled
+  if (reissueEnabled === true || String(reissueEnabled).toLowerCase() === 'true') {
+    config.mps_tls_config.mps_cert_reissue_enabled = true
+  } else {
+    if (reissueEnabled != null && reissueEnabled !== false && String(reissueEnabled).toLowerCase() !== 'false') {
+      logger.warn(`Invalid mps_tls_config.mps_cert_reissue_enabled "${reissueEnabled}", using default false`)
+    }
+    config.mps_tls_config.mps_cert_reissue_enabled = false
+  }
+
   logger.silly(`Updated config... ${JSON.stringify(config, null, 2)}`)
   return config
 }
@@ -224,7 +235,16 @@ export async function loadCertificates(secrets: ISecretManagerService): Promise<
     }
     logger.debug('Loaded existing certificates')
   } else {
-    certs = await certificates.getCertificates()
+    try {
+      certs = await certificates.getCertificates()
+    } catch (error) {
+      if (error instanceof CertificateStartupError) {
+        // the stored certificates can't be used and must not be regenerated: exit so the failure is visible to the operator
+        logger.error(error.message)
+        process.exit(1)
+      }
+      throw error
+    }
   }
   logger.debug('certs loaded..')
   return certs
