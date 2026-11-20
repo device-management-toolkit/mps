@@ -6,7 +6,7 @@
 import { describe, expect, it } from 'vitest'
 import { validationResult } from 'express-validator'
 import { sendRPEValidator } from './sendRPEValidator.js'
-import { MAX_SSD_PASSWORD_LENGTH } from './rpeConstants.js'
+import { MAX_RPE_CREDENTIAL_BYTES } from './rpeConstants.js'
 
 async function getValidationErrors(body: any): Promise<any[]> {
   const req: any = { body, query: {}, params: {} }
@@ -82,7 +82,7 @@ describe('sendRPE validator', () => {
     it('accepts ssdPassword at exactly the max byte length', async () => {
       const errors = await getValidationErrors({
         secureEraseAllSSDs: true,
-        ssdPassword: 'a'.repeat(MAX_SSD_PASSWORD_LENGTH)
+        ssdPassword: 'a'.repeat(MAX_RPE_CREDENTIAL_BYTES)
       })
       expect(errors).toHaveLength(0)
     })
@@ -165,10 +165,10 @@ describe('sendRPE validator', () => {
     it('rejects ssdPassword exceeding max byte length', async () => {
       const errors = await getValidationErrors({
         secureEraseAllSSDs: true,
-        ssdPassword: 'a'.repeat(MAX_SSD_PASSWORD_LENGTH + 1)
+        ssdPassword: 'a'.repeat(MAX_RPE_CREDENTIAL_BYTES + 1)
       })
       expect(errors.some((e) => e.path === 'ssdPassword')).toBe(true)
-      expect(errors.some((e) => e.msg.includes(`${MAX_SSD_PASSWORD_LENGTH} bytes`))).toBe(true)
+      expect(errors.some((e) => e.msg.includes(`${MAX_RPE_CREDENTIAL_BYTES} bytes`))).toBe(true)
     })
 
     it('rejects multibyte password that exceeds 64 bytes despite being fewer characters', async () => {

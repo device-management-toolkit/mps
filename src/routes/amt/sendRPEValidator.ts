@@ -4,7 +4,7 @@
  **********************************************************************/
 
 import { body, type ValidationChain } from 'express-validator'
-import { MAX_SSD_PASSWORD_LENGTH } from './rpeConstants.js'
+import { MAX_RPE_CREDENTIAL_BYTES } from './rpeConstants.js'
 
 export const sendRPEValidator = (): ValidationChain[] => [
   body('secureEraseAllSSDs').optional().isBoolean({ strict: true }).withMessage('secureEraseAllSSDs must be a boolean'),
@@ -28,9 +28,9 @@ export const sendRPEValidator = (): ValidationChain[] => [
       .withMessage(`${field} must be a string`)
       .bail()
       .custom((value: string) => {
-        if (Buffer.byteLength(value, 'utf8') > MAX_SSD_PASSWORD_LENGTH) {
+        if (Buffer.byteLength(value, 'utf8') > MAX_RPE_CREDENTIAL_BYTES) {
           throw new Error(
-            `${field === 'ssdPassword' ? 'SSD password' : 'PSID'} must not exceed ${MAX_SSD_PASSWORD_LENGTH} bytes`
+            `${field === 'ssdPassword' ? 'SSD password' : 'PSID'} must not exceed ${MAX_RPE_CREDENTIAL_BYTES} bytes`
           )
         }
         return true

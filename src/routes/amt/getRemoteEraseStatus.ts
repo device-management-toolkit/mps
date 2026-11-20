@@ -35,7 +35,9 @@ export async function getRemoteEraseStatus(req: Request<{ guid: string }>, res: 
 
 function parseBIOSLastStatus(value: unknown): RemoteEraseStatus {
   if (Array.isArray(value) && value.length >= 2) {
-    const [status, detail] = value
+    const [rawStatus, rawDetail] = value
+    const status = parseStatusCode(rawStatus)
+    const detail = parseStatusCode(rawDetail)
     switch (status) {
       case 0:
         if (detail === 0) {
@@ -63,4 +65,11 @@ function parseBIOSLastStatus(value: unknown): RemoteEraseStatus {
     }
   }
   return { status: 'unknown', message: 'BIOS erase outcome is unconfirmed.' }
+}
+
+function parseStatusCode(value: unknown): number | undefined {
+  if (typeof value !== 'number' && typeof value !== 'string') return undefined
+  if (typeof value === 'string' && value.trim() === '') return undefined
+  const parsed = Number(value)
+  return Number.isFinite(parsed) ? parsed : undefined
 }

@@ -11,7 +11,9 @@ import { type CIRAHandler } from './CIRAHandler.js'
 import {
   BOOT_SERVICE_STATE_BOTH_OFF,
   BOOT_SERVICE_STATE_RPE_ONLY,
-  MAX_SSD_PASSWORD_LENGTH
+  MAX_RPE_CREDENTIAL_BYTES,
+  RPE_TLV_PSID,
+  RPE_TLV_SSD_PASSWORD
 } from '../routes/amt/rpeConstants.js'
 import { MPSValidationError } from '../utils/MPSValidationError.js'
 
@@ -262,8 +264,8 @@ export class DeviceAction {
       ['SSD password', ssdPassword],
       ['PSID', psid]
     ]) {
-      if (value != null && Buffer.byteLength(value, 'utf8') > MAX_SSD_PASSWORD_LENGTH) {
-        throw new MPSValidationError(`${name} must not exceed ${MAX_SSD_PASSWORD_LENGTH} bytes`, 400)
+      if (value != null && Buffer.byteLength(value, 'utf8') > MAX_RPE_CREDENTIAL_BYTES) {
+        throw new MPSValidationError(`${name} must not exceed ${MAX_RPE_CREDENTIAL_BYTES} bytes`, 400)
       }
     }
     await this.withDeviceLock(async () => {
@@ -342,8 +344,8 @@ export class DeviceAction {
         putBody.UefiBootNumberOfParams = 1
 
         for (const { type, value } of [
-          { type: 10, value: psid },
-          { type: 20, value: ssdPassword }
+          { type: RPE_TLV_PSID, value: psid },
+          { type: RPE_TLV_SSD_PASSWORD, value: ssdPassword }
         ]) {
           if (value == null || value === '') continue
           const credential = Buffer.from(value, 'utf8')

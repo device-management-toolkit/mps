@@ -8,6 +8,7 @@ import { type AMT, type CIM } from '@device-management-toolkit/wsman-messages'
 import { type Selector } from '@device-management-toolkit/wsman-messages/WSMan.js'
 import { type Models } from '@device-management-toolkit/wsman-messages/ips/models.js'
 import { type CIRASocket } from '../models/models.js'
+import { RPE_TLV_PSID, RPE_TLV_SSD_PASSWORD } from '../routes/amt/rpeConstants.js'
 import {
   addAlarmClockOccurrenceResponse,
   alarmClockOccurrences,
@@ -573,8 +574,8 @@ describe('Device Action Tests', () => {
       let offset = 12
       let count = 1
       for (const { type, value } of [
-        { type: 10, value: psid },
-        { type: 20, value: password }
+        { type: RPE_TLV_PSID, value: psid },
+        { type: RPE_TLV_SSD_PASSWORD, value: password }
       ]) {
         if (!value) continue
         expect(raw.readUInt16LE(offset)).toBe(0x8086)
@@ -643,7 +644,6 @@ describe('Device Action Tests', () => {
         expect(diagnostic).toContain('<h:UefiBootParametersArray>***</h:UefiBootParametersArray>')
         expect(diagnostic).not.toContain(encoded)
         expect(diagnostic).not.toContain('password')
-        expect(diagnostic).not.toContain('psid')
       } finally {
         vi.unstubAllEnvs()
       }

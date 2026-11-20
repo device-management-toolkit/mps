@@ -40,6 +40,7 @@ describe('Get last BIOS erase status', () => {
 
   it.each([
     { words: [0, 0], status: 'succeeded', message: 'BIOS reported that the erase completed successfully.' },
+    { words: ['0', '0'], status: 'succeeded', message: 'BIOS reported that the erase completed successfully.' },
     { words: [1, 0], status: 'pending', message: 'Waiting for the BIOS erase result.' },
     {
       words: [2, 0],
@@ -49,6 +50,7 @@ describe('Get last BIOS erase status', () => {
     { words: [0xffff, 0], status: 'failed', message: 'BIOS reported that the erase failed.' },
     { words: [0xffff, 1], status: 'failed', message: 'BIOS erase failed: general drive failure.' },
     { words: [0xffff, 2], status: 'failed', message: 'BIOS erase failed: drive password/authentication failure.' },
+    { words: ['65535', '2'], status: 'failed', message: 'BIOS erase failed: drive password/authentication failure.' },
     { words: [0xffff, 3], status: 'failed', message: 'BIOS erase failed: feature is not supported.' },
     { words: [0xffff, 99], status: 'failed', message: 'BIOS reported that the erase failed.' }
   ])('maps BIOSLastStatus $words to $status', async ({ words, status, message }) => {
@@ -76,7 +78,8 @@ describe('Get last BIOS erase status', () => {
     [99, 0],
     0,
     '0,0',
-    ['0', '0']
+    ['', '0'],
+    ['not-a-number', '0']
   ])('does not report success for missing or unrecognized status (%s)', async (words) => {
     vi.spyOn(device.ciraHandler, 'Get').mockResolvedValue({
       Envelope: { Body: { AMT_BootSettingData: { BIOSLastStatus: words } } }

@@ -340,7 +340,7 @@ paths:
         - `restoreBIOSToEOM` — Reload BIOS golden configuration (bit 0x4000000)
         - `unconfigureCSME` — CSME unconfigure; can be combined with hardware bits
         - `ssdPassword` — Optional SSD master password (max 64 UTF-8 bytes, carried in UEFI TLV type 20)
-        - `psid` — Optional Pyrite drive revert/clear PSID (max 64 bytes, carried in UEFI TLV type 10)
+        - `psid` — Optional TCG drive PSID (physical SID) for revert (max 64 bytes, carried in UEFI TLV type 10)
 
         Returns 400 if the device does not support RPE or the requested options are not supported.
         A successful response confirms submission, not BIOS erase completion.
@@ -4626,8 +4626,7 @@ components:
           description: 'Optional SSD master password, limited to 64 UTF-8 bytes with no separate character limit'
         psid:
           type: string
-          description: 'Optional Pyrite drive revert/clear PSID, limited to 64 bytes'
-          maxLength: 64
+          description: 'Optional TCG drive PSID (physical SID) for revert, limited to 64 UTF-8 bytes with no separate character limit'
       example:
         secureEraseAllSSDs: true
         tpmClear: false
