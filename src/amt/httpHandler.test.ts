@@ -155,9 +155,7 @@ it('should not log outgoing request contents when UTF8 encoding changes the byte
   try {
     httpHandler.wrapIt(params, xmlRequestBody)
 
-    expect(logSpy).toHaveBeenCalledWith(
-      expect.stringContaining('wrapIt data length mismatch')
-    )
+    expect(logSpy).toHaveBeenCalledWith(expect.stringContaining('wrapIt data length mismatch'))
     expect(logSpy.mock.calls.flat().join(' ')).not.toContain(password)
     expect(logSpy.mock.calls.flat().join(' ')).not.toContain(psid)
   } finally {

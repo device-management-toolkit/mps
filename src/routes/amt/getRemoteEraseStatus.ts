@@ -13,7 +13,7 @@ interface RemoteEraseStatus {
   message: string
 }
 
-export async function getRemoteEraseStatus(req: Request, res: Response): Promise<void> {
+export async function getRemoteEraseStatus(req: Request<{ guid: string }>, res: Response): Promise<void> {
   try {
     const guid: string = req.params.guid
     MqttProvider.publishEvent('request', ['AMT_BootSettingData'], messages.REMOTE_ERASE_STATUS_REQUESTED, guid)
@@ -45,7 +45,10 @@ function parseBIOSLastStatus(value: unknown): RemoteEraseStatus {
       case 1:
         return { status: 'pending', message: 'Waiting for the BIOS erase result.' }
       case 2:
-        return { status: 'unknown', message: 'BIOS has not updated the last-boot status; erase outcome is unconfirmed.' }
+        return {
+          status: 'unknown',
+          message: 'BIOS has not updated the last-boot status; erase outcome is unconfirmed.'
+        }
       case 0xffff:
         switch (detail) {
           case 1:
