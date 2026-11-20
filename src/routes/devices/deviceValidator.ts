@@ -4,6 +4,19 @@
  **********************************************************************/
 
 import { check, query } from 'express-validator'
+import { type RequestHandler } from 'express'
+
+// Express 5 reparses query parameters on every access. Retain one object so
+// pagination, count and status sanitizers remain visible to route handlers.
+const retainQuery: RequestHandler = (req, _res, next) => {
+  Object.defineProperty(req, 'query', {
+    value: req.query,
+    writable: true,
+    configurable: true,
+    enumerable: true
+  })
+  next()
+}
 
 export const validator = (): any => [
   check('guid').isUUID('loose').isString(),
@@ -32,6 +45,7 @@ export const validator = (): any => [
 ]
 
 export const odataValidator = (): any => [
+  retainQuery,
   query('$top')
     .optional()
     .isInt({ min: 0 })

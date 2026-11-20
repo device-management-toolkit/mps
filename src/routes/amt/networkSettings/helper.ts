@@ -171,7 +171,7 @@ export const asArray = <T>(value: T | T[] | undefined | null): T[] => {
   return Array.isArray(value) ? value : [value]
 }
 
-export function mapEnum(value: unknown, map: Record<number, string>): string  | null {
+export function mapEnum(value: unknown, map: Record<number, string>): string | null {
   if (typeof value !== 'number') {
     return null
   }

@@ -10,6 +10,7 @@ import { Environment } from '../../utils/Environment.js'
 import { type DeviceSecrets } from '../../models/models.js'
 import { type ILogger } from '../../interfaces/ILogger.js'
 import { messages } from '../../logging/index.js'
+import { CertificateStartupError } from '../../utils/certificates.js'
 
 export class VaultSecretManagerService implements ISecretManagerService {
   gotClient: Got
@@ -73,12 +74,44 @@ export class VaultSecretManagerService implements ISecretManagerService {
   }
 
   async getMPSCerts(): Promise<certificatesType> {
-    const secret: { data: certificatesType } = await this.getSecretAtPath('MPSCerts')
-    if (secret == null) {
-      return null
+    // Only "not found" means there are no certificates yet (a fresh installation). Any other failure must not look like
+    // that, or startup would generate a new root over the one every provisioned device trusts.
+    try {
+      this.logger.verbose(`${messages.SECRET_MANAGER_GETTING_SECRET} MPSCerts`)
+      const rspJson: any = await this.gotClient.get('MPSCerts').json()
+      this.logger.debug(`${messages.SECRET_MANAGER_RECEIVED_SECRET} MPSCerts`)
+      // the secret exists: return what it holds, even if empty, so the caller rejects it instead of regenerating
+      return rspJson?.data?.data ?? ({} as certificatesType)
+    } catch (error) {
+      if (error?.response?.statusCode === 404) {
+        // KV v2 also answers 404 for a soft-deleted or destroyed version, but then still returns its metadata.
+        // That is an existing deployment whose certificates were deleted, not a fresh installation.
+        const metadata = VaultSecretManagerService.parseBody(error.response.body)?.data?.metadata
+        if (metadata != null) {
+          const state =
+            metadata.destroyed === true ? 'destroyed' : `deleted at ${metadata.deletion_time ?? 'unknown time'}`
+          throw new CertificateStartupError(
+            `${messages.MPS_CERTIFICATES_DELETED}: version ${metadata.version ?? 'unknown'} ${state}`
+          )
+        }
+        return null
+      }
+      throw new CertificateStartupError(`${messages.MPS_CERTIFICATES_READ_FAILED}: ${error?.message ?? error}`)
     }
-    const certs: certificatesType = secret.data
-    return certs
+  }
+
+  private static parseBody(body: unknown): any {
+    if (typeof body === 'string') {
+      try {
+        return JSON.parse(body)
+      } catch {
+        return null
+      }
+    }
+    if (Buffer.isBuffer(body)) {
+      return VaultSecretManagerService.parseBody(body.toString('utf8'))
+    }
+    return body
   }
 
   async deleteSecretAtPath(path: string): Promise<void> {

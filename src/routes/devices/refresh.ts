@@ -9,7 +9,7 @@ import { devices } from '../../server/mpsserver.js'
 import { type Request, type Response } from 'express'
 import { ConnectedDevice } from '../../amt/ConnectedDevice.js'
 
-export async function refreshDevice(req: Request, res: Response): Promise<void> {
+export async function refreshDevice(req: Request<{ guid: string }>, res: Response): Promise<void> {
   try {
     const guid = req.params.guid
     const device = devices[guid]

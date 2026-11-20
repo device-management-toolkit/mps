@@ -15,7 +15,7 @@ interface CertInfo {
   isTrusted: boolean
 }
 
-export async function addAMTCertificate(req: Request, res: Response): Promise<void> {
+export async function addAMTCertificate(req: Request<{ guid: string }>, res: Response): Promise<void> {
   try {
     const guid: string = req.params.guid
     const certInfo: CertInfo = req.body
@@ -36,7 +36,11 @@ export async function addAMTCertificate(req: Request, res: Response): Promise<vo
   }
 }
 
-async function addCertificateToDevice(req: Request, guid: string, certInfo: CertInfo): Promise<string> {
+async function addCertificateToDevice(
+  req: Request<{ guid: string }>,
+  guid: string,
+  certInfo: CertInfo
+): Promise<string> {
   let certData: Buffer
 
   // Step 1: Decode from base64

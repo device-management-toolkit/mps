@@ -503,22 +503,26 @@ describe('extractIEEE8021xSettings', () => {
 
   describe('toWirelessNetworkInfo', () => {
     it('maps common network fields and wireless-specific enums', () => {
-      const wifiNetworks = [{
-        elementName: 'corp',
-        ssid: 'corpSsid',
-        authenticationMethod: 'WPA2IEEE8021x',
-        encryptionMethod: 'CCMP',
-        priority: 1,
-        bsstype: 'Infrastructure'
-      }]
-      const ieee8021xSettings = [{
-        authenticationProtocol: 2,
-        roamingIdentity: 'roam',
-        serverCertificateName: 'CN=server',
-        serverCertificateNameComparison: 1,
-        username: 'user',
-        domain: 'corp'
-      }]
+      const wifiNetworks = [
+        {
+          elementName: 'corp',
+          ssid: 'corpSsid',
+          authenticationMethod: 'WPA2IEEE8021x',
+          encryptionMethod: 'CCMP',
+          priority: 1,
+          bsstype: 'Infrastructure'
+        }
+      ]
+      const ieee8021xSettings = [
+        {
+          authenticationProtocol: 2,
+          roamingIdentity: 'roam',
+          serverCertificateName: 'CN=server',
+          serverCertificateNameComparison: 1,
+          username: 'user',
+          domain: 'corp'
+        }
+      ]
       const wifiPortConfigService = {
         requestedState: 2,
         enabledState: 2,
@@ -564,20 +568,25 @@ describe('extractIEEE8021xSettings', () => {
     })
 
     it('defaults unsupported wireless-specific enums to empty strings', () => {
-      const result = toWirelessNetworkInfo({ LinkPreference: 99, LinkControl: 99, WLANLinkProtectionLevel: 99 } as any, [], [], {
-        requestedState: 0,
-        enabledState: 0,
-        healthState: 0,
-        elementName: '',
-        systemCreationClassName: '',
-        systemName: '',
-        creationClassName: '',
-        name: '',
-        localProfileSynchronizationEnabled: 0,
-        lastConnectedSsidUnderMeControl: '',
-        noHostCsmeSoftwarePolicy: 0,
-        uefiWiFiProfileShareEnabled: false
-      })
+      const result = toWirelessNetworkInfo(
+        { LinkPreference: 99, LinkControl: 99, WLANLinkProtectionLevel: 99 } as any,
+        [],
+        [],
+        {
+          requestedState: 0,
+          enabledState: 0,
+          healthState: 0,
+          elementName: '',
+          systemCreationClassName: '',
+          systemName: '',
+          creationClassName: '',
+          name: '',
+          localProfileSynchronizationEnabled: 0,
+          lastConnectedSsidUnderMeControl: '',
+          noHostCsmeSoftwarePolicy: 0,
+          uefiWiFiProfileShareEnabled: false
+        }
+      )
 
       expect(result.linkPreference).toBe('')
       expect(result.linkControl).toBe('')

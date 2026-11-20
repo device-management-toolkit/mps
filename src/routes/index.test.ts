@@ -3,29 +3,42 @@
  * SPDX-License-Identifier: Apache-2.0
  **********************************************************************/
 
+import express from 'express'
 import router from './index.js'
+import { request } from '../test/helper/http.js'
 
-describe('Check index from routes', () => {
-  const routes = [
-    { path: '/ciracert', method: 'get' }
-  ]
-  it('should have routes', () => {
-    routes.forEach((route) => {
-      const match = router.stack.find((s) => s.route?.path === route.path && (s.route as any)?.methods[route.method])
-      expect(match).toBeTruthy()
+const { childRouter } = vi.hoisted(() => ({
+  childRouter: async () => {
+    const { Router } = await import('express')
+    return { default: Router().get('/', (req, res) => res.json({ mounted: req.baseUrl })) }
+  }
+}))
+
+vi.mock('./auth/index.js', () => childRouter())
+vi.mock('./devices/index.js', () => childRouter())
+vi.mock('./amt/index.js', () => childRouter())
+vi.mock('./health/index.js', () => childRouter())
+vi.mock('./version/index.js', () => childRouter())
+vi.mock('./certs/index.js', () => ({ mpsrootcert: (_req, res) => res.json({ certificate: 'root' }) }))
+
+describe('API router', () => {
+  it.each([
+    'authorize',
+    'devices',
+    'amt',
+    'health',
+    'version'
+  ])('mounts /%s', async (path) => {
+    expect(await request(express().use('/api/v1', router), `/api/v1/${path}`)).toEqual({
+      status: 200,
+      body: { mounted: `/api/v1/${path}` }
     })
   })
-  const routers = [
-    { path: '/authorize', method: 'use' },
-    { path: '/devices', method: 'use' },
-    { path: '/amt', method: 'use' },
-    { path: '/health', method: 'use' }
-  ]
 
-  it('should have routers', () => {
-    routers.forEach((route) => {
-      const match = router.stack.find((s) => (s?.regexp as RegExp).exec(route.path)?.length > 0 && s.path == null)
-      expect(match).toBeTruthy()
+  it('serves /ciracert', async () => {
+    expect(await request(express().use('/api/v1', router), '/api/v1/ciracert')).toEqual({
+      status: 200,
+      body: { certificate: 'root' }
     })
   })
 })

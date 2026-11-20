@@ -476,5 +476,9 @@ export const CIRA_KEEPALIVE_INTERVAL = 30 // 30 seconds is typical keepalive int
 export const CIRA_MAX_IDLE_TIME = 90 // 90 seconds max idle time, higher than the typical CIRA_KEEPALIVE_INTERVAL of 30 seconds
 
 // Certificate key size constants
-export const DEFAULT_MPS_CERT_KEY_SIZE = 2048 // Default 2048-bit for backward compatibility
-export const ALLOWED_MPS_CERT_KEY_SIZES = [2048, 3072] // Supported key sizes
+export const DEFAULT_MPS_CERT_KEY_SIZE = 4096 // Leaf size when mps_cert_key_size is missing or invalid; works from AMT 12 to AMT 22
+export const ALLOWED_MPS_CERT_KEY_SIZES = [
+  2048,
+  3072,
+  4096
+] // Supported key sizes

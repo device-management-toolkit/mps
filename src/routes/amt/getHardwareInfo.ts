@@ -9,7 +9,7 @@ import { ErrorResponse } from '../../utils/amtHelper.js'
 import { MqttProvider } from '../../utils/MqttProvider.js'
 import { type DeviceAction } from '../../amt/DeviceAction.js'
 
-export async function hardwareInfo(req: Request, res: Response): Promise<void> {
+export async function hardwareInfo(req: Request<{ guid: string }>, res: Response): Promise<void> {
   try {
     const guid: string = req.params.guid
 

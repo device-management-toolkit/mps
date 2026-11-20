@@ -9,7 +9,7 @@ import { ErrorResponse } from '../../utils/amtHelper.js'
 import { MqttProvider } from '../../utils/MqttProvider.js'
 import { operationWithTimeout, TIMEOUT_MS_DEFAULT, TimeoutError } from '../../utils/timeoutOpManagement.js'
 
-export async function powerState(req: Request, res: Response): Promise<void> {
+export async function powerState(req: Request<{ guid: string }>, res: Response): Promise<void> {
   try {
     const guid: string = req.params.guid
     let osPowerSavingState = 0

@@ -9,7 +9,7 @@ import { ErrorResponse } from '../../../utils/amtHelper.js'
 import { MqttProvider } from '../../../utils/MqttProvider.js'
 import { buildWirelessProfileResponses } from './wirelessProfileHelper.js'
 
-export async function getWirelessProfiles(req: Request, res: Response): Promise<void> {
+export async function getWirelessProfiles(req: Request<{ guid: string }>, res: Response): Promise<void> {
   const guid: string = req.params.guid
   try {
     MqttProvider.publishEvent('request', ['AMT_WiFiProfiles'], messages.WIRELESS_PROFILE_GET_REQUESTED, guid)

@@ -6,7 +6,7 @@
 import { type Request, type Response } from 'express'
 import { logger, messages } from '../../logging/index.js'
 
-export async function deleteDevice(req: Request, res: Response): Promise<void> {
+export async function deleteDevice(req: Request<{ guid: string }>, res: Response): Promise<void> {
   try {
     let dbResults
     let vaultResults
@@ -45,7 +45,7 @@ export async function deleteDevice(req: Request, res: Response): Promise<void> {
   }
 }
 
-export async function deleteSecrets(req: Request, guid: string): Promise<boolean> {
+export async function deleteSecrets(req: Request<{ guid: string }>, guid: string): Promise<boolean> {
   const queryParams = req.query
   try {
     if (queryParams.isSecretToBeDeleted === 'true') {

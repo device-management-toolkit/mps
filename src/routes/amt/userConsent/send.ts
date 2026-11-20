@@ -9,7 +9,7 @@ import { ErrorResponse } from '../../../utils/amtHelper.js'
 import { MqttProvider } from '../../../utils/MqttProvider.js'
 import { AMTStatusCodes } from '../../../utils/constants.js'
 
-export async function send(req: Request, res: Response): Promise<void> {
+export async function send(req: Request<{ guid: string }>, res: Response): Promise<void> {
   const userConsentCode: number = req.body.consentCode
   const guid: string = req.params.guid
   try {

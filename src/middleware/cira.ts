@@ -10,7 +10,7 @@ import { devices } from '../server/mpsserver.js'
 import { ErrorResponse } from '../utils/amtHelper.js'
 import { MqttProvider } from '../utils/MqttProvider.js'
 
-const ciraMiddleware = async (req: Request, res: Response, next): Promise<void> => {
+const ciraMiddleware = async (req: Request<{ guid: string }>, res: Response, next): Promise<void> => {
   const guid = req.params.guid
   const device = devices[guid]
 

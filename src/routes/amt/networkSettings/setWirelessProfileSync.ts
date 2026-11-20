@@ -15,7 +15,7 @@ import {
   LOCAL_SYNC_DISABLED
 } from './helper.js'
 
-export async function setWirelessProfileSync(req: Request, res: Response): Promise<void> {
+export async function setWirelessProfileSync(req: Request<{ guid: string }>, res: Response): Promise<void> {
   const guid: string = req.params.guid
   try {
     MqttProvider.publishEvent(

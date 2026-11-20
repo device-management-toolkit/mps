@@ -18,7 +18,7 @@ import {
   type WirelessProfileConfigRequest
 } from './wirelessProfileHelper.js'
 
-export async function addWirelessProfile(req: Request, res: Response): Promise<void> {
+export async function addWirelessProfile(req: Request<{ guid: string }>, res: Response): Promise<void> {
   const guid: string = req.params.guid
   try {
     MqttProvider.publishEvent('request', ['AMT_WiFiProfiles'], messages.WIRELESS_PROFILE_ADD_REQUESTED, guid)

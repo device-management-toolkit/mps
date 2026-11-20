@@ -226,9 +226,14 @@ export class DeviceAction {
     // `gate` is resolved only when this caller calls `release`, which unblocks
     // the next waiter in the queue.
     let release!: () => void
-    const gate = new Promise<void>((resolve) => { release = resolve })
+    const gate = new Promise<void>((resolve) => {
+      release = resolve
+    })
     const prev = deviceLocks.get(key) ?? Promise.resolve()
-    deviceLocks.set(key, prev.then(() => gate))
+    deviceLocks.set(
+      key,
+      prev.then(() => gate)
+    )
     // Wait for all previous holders to finish before proceeding.
     await prev
     try {
@@ -302,10 +307,7 @@ export class DeviceAction {
       // Step 2: Build a strict, schema-safe payload with deterministic values.
       // Avoid carrying mutable values from GET (for example BIOSSetup=true) that can
       // make PUT fail validation on some firmware generations.
-      const putBody: AMT.Models.BootSettingData & {
-        UefiBootParametersArray?: string
-        UefiBootNumberOfParams?: number
-      } = {
+      const putBody: any = {
         InstanceID: current.InstanceID,
         ElementName: current.ElementName,
         OwningEntity: current.OwningEntity,
@@ -353,9 +355,19 @@ export class DeviceAction {
           putBody.UefiBootNumberOfParams++
         }
         putBody.UefiBootParametersArray = Buffer.concat(params).toString('base64')
+      } else {
+        delete putBody.UefiBootParametersArray
+        delete putBody.UefiBootNumberOfParams
       }
 
-      const xmlPut = this.amt.BootSettingData.Put(putBody)
+      // Remove conflicting schema variants and read-only fields if present.
+      delete putBody.UEFIBootParametersArray
+      delete putBody.UEFIBootNumberOfParams
+      delete putBody.RPEEnabled
+      delete putBody.OptionsCleared
+      delete putBody.BIOSLastStatus
+
+      const xmlPut = this.amt.BootSettingData.Put(putBody as AMT.Models.BootSettingData)
       if (process.env.MPS_RPE_LOG_REDACTED_XML != null && process.env.MPS_RPE_LOG_REDACTED_XML !== '') {
         const redactedXml = xmlPut.replace(
           /(<h:UefiBootParametersArray>)[\s\S]*?(<\/h:UefiBootParametersArray>)/g,

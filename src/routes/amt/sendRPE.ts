@@ -15,7 +15,7 @@ import {
   PLATFORM_ERASE_BIOS_TO_EOM
 } from './rpeConstants.js'
 
-export async function sendRPE(req: Request, res: Response): Promise<void> {
+export async function sendRPE(req: Request<{ guid: string }>, res: Response): Promise<void> {
   try {
     const guid: string = req.params.guid
 
