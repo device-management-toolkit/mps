@@ -73,6 +73,33 @@ beforeEach(() => {
 })
 
 describe('create', () => {
+  it('should not insert server-owned power state fields from the request body', async () => {
+    req.db.devices.getById.mockResolvedValue(null)
+    req.body = {
+      ...reqDevice,
+      powerState: 2,
+      osPowerSavingState: 2,
+      powerStateUpdatedAt: '2020-01-01T00:00:00.000Z'
+    }
+    await insertDevice(req, res)
+    const inserted = req.db.devices.insert.mock.calls[0][0]
+    expect(inserted.hostname).toBe(reqDevice.hostname)
+    expect(inserted).not.toHaveProperty('powerState')
+    expect(inserted).not.toHaveProperty('osPowerSavingState')
+    expect(inserted).not.toHaveProperty('powerStateUpdatedAt')
+    expect(statusSpy).toHaveBeenCalledWith(201)
+  })
+  it('should not let a create request overwrite cached power state on an existing device', async () => {
+    const updatedAt = new Date('2026-08-25T17:00:00.000Z')
+    req.db.devices.getById.mockResolvedValue({ ...mockDevice, powerState: 4, powerStateUpdatedAt: updatedAt })
+    req.body = { ...reqDevice, powerState: 2, powerStateUpdatedAt: '2020-01-01T00:00:00.000Z' }
+    await insertDevice(req, res)
+    const updated = req.db.devices.update.mock.calls[0][0]
+    expect(updated.hostname).toBe(reqDevice.hostname)
+    expect(updated.powerState).toBe(4)
+    expect(updated.powerStateUpdatedAt).toBe(updatedAt)
+    expect(statusSpy).toHaveBeenCalledWith(200)
+  })
   it('should update device and return 200 if device exists', async () => {
     const expectedDevice = {
       ...mockDevice,

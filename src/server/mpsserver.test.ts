@@ -44,7 +44,8 @@ describe('MPS Server', function () {
       clearInstanceStatus: async () => true,
       delete: async (guid) => true,
       insert: async (device) => device,
-      update: async () => testDevice
+      update: async () => testDevice,
+      updatePowerState: async () => true
     }
 
     db = {

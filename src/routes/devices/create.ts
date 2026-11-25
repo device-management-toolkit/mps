@@ -11,16 +11,18 @@ import { type Request, type Response } from 'express'
 export async function insertDevice(req: Request, res: Response): Promise<void> {
   let device: Device
   try {
+    // power state is server-owned; never taken from the request body
+    const { powerState, osPowerSavingState, powerStateUpdatedAt, ...body } = req.body
     device = await req.db.devices.getById(req.body.guid as string, req.body.tenantId as string)
     if (device != null) {
-      device = { ...device, ...req.body }
+      device = { ...device, ...body }
       const results = await req.db.devices.update(device)
       res.status(200).json(results)
     } else {
       const newEntry: Device = {
         tenantId: '',
         connectionStatus: false,
-        ...req.body
+        ...body
       }
       const results = await req.db.devices.insert(newEntry)
       res.status(201).json(results)
