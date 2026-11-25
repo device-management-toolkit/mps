@@ -101,7 +101,6 @@ export class HttpHandler {
         logger.silly(
           `wrapIt data length mismatch: Buffer.length = ${dataBuffer.length}, string.length = ${data.length}`
         )
-        logger.silly(buffer.toString('utf8'))
       }
       return buffer
     } catch (err) {

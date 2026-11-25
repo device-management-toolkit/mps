@@ -1,5 +1,33 @@
 [
   {
+    "name": "Last BIOS erase status requires a connected device",
+    "url": "{{protocol}}://{{host}}/api/v1/amt/boot/remoteErase/1/status",
+    "verb": "GET",
+    "body": "{}",
+    "expected": "404"
+  },
+  {
+    "name": "Last BIOS erase status rejects unsupported POST",
+    "url": "{{protocol}}://{{host}}/api/v1/amt/boot/remoteErase/1/status",
+    "verb": "POST",
+    "body": "{}",
+    "expected": "404"
+  },
+  {
+    "name": "RPE rejects SSD master passwords longer than 64 bytes",
+    "url": "{{protocol}}://{{host}}/api/v1/amt/boot/remoteErase/1",
+    "verb": "POST",
+    "body": "{\"secureEraseAllSSDs\":true,\"ssdPassword\":\"ppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp\"}",
+    "expected": "400"
+  },
+  {
+    "name": "RPE rejects PSIDs longer than 64 bytes",
+    "url": "{{protocol}}://{{host}}/api/v1/amt/boot/remoteErase/1",
+    "verb": "POST",
+    "body": "{\"secureEraseAllSSDs\":true,\"psid\":\"sssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss\"}",
+    "expected": "400"
+  },
+  {
     "_TEST_CASE_6597": "MPS: Rest API- Use POST method for mps api's (positive test)",
     "url": "{{protocol}}://{{host}}/api/v1/authorize",
     "verb": "POST",

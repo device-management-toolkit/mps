@@ -8,7 +8,14 @@ import { type Selector } from '@device-management-toolkit/wsman-messages/WSMan.j
 import { logger, messages } from '../logging/index.js'
 import { Certificates, OCRData, type CIRASocket } from '../models/models.js'
 import { type CIRAHandler } from './CIRAHandler.js'
-import { BOOT_SERVICE_STATE_BOTH_OFF, BOOT_SERVICE_STATE_RPE_ONLY } from '../routes/amt/rpeConstants.js'
+import {
+  BOOT_SERVICE_STATE_BOTH_OFF,
+  BOOT_SERVICE_STATE_RPE_ONLY,
+  MAX_RPE_CREDENTIAL_BYTES,
+  RPE_TLV_PSID,
+  RPE_TLV_SSD_PASSWORD
+} from '../routes/amt/rpeConstants.js'
+import { MPSValidationError } from '../utils/MPSValidationError.js'
 
 // Per-device mutex registry. Keyed by the CIRASocket instance (one per device
 // connection) so that concurrent requests to the same device are serialized for
@@ -252,7 +259,15 @@ export class DeviceAction {
     logger.silly(`setRPE ${messages.COMPLETE}`)
   }
 
-  async sendRPE(eraseMask: number, ssdPassword?: string): Promise<void> {
+  async sendRPE(eraseMask: number, ssdPassword?: string, psid?: string): Promise<void> {
+    for (const [name, value] of [
+      ['SSD password', ssdPassword],
+      ['PSID', psid]
+    ]) {
+      if (value != null && Buffer.byteLength(value, 'utf8') > MAX_RPE_CREDENTIAL_BYTES) {
+        throw new MPSValidationError(`${name} must not exceed ${MAX_RPE_CREDENTIAL_BYTES} bytes`, 400)
+      }
+    }
     await this.withDeviceLock(async () => {
       logger.silly(`sendRPE ${messages.REQUEST}`)
 
@@ -319,19 +334,29 @@ export class DeviceAction {
       }
 
       if (tlvMask !== 0) {
-        // AMT RPE expects an Intel TLV payload for erase targets.
-        // Parameter format: [vendor:0x8086][type:1][len:4][value:eraseMask]
+        // Each Intel TLV is [vendor:2 LE][type:2 LE][length:4 LE][value].
         const buf = Buffer.alloc(12)
         buf.writeUInt16LE(0x8086, 0)
         buf.writeUInt16LE(1, 2)
         buf.writeUInt32LE(4, 4)
         buf.writeUInt32LE(tlvMask, 8)
-        putBody.UefiBootParametersArray = buf.toString('base64')
+        const params = [buf]
         putBody.UefiBootNumberOfParams = 1
 
-        if (ssdPassword != null && ssdPassword !== '') {
-          putBody.RSEPassword = ssdPassword
+        for (const { type, value } of [
+          { type: RPE_TLV_PSID, value: psid },
+          { type: RPE_TLV_SSD_PASSWORD, value: ssdPassword }
+        ]) {
+          if (value == null || value === '') continue
+          const credential = Buffer.from(value, 'utf8')
+          const header = Buffer.alloc(8)
+          header.writeUInt16LE(0x8086, 0)
+          header.writeUInt16LE(type, 2)
+          header.writeUInt32LE(credential.length, 4)
+          params.push(header, credential)
+          putBody.UefiBootNumberOfParams++
         }
+        putBody.UefiBootParametersArray = Buffer.concat(params).toString('base64')
       } else {
         delete putBody.UefiBootParametersArray
         delete putBody.UefiBootNumberOfParams
@@ -346,7 +371,10 @@ export class DeviceAction {
 
       const xmlPut = this.amt.BootSettingData.Put(putBody as AMT.Models.BootSettingData)
       if (process.env.MPS_RPE_LOG_REDACTED_XML != null && process.env.MPS_RPE_LOG_REDACTED_XML !== '') {
-        const redactedXml = xmlPut.replace(/(<h:RSEPassword>)([\s\S]*?)(<\/h:RSEPassword>)/g, '$1***$3')
+        const redactedXml = xmlPut.replace(
+          /(<h:UefiBootParametersArray>)[\s\S]*?(<\/h:UefiBootParametersArray>)/g,
+          '$1***$2'
+        )
         logger.info(`sendRPE BootSettingData PUT XML (redacted): ${redactedXml}`)
       }
       const putResult = await this.ciraHandler.Send(this.ciraSocket, xmlPut)

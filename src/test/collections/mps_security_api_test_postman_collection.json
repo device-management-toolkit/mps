@@ -2,6 +2,7 @@
   "info": {
     "_postman_id": "d0edafd2-5cf9-4fab-83ce-306db5584098",
     "name": "Verbs Copy",
+    "description": "Data-driven API method tests, including GET last BIOS erase status and RPE credential byte limits, from data/mps_security_api_test_data.json.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [

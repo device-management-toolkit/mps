@@ -6,7 +6,7 @@
 import { describe, expect, it } from 'vitest'
 import { validationResult } from 'express-validator'
 import { sendRPEValidator } from './sendRPEValidator.js'
-import { MAX_SSD_PASSWORD_LENGTH } from './rpeConstants.js'
+import { MAX_RPE_CREDENTIAL_BYTES } from './rpeConstants.js'
 
 async function getValidationErrors(body: any): Promise<any[]> {
   const req: any = { body, query: {}, params: {} }
@@ -18,6 +18,38 @@ async function getValidationErrors(body: any): Promise<any[]> {
 }
 
 describe('sendRPE validator', () => {
+  describe.each(['ssdPassword', 'psid'])('%s byte limits', (field) => {
+    it('does not expose oversized credentials in validation errors', async () => {
+      const credential = 'secret-credential'.repeat(5)
+      const errors = await getValidationErrors({ secureEraseAllSSDs: true, [field]: credential })
+
+      expect(errors.some((error) => error.path === field)).toBe(true)
+      expect(JSON.stringify(errors)).not.toContain(credential)
+    })
+
+    it.each([
+      '',
+      'p'.repeat(33),
+      'p'.repeat(64),
+      '\u00e9'.repeat(32),
+      '\u00e9'.repeat(16) + 'p'.repeat(32)
+    ])('accepts credentials up to 64 UTF-8 bytes (%s)', async (value) => {
+      expect(await getValidationErrors({ secureEraseAllSSDs: true, [field]: value })).toHaveLength(0)
+    })
+
+    it.each([
+      null,
+      123,
+      {},
+      'p'.repeat(65),
+      '\u00e9'.repeat(33),
+      '\u00e9'.repeat(32) + 'p'
+    ])('rejects invalid or oversized credentials (%s)', async (value) => {
+      const errors = await getValidationErrors({ secureEraseAllSSDs: true, [field]: value })
+      expect(errors.some((error) => error.path === field)).toBe(true)
+    })
+  })
+
   describe('valid requests', () => {
     it('accepts a single boolean erase option', async () => {
       const errors = await getValidationErrors({ secureEraseAllSSDs: true })
@@ -50,7 +82,7 @@ describe('sendRPE validator', () => {
     it('accepts ssdPassword at exactly the max byte length', async () => {
       const errors = await getValidationErrors({
         secureEraseAllSSDs: true,
-        ssdPassword: 'a'.repeat(MAX_SSD_PASSWORD_LENGTH)
+        ssdPassword: 'a'.repeat(MAX_RPE_CREDENTIAL_BYTES)
       })
       expect(errors).toHaveLength(0)
     })
@@ -66,6 +98,17 @@ describe('sendRPE validator', () => {
       const errors = await getValidationErrors({})
       expect(errors.length).toBeGreaterThan(0)
       expect(errors.some((e) => e.msg === 'At least one erase option must be enabled')).toBe(true)
+    })
+
+    it('does not expose credentials in the whole-body validation error', async () => {
+      const password = 'secret-password'
+      const psid = 'secret-psid'
+      const errors = await getValidationErrors({ ssdPassword: password, psid })
+
+      expect(errors).toHaveLength(1)
+      expect(errors[0]).not.toHaveProperty('value')
+      expect(JSON.stringify(errors)).not.toContain(password)
+      expect(JSON.stringify(errors)).not.toContain(psid)
     })
 
     it('rejects when all erase options are false', async () => {
@@ -112,13 +155,20 @@ describe('sendRPE validator', () => {
       expect(errors.some((e) => e.path === 'ssdPassword')).toBe(true)
     })
 
+    it('does not expose oversized ssdPassword in validation errors', async () => {
+      const password = 'secret-password'.repeat(5)
+      const errors = await getValidationErrors({ secureEraseAllSSDs: true, ssdPassword: password })
+      expect(errors.some((e) => e.path === 'ssdPassword')).toBe(true)
+      expect(JSON.stringify(errors)).not.toContain(password)
+    })
+
     it('rejects ssdPassword exceeding max byte length', async () => {
       const errors = await getValidationErrors({
         secureEraseAllSSDs: true,
-        ssdPassword: 'a'.repeat(MAX_SSD_PASSWORD_LENGTH + 1)
+        ssdPassword: 'a'.repeat(MAX_RPE_CREDENTIAL_BYTES + 1)
       })
       expect(errors.some((e) => e.path === 'ssdPassword')).toBe(true)
-      expect(errors.some((e) => e.msg.includes(`${MAX_SSD_PASSWORD_LENGTH} bytes`))).toBe(true)
+      expect(errors.some((e) => e.msg.includes(`${MAX_RPE_CREDENTIAL_BYTES} bytes`))).toBe(true)
     })
 
     it('rejects multibyte password that exceeds 64 bytes despite being fewer characters', async () => {
